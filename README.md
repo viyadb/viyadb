@@ -3,6 +3,8 @@ ViyaDB
 
 ViyaDB in-memory columnar analytical data store.
 
+[![Build Status](https://travis-ci.org/viyadb/viyadb.png)](https://travis-ci.org/viyadb/viyadb)
+
 For more information please visit the Website: http://viyadb.com
 
 ## Building from source
