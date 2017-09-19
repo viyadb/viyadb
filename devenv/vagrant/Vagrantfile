@@ -1,0 +1,54 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/zesty64"
+  config.vm.network "forwarded_port", guest: 5000, host: 5000
+  config.vm.synced_folder "../../", "/viyadb"
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.name = "viyadb-devenv"
+    vb.gui = false
+    vb.memory = "8192"
+    vb.cpus = 8
+  end
+
+  config.vm.provision "shell", inline: <<-SHELL
+    sudo add-apt-repository ppa:ubuntu-toolchain-r/test \
+      && apt-get update && apt-get install -y --no-install-recommends \
+        autoconf \
+        automake \
+        binutils-dev \
+        build-essential \
+        cmake \
+        g++-7 \
+        git \
+        libbz2-dev \
+        libevent-dev \
+        liblz4-dev \
+        libssl-dev \
+        libtool \
+        linux-tools-$(uname -r) \
+        ntp \
+        pkg-config \
+        python \
+        valgrind \
+        wget \
+        zlib1g-dev \
+      && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 60 --slave /usr/bin/g++ g++ /usr/bin/g++-7 \
+      && apt-get clean \
+      && rm -rf /var/lib/apt/lists/*
+
+    if ! ldconfig -p | grep libboost_system.so.1.65.1 2>&1 >/dev/null; then
+      wget -qc https://dl.bintray.com/boostorg/release/1.65.1/source/boost_1_65_1.tar.gz \
+        && tar xfz boost_1_65_1.tar.gz \
+        && rm boost_1_65_1.tar.gz \
+        && cd boost_1_65_1 \
+        && ./bootstrap.sh \
+        && ./b2 --without-python -j 4 link=static runtime-link=shared install \
+        && cd .. \
+        && rm -rf boost_1_65_1 \
+        && ldconfig
+    fi
+  SHELL
+end

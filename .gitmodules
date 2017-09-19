@@ -1,0 +1,33 @@
+[submodule "third_party/json"]
+	path = third_party/json
+	url = https://github.com/nlohmann/json.git
+[submodule "third_party/cpp-subprocess"]
+	path = third_party/cpp-subprocess
+	url = https://github.com/spektom/cpp-subprocess.git
+[submodule "third_party/cityhash"]
+	path = third_party/cityhash
+	url = https://github.com/google/cityhash.git
+[submodule "third_party/CRoaring"]
+	path = third_party/CRoaring
+	url = https://github.com/RoaringBitmap/CRoaring.git
+[submodule "third_party/Simple-Web-Server"]
+	path = third_party/Simple-Web-Server
+	url = https://github.com/eidheim/Simple-Web-Server.git
+[submodule "third_party/googletest"]
+	path = third_party/googletest
+	url = https://github.com/google/googletest.git
+[submodule "third_party/CTPL"]
+	path = third_party/CTPL
+	url = https://github.com/vit-vit/CTPL.git
+[submodule "third_party/fmt"]
+	path = third_party/fmt
+	url = https://github.com/fmtlib/fmt.git
+[submodule "third_party/glog"]
+	path = third_party/glog
+	url = https://github.com/google/glog.git
+[submodule "third_party/gflags"]
+	path = third_party/gflags
+	url = https://github.com/gflags/gflags.git
+[submodule "third_party/cpr"]
+	path = third_party/cpr
+	url = https://github.com/whoshuu/cpr.git

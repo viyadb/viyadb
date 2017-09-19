@@ -1,0 +1,4 @@
+#cmakedefine VIYA_VERSION "@VIYA_VERSION@"
+#cmakedefine01 VIYA_IS_RELEASE
+#cmakedefine01 CXX_COMPILER_IS_CLANG
+#cmakedefine01 ENABLE_PERSISTENCE
