@@ -13,6 +13,7 @@ install:
   - tar xfz boost_1_65_1.tar.gz && cd boost_1_65_1
   - ./bootstrap.sh && sudo ./b2 -d0 --with-libraries=program_options,filesystem,system --without-python -j 2 link=static runtime-link=shared install
   - sudo ldconfig
+  - cd .. && boost_1_65_1
 
 script:
   - mkdir build
