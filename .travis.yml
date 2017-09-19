@@ -7,7 +7,7 @@ before_install:
   - sudo apt-get update -qq
 
 install: 
-  - sudo apt-get install -qq g++-7
+  - sudo apt-get install -qq g++-7 cmake
   - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 90
   - sudo apt-get install libboost-dev
 
