@@ -1,9 +1,6 @@
 file(GLOB_RECURSE SOURCES *.cc)
 add_library(viya_codegen ${SOURCES})
 
-include_directories(
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/boost-process/include)
-
 target_link_libraries(viya_codegen
   viya_util
   viya_db
