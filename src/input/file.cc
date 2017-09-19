@@ -45,6 +45,8 @@ void FileLoader::LoadTsv() {
   static char buf[BUFFER_SIZE + 1];
   static char line[MAX_TUPLE_SIZE];
 
+  size_t file_cols_num = tuple_idx_map_.size();
+
   std::vector<std::string> tuple(cols_num);
   for (auto& s: tuple) {
     s.reserve(MAX_TUPLE_SIZE / cols_num);
@@ -74,7 +76,7 @@ void FileLoader::LoadTsv() {
       while (*tp) {
         if (*tp == '\t') {
           *tp = '\0';
-          if (tuple_idx >= cols_num) {
+          if (tuple_idx >= file_cols_num) {
             throw std::runtime_error("number of input columns is too big");
           }
           auto target_idx = tuple_idx_map_[tuple_idx];
@@ -87,7 +89,7 @@ void FileLoader::LoadTsv() {
         tp++;
       }
       if (tp > tp_start) {
-        if (tuple_idx >= cols_num) {
+        if (tuple_idx >= file_cols_num) {
           throw std::runtime_error("number of input columns is too big");
         }
         auto target_idx = tuple_idx_map_[tuple_idx];
