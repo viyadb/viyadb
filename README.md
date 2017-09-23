@@ -10,11 +10,11 @@ ViyaDB is in-memory columnar analytical data store, featuring:
  * Dynamic period based rollup
  * REST API interface with intuitive JSON-based language
 
-[![Build Status](https://travis-ci.org/viyadb/viyadb.png)](https://travis-ci.org/viyadb/viyadb)
-
 For more information please visit the Website: http://viyadb.com
 
 ## Building from source
+
+[![Build Status](https://travis-ci.org/viyadb/viyadb.png)](https://travis-ci.org/viyadb/viyadb)
 
 If your development machine is not Linux, unfortunately, refer to [this](devenv) document for instructions.
 
