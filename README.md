@@ -1,7 +1,14 @@
 ViyaDB
 =======
 
-ViyaDB in-memory columnar analytical data store.
+ViyaDB is in-memory columnar analytical data store, featuring:
+
+ * Fast ad-hoc analytical queries
+ * Random access update pattern
+ * Built-in cardinality protection
+ * Real-time query compilation to machine code
+ * Dynamic period based rollup
+ * REST API interface with intuitive JSON-based language
 
 [![Build Status](https://travis-ci.org/viyadb/viyadb.png)](https://travis-ci.org/viyadb/viyadb)
 
