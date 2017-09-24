@@ -20,5 +20,4 @@ script:
   - mkdir build
   - cd build
   - cmake ..
-  - make -j 2
-  - ./test/unit_tests || for f in /tmp/*.so ; do nm $f ; done
+  - make -j 2 && ./test/unit_tests

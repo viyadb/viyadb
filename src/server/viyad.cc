@@ -1,16 +1,15 @@
 #include <sched.h>
-#include <unistd.h>
-#include <limits.h>
 #include <sstream>
 #include <json.hpp>
 #include "server/viyad.h"
+#include "util/hostname.h"
 
 namespace viya {
 namespace server {
 
 namespace db = viya::db;
 namespace coord = viya::coord;
-namespace server = viya::server;
+namespace util = viya::util;
 
 using json = nlohmann::json;
 
@@ -23,22 +22,20 @@ void Viyad::Start() {
 #endif
 
   db::Database database(config_);
-  server::Http http_service(config_, database);
+  Http http_service(config_, database);
   
   RegisterNode(http_service);
 
   http_service.Start();
 }
 
-void Viyad::RegisterNode(const server::Http& http_service) {
+void Viyad::RegisterNode(const Http& http_service) {
   if (consul_.Enabled()) {
     session_ = consul_.CreateSession(std::string("viyadb-worker"));
 
-    char hostname[HOST_NAME_MAX];
-    gethostname(hostname, HOST_NAME_MAX);
     std::ostringstream key;
     key<<config_.str("cluster_id")
-      <<"/nodes/workers/"<<hostname<<":"<<std::to_string(http_service.port());
+      <<"/nodes/workers/"<<util::get_hostname()<<":"<<std::to_string(http_service.port());
 
     json data = json({});
     session_->EphemeralKey(key.str(), data.dump());
