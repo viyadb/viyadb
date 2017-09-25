@@ -50,6 +50,7 @@ class Table {
     const Dimension* dimension(const std::string& name) const;
     const Dimension* dimension(size_t index) const { return dimensions_[index]; }
     const Metric* metric(const std::string& name) const;
+    const Metric* metric(size_t index) const { return metrics_[index]; }
     const SegmentStore* store() const { return store_; }
     SegmentStore* store() { return store_; }
     size_t segment_size() const { return segment_size_; }

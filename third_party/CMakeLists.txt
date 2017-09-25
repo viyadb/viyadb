@@ -1,4 +1,5 @@
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+set(CMAKE_DEBUG_POSTFIX "" CACHE STRING "Generate debug library name without a postfix.")
 
 include(cityhash.cmake)
 
