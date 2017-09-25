@@ -1,6 +1,8 @@
 ViyaDB
 =======
 
+[![Build Status](https://travis-ci.org/viyadb/viyadb.png)](https://travis-ci.org/viyadb/viyadb)
+
 ViyaDB is in-memory columnar analytical data store, featuring:
 
  * Fast ad-hoc analytical queries
@@ -12,9 +14,15 @@ ViyaDB is in-memory columnar analytical data store, featuring:
 
 For more information please visit the Website: http://viyadb.com
 
-## Building from source
+## Running Docker image
 
-[![Build Status](https://travis-ci.org/viyadb/viyadb.png)](https://travis-ci.org/viyadb/viyadb)
+For testing purposes, latest ViyaDB version can be started using the following command:
+
+```bash
+docker run -p 5000:5000 --rm -ti -v /tmp/viyadb:/tmp/viyadb viyadb/viyadb:latest
+```
+
+## Building from source
 
 If your development machine is not Linux, unfortunately, refer to [this](devenv) document for instructions.
 
