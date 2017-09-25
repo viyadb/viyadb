@@ -2,13 +2,14 @@
 #define VIYA_SERVER_VIYAD_H_
 
 #include "util/config.h"
-#include "coord/consul/consul.h"
+#include "cluster/worker.h"
 #include "server/http/service.h"
 
 namespace viya {
 namespace server {
 
 namespace util = viya::util;
+namespace cluster = viya::cluster;
 
 class Viyad {
   public:
@@ -24,8 +25,7 @@ class Viyad {
 
   private:
     const util::Config config_;
-    const coord::Consul consul_;
-    std::unique_ptr<coord::Session> session_;
+    std::unique_ptr<cluster::Worker> worker_;
 };
 
 }}

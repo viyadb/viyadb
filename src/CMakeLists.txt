@@ -9,6 +9,6 @@ add_subdirectory(db)
 add_subdirectory(input)
 add_subdirectory(query)
 add_subdirectory(codegen)
-add_subdirectory(coord)
+add_subdirectory(cluster)
 add_subdirectory(server)
 

@@ -8,7 +8,7 @@ target_link_libraries(viyad
   viya_input
   viya_query
   viya_codegen
-  viya_coord
+  viya_cluster
   viya_util
   glog
   pthread)

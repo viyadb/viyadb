@@ -9,12 +9,12 @@ namespace viya {
 namespace server {
 
 namespace db = viya::db;
-namespace coord = viya::coord;
+namespace cluster = viya::cluster;
 namespace server = viya::server;
 
 using json = nlohmann::json;
 
-Viyad::Viyad(const util::Config& config):config_(config),consul_(config) {
+Viyad::Viyad(const util::Config& config):config_(config) {
 }
 
 void Viyad::Start() {
@@ -25,24 +25,9 @@ void Viyad::Start() {
   db::Database database(config_);
   server::Http http_service(config_, database);
   
-  RegisterNode(http_service);
+  worker_ = std::make_unique<cluster::Worker>(config);
 
   http_service.Start();
-}
-
-void Viyad::RegisterNode(const server::Http& http_service) {
-  if (consul_.Enabled()) {
-    session_ = consul_.CreateSession(std::string("viyadb-worker"));
-
-    char hostname[HOST_NAME_MAX];
-    gethostname(hostname, HOST_NAME_MAX);
-    std::ostringstream key;
-    key<<config_.str("cluster_id")
-      <<"/nodes/workers/"<<hostname<<":"<<std::to_string(http_service.port());
-
-    json data = json({});
-    session_->EphemeralKey(key.str(), data.dump());
-  }
 }
 
 #ifdef __linux__

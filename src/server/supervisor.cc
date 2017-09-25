@@ -52,7 +52,7 @@ void Supervisor::Start() {
 
   EnableRestartHandler();
 
-  controller_.reset(new coord::Controller(config));
+  controller_.reset(new cluster::Controller(config));
 
   auto cpu_list = config.numlist("cpu_list");
   if (cpu_list.size() < workers_num) {

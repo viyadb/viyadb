@@ -5,13 +5,14 @@
 #include <sys/types.h>
 #include <vector>
 #include <csetjmp>
-#include "coord/controller.h"
+#include "cluster/controller.h"
 #include "util/config.h"
 
 namespace viya {
 namespace server {
 
 namespace util = viya::util;
+namespace cluster = viya::cluster;
 
 class Supervisor {
   public:
@@ -38,7 +39,7 @@ class Supervisor {
     static Supervisor* instance_;
     std::vector<std::string> args_;
     std::vector<Worker> workers_;
-    std::unique_ptr<coord::Controller> controller_;
+    std::unique_ptr<cluster::Controller> controller_;
     std::jmp_buf jump_;
 };
 
