@@ -238,17 +238,15 @@ Code CreateSegment::GenerateCode() const {
   Code code;
   StoreDefs store_defs(table_);
   code<<store_defs.GenerateCode();
-  code<<"db::SegmentBase* viya_segment_create() __attribute__((__visibility__(\"default\")));\n";
-  code<<"db::SegmentBase* viya_segment_create() {\n";
+  code<<"extern \"C\" db::SegmentBase* viya_segment_create() __attribute__((__visibility__(\"default\")));\n";
+  code<<"extern \"C\" db::SegmentBase* viya_segment_create() {\n";
   code<<" return new Segment();\n";
   code<<"}\n";
   return code;
 }
 
 db::CreateSegmentFn CreateSegment::Function() {
-  return GenerateFunction<db::CreateSegmentFn>(std::string(
-    "_Z19viya_segment_createv"
-  ));
+  return GenerateFunction<db::CreateSegmentFn>(std::string("viya_segment_create"));
 }
 
 }}

@@ -6,7 +6,9 @@
 #include <thread>
 #include <chrono>
 #include <csetjmp>
-#include <sys/prctl.h>
+#if __linux__
+ #include <sys/prctl.h>
+#endif
 #include <glog/logging.h>
 #include "server/args.h"
 #include "server/supervisor.h"

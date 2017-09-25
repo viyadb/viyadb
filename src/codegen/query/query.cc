@@ -259,10 +259,10 @@ void ScanGenerator::Visit(query::AggregateQuery* query) {
   MetricsStruct metrics_struct(metrics, "AggMetrics");
   code_<<metrics_struct.GenerateCode();
 
-  code_<<"void viya_query_agg(db::Table& table, query::RowOutput& output, "
+  code_<<"extern \"C\" void viya_query_agg(db::Table& table, query::RowOutput& output, "
     <<"query::QueryStats& stats, std::vector<db::AnyNum> fargs, size_t skip, size_t limit) __attribute__((__visibility__(\"default\")));\n";
 
-  code_<<"void viya_query_agg(db::Table& table, query::RowOutput& output, "
+  code_<<"extern \"C\" void viya_query_agg(db::Table& table, query::RowOutput& output, "
     <<"query::QueryStats& stats, std::vector<db::AnyNum> fargs, size_t skip, size_t limit) {\n";
 
   UnpackArguments(query);
@@ -323,10 +323,10 @@ void ScanGenerator::Visit(query::SearchQuery* query) {
   code_<<"namespace query = viya::query;\n";
   code_<<"namespace util = viya::util;\n";
 
-  code_<<"void viya_query_search(db::Table& table, query::RowOutput& output, query::QueryStats& stats, "
+  code_<<"extern \"C\" void viya_query_search(db::Table& table, query::RowOutput& output, query::QueryStats& stats, "
     <<"std::vector<db::AnyNum> fargs, const std::string& term, size_t limit) __attribute__((__visibility__(\"default\")));\n";
 
-  code_<<"void viya_query_search(db::Table& table, query::RowOutput& output, query::QueryStats& stats, "
+  code_<<"extern \"C\" void viya_query_search(db::Table& table, query::RowOutput& output, query::QueryStats& stats, "
     <<"std::vector<db::AnyNum> fargs, const std::string& term, size_t limit) {\n";
 
   UnpackArguments(query);
@@ -349,23 +349,11 @@ Code QueryGenerator::GenerateCode() const {
 }
 
 query::AggQueryFn QueryGenerator::AggQueryFunction() {
-  return GenerateFunction<query::AggQueryFn>(std::string(
-#if CXX_COMPILER_IS_CLANG
-    "_Z14viya_query_aggRN4viya2db5TableERNS_5query9RowOutputERNS3_10QueryStatsENSt3__16vectorINS0_6AnyNumENS8_9allocatorISA_EEEEmm"
-#else
-    "_Z14viya_query_aggRN4viya2db5TableERNS_5query9RowOutputERNS3_10QueryStatsESt6vectorINS0_6AnyNumESaIS9_EEmm"
-#endif
-  ));
+  return GenerateFunction<query::AggQueryFn>(std::string("viya_query_agg"));
 }
 
 query::SearchQueryFn QueryGenerator::SearchQueryFunction() {
-  return GenerateFunction<query::SearchQueryFn>(std::string(
-#if CXX_COMPILER_IS_CLANG
-    "_Z17viya_query_searchRN4viya2db5TableERNS_5query9RowOutputERNS3_10QueryStatsENSt3__16vectorINS0_6AnyNumENS8_9allocatorISA_EEEERKNS8_12basic_stringIcNS8_11char_traitsIcEENSB_IcEEEEm"
-#else
-    "_Z17viya_query_searchRN4viya2db5TableERNS_5query9RowOutputERNS3_10QueryStatsESt6vectorINS0_6AnyNumESaIS9_EERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEm"
-#endif
-  ));
+  return GenerateFunction<query::SearchQueryFn>(std::string("viya_query_search"));
 }
 
 }}

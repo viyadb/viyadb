@@ -17,8 +17,8 @@ Code TableMetadata::GenerateCode() const {
 
   code<<"using json = nlohmann::json;\n";
 
-  code<<"void viya_table_metadata(db::Table& table, std::string& output) __attribute__((__visibility__(\"default\")));\n";
-  code<<"void viya_table_metadata(db::Table& table, std::string& output) {\n";
+  code<<"extern \"C\" void viya_table_metadata(db::Table& table, std::string& output) __attribute__((__visibility__(\"default\")));\n";
+  code<<"extern \"C\" void viya_table_metadata(db::Table& table, std::string& output) {\n";
   code<<" json meta;\n";
 
   // Segments metadata
@@ -84,13 +84,7 @@ Code TableMetadata::GenerateCode() const {
 }
 
 db::TableMetadataFn TableMetadata::Function() {
-  return GenerateFunction<db::TableMetadataFn>(std::string(
-#if CXX_COMPILER_IS_CLANG
-    "_Z19viya_table_metadataRN4viya2db5TableERNSt3__112basic_stringIcNS3_11char_traitsIcEENS3_9allocatorIcEEEE"
-#else
-    "_Z19viya_table_metadataRN4viya2db5TableERNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE"
-#endif
-  ));
+  return GenerateFunction<db::TableMetadataFn>(std::string("viya_table_metadata"));
 }
 
 }}

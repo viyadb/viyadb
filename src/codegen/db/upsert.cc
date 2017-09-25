@@ -184,8 +184,8 @@ Code UpsertGenerator::SetupFunctionCode() const {
 
   code<<OptimizeFunctionCode();
 
-  code<<"void viya_upsert_setup(db::Table& t) __attribute__((__visibility__(\"default\")));\n";
-  code<<"void viya_upsert_setup(db::Table& t) {\n";
+  code<<"extern \"C\" void viya_upsert_setup(db::Table& t) __attribute__((__visibility__(\"default\")));\n";
+  code<<"extern \"C\" void viya_upsert_setup(db::Table& t) {\n";
   code<<" table = &t;\n";
   for (auto* dimension : table_.dimensions()) {
     if (dimension->dim_type() == db::Dimension::DimType::STRING) {
@@ -197,8 +197,8 @@ Code UpsertGenerator::SetupFunctionCode() const {
   }
   code<<"}\n";
 
-  code<<"void viya_upsert_before() __attribute__((__visibility__(\"default\")));\n";
-  code<<"void viya_upsert_before() {\n";
+  code<<"extern \"C\" void viya_upsert_before() __attribute__((__visibility__(\"default\")));\n";
+  code<<"extern \"C\" void viya_upsert_before() {\n";
   code<<" stats = db::UpsertStats();\n";
   if (has_time_dim) {
     RollupReset rollup_reset(table_.dimensions());
@@ -206,8 +206,8 @@ Code UpsertGenerator::SetupFunctionCode() const {
   }
   code<<"}\n";
 
-  code<<"db::UpsertStats viya_upsert_after() __attribute__((__visibility__(\"default\")));\n";
-  code<<"db::UpsertStats viya_upsert_after() {\n";
+  code<<"extern \"C\" db::UpsertStats viya_upsert_after() __attribute__((__visibility__(\"default\")));\n";
+  code<<"extern \"C\" db::UpsertStats viya_upsert_after() {\n";
   code<<" viya_upsert_optimize();\n";
   code<<" return stats;\n";
   code<<"}\n";
@@ -291,8 +291,8 @@ Code UpsertGenerator::GenerateCode() const {
   Code code;
   code<<SetupFunctionCode();
 
-  code<<"void viya_upsert_do(std::vector<std::string>& values) __attribute__((__visibility__(\"default\")));\n";
-  code<<"void viya_upsert_do(std::vector<std::string>& values) {\n";
+  code<<"extern \"C\" void viya_upsert_do(std::vector<std::string>& values) __attribute__((__visibility__(\"default\")));\n";
+  code<<"extern \"C\" void viya_upsert_do(std::vector<std::string>& values) {\n";
 
   size_t value_idx = 0;
   bool add_optimize = AddOptimize();
@@ -348,31 +348,19 @@ Code UpsertGenerator::GenerateCode() const {
 }
 
 db::UpsertSetupFn UpsertGenerator::SetupFunction() {
-  return GenerateFunction<db::UpsertSetupFn>(std::string(
-    "_Z17viya_upsert_setupRN4viya2db5TableE"
-  ));
+  return GenerateFunction<db::UpsertSetupFn>(std::string("viya_upsert_setup"));
 }
 
 db::BeforeUpsertFn UpsertGenerator::BeforeFunction() {
-  return GenerateFunction<db::BeforeUpsertFn>(std::string(
-    "_Z18viya_upsert_beforev"
-  ));
+  return GenerateFunction<db::BeforeUpsertFn>(std::string("viya_upsert_before"));
 }
 
 db::AfterUpsertFn UpsertGenerator::AfterFunction() {
-  return GenerateFunction<db::AfterUpsertFn>(std::string(
-    "_Z17viya_upsert_afterv"
-  ));
+  return GenerateFunction<db::AfterUpsertFn>(std::string("viya_upsert_after"));
 }
 
 db::UpsertFn UpsertGenerator::Function() {
-  return GenerateFunction<db::UpsertFn>(std::string(
-#if CXX_COMPILER_IS_CLANG
-    "_Z14viya_upsert_doRNSt3__16vectorINS_12basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEENS4_IS6_EEEE"
-#else
-    "_Z14viya_upsert_doRSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaIS5_EE"
-#endif
-  ));
+  return GenerateFunction<db::UpsertFn>(std::string("viya_upsert_do"));
 }
 
 }}

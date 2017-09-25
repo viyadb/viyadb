@@ -10,10 +10,9 @@
 #include <algorithm>
 #include <sstream>
 #include <iomanip>
-#include <unistd.h>
-#include <limits.h>
 #include <boost/algorithm/string.hpp>
 #include "util/statsd.h"
+#include "util/hostname.h"
 
 namespace viya {
 namespace util {
@@ -25,9 +24,7 @@ void Statsd::Connect(const Config& config) {
   int port = config.num("port", 8125);
   prefix_ = config.str("prefix", "viyadb.%h.");
 
-  char hostname[HOST_NAME_MAX];
-  gethostname(hostname, HOST_NAME_MAX);
-  boost::replace_all(prefix_, "%h", hostname);
+  boost::replace_all(prefix_, "%h", get_hostname());
 
   struct hostent *server = gethostbyname(host.c_str());
   if (server == nullptr) {

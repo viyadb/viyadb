@@ -21,7 +21,6 @@ class Viyad {
 #ifdef __linux__
     void SetCpuAffinity();
 #endif
-    void RegisterNode(const server::Http& http_service);
 
   private:
     const util::Config config_;

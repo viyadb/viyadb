@@ -1,9 +1,8 @@
 #include <sched.h>
-#include <unistd.h>
-#include <limits.h>
 #include <sstream>
 #include <json.hpp>
 #include "server/viyad.h"
+#include "util/hostname.h"
 
 namespace viya {
 namespace server {
@@ -23,7 +22,7 @@ void Viyad::Start() {
 #endif
 
   db::Database database(config_);
-  server::Http http_service(config_, database);
+  Http http_service(config_, database);
   
   worker_ = std::make_unique<cluster::Worker>(config);
 
