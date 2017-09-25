@@ -68,9 +68,11 @@ void Session::Renew() {
   auto r = cpr::Put(
     cpr::Url { consul_.url() + "/v1/session/renew/" + id_ }
   );
+
   if (r.status_code == 0) {
     LOG(WARNING)<<"Can't contact Consul (host is unreachable)";
-  } else if (r.status_code == 404) {
+  }
+  else if (r.status_code == 404) {
     LOG(WARNING)<<"Session '"<<id_<<"' was invalidated externally";
     Create();
   }

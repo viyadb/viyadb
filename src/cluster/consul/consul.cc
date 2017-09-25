@@ -49,18 +49,23 @@ std::unique_ptr<Watch> Consul::WatchKey(const std::string& key) const {
 
 std::vector<std::string> Consul::ListKeys(const std::string& key) const {
   auto r = cpr::Get(
-    cpr::Url { url_ + "/" + prefix_ + "/" + key }
+    cpr::Url { url_ + "/v1/kv/" + prefix_ + "/" + key },
+    cpr::Parameters {{ "keys", "true" }}
   );
+  if (r.status_code == 0) {
+    throw std::runtime_error("Can't contact Consul (host is unreachable)");
+  }
+  if (r.status_code == 404) {
+    return std::move(std::vector<std::string> {});
+  }
   if (r.status_code != 200) {
-    if (r.status_code == 0) {
-      throw std::runtime_error("Can't contact Consul (host is unreachable)");
-    }
-    if (r.status_code == 404) {
-      return std::move(std::vector<std::string> {});
-    }
     throw std::runtime_error("Can't list keys (" + r.text + ")");
   }
-  return std::move(json::parse(r.text)[0].get<std::vector<std::string>>());
+  auto keys = json::parse(r.text).get<std::vector<std::string>>();
+  std::for_each(keys.begin(), keys.end(), [](std::string& key) {
+    key.erase(0, key.rfind("/") + 1);
+  });
+  return std::move(keys);
 }
 
 }}

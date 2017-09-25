@@ -20,12 +20,12 @@ void LeaderElector::Start() {
       if (!leader_) {
         leader_ = session_.EphemeralKey(key_, std::string(""));
         if (leader_) {
-          LOG(INFO)<<"Became leader";
+          LOG(INFO)<<"Became a leader";
         }
       }
       auto changes = watch_->LastChanges();
       if (leader_ && session_.id() != changes["Session"]) {
-        LOG(INFO)<<"Not leader anymore";
+        LOG(INFO)<<"Not a leader anymore";
         leader_ = false;
       }
     } catch (std::exception& e) {

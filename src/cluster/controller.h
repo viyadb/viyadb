@@ -4,6 +4,7 @@
 #include <memory>
 #include "cluster/consul/consul.h"
 #include "util/config.h"
+#include "util/schedule.h"
 
 namespace viya {
 namespace cluster {
@@ -22,6 +23,7 @@ class Controller {
     const Consul consul_;
     std::unique_ptr<Session> session_;
     std::unique_ptr<LeaderElector> le_;
+    std::unique_ptr<util::Repeat> repeat_;
 };
 
 }}
