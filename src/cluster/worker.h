@@ -17,7 +17,7 @@ class Worker {
 
   private:
     const util::Config& config_;
-    std::unique_ptr<Consul> consul_;
+    const Consul& consul_;
     std::unique_ptr<Session> session_;
 };
 

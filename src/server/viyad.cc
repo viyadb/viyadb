@@ -24,7 +24,7 @@ void Viyad::Start() {
   db::Database database(config_);
   Http http_service(config_, database);
   
-  worker_ = std::make_unique<cluster::Worker>(config);
+  worker_ = std::make_unique<cluster::Worker>(config_);
 
   http_service.Start();
 }

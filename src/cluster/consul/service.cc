@@ -5,6 +5,7 @@
 #include <cpr/cpr.h>
 #include <glog/logging.h>
 #include "cluster/consul/consul.h"
+#include "util/hostname.h"
 
 namespace viya {
 namespace cluster {
@@ -34,13 +35,10 @@ void Service::Deregister() {
 }
 
 void Service::Register() {
-  char hostname[HOST_NAME_MAX];
-  gethostname(hostname, sizeof(hostname));
-
   json data = {
     { "id", id_ },
     { "name", name_ },
-    { "address", hostname },
+    { "address", util::get_hostname() },
     { "port", port_ },
     { "check", {{ "ttl", std::to_string(ttl_sec_) + "s" }} }
   };
