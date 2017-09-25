@@ -2,6 +2,7 @@
 #define VIYA_CLUSTER_CONSUL_H_
 
 #include <memory>
+#include <functional>
 #include "util/config.h"
 #include "cluster/consul/session.h"
 #include "cluster/consul/service.h"
@@ -20,10 +21,16 @@ class Consul {
 
     bool Enabled() const { return !url_.empty(); }
 
-    std::unique_ptr<Session> CreateSession(const std::string& name, uint32_t ttl_sec = 10) const;
-    std::unique_ptr<Service> RegisterService(const std::string& name, uint16_t port, uint32_t ttl_sec = 10, bool auto_hc = true) const;
+    std::unique_ptr<Session> CreateSession(const std::string& name,
+        std::function<void(const Session&)> on_create = {}, uint32_t ttl_sec = 10) const;
+
+    std::unique_ptr<Service> RegisterService(const std::string& name,
+        uint16_t port, uint32_t ttl_sec = 10, bool auto_hc = true) const;
+
     std::unique_ptr<LeaderElector> ElectLeader(const Session& session, const std::string& key) const;
+
     std::unique_ptr<Watch> WatchKey(const std::string& key) const;
+    std::vector<std::string> ListKeys(const std::string& key) const;
 
     const std::string& url() const { return url_; }
     const std::string& prefix() const { return prefix_; }

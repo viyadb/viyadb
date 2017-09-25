@@ -12,4 +12,7 @@ Controller::Controller(const util::Config& config)
   }
 }
 
+void Controller::GeneratePlan() const {
+}
+
 }}

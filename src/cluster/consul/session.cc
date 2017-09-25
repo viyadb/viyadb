@@ -9,8 +9,9 @@ namespace cluster {
 
 using json = nlohmann::json;
 
-Session::Session(const Consul& consul, const std::string& name, uint32_t ttl_sec):
-  consul_(consul),name_(name),ttl_sec_(ttl_sec),repeat_(nullptr) {
+Session::Session(const Consul& consul, const std::string& name,
+                 std::function<void(const Session&)> on_create, uint32_t ttl_sec):
+  consul_(consul),name_(name),on_create_(on_create),ttl_sec_(ttl_sec),repeat_(nullptr) {
 
   Create();
 
@@ -56,6 +57,10 @@ void Session::Create() {
   json response = json::parse(r.text);
   id_ = response["ID"];
   LOG(INFO)<<"Created new session: "<<id_;
+
+  if (on_create_) {
+    on_create_(const_cast<const Session&>(*this));
+  }
 }
 
 void Session::Renew() {
@@ -63,7 +68,9 @@ void Session::Renew() {
   auto r = cpr::Put(
     cpr::Url { consul_.url() + "/v1/session/renew/" + id_ }
   );
-  if (r.status_code == 404) {
+  if (r.status_code == 0) {
+    LOG(WARNING)<<"Can't contact Consul (host is unreachable)";
+  } else if (r.status_code == 404) {
     LOG(WARNING)<<"Session '"<<id_<<"' was invalidated externally";
     Create();
   }

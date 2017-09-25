@@ -2,6 +2,7 @@
 #define VIYA_CLUSTER_SESSION_H_
 
 #include <memory>
+#include <functional>
 #include "util/schedule.h"
 
 namespace viya {
@@ -11,7 +12,8 @@ class Consul;
 
 class Session {
   public:
-    Session(const Consul& consul, const std::string& name, uint32_t ttl_sec);
+    Session(const Consul& consul, const std::string& name,
+        std::function<void(const Session&)> on_create, uint32_t ttl_sec);
     Session(const Session& other) = delete;
     ~Session();
 
@@ -27,6 +29,7 @@ class Session {
   private:
     const Consul& consul_;
     const std::string name_;
+    std::function<void(const Session&)> on_create_;
     const uint32_t ttl_sec_;
     std::string id_;
     std::unique_ptr<util::Repeat> repeat_;

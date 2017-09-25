@@ -26,9 +26,10 @@ void Consul::CheckEnabled() const {
   }
 }
 
-std::unique_ptr<Session> Consul::CreateSession(const std::string& name, uint32_t ttl_sec) const {
+std::unique_ptr<Session> Consul::CreateSession(const std::string& name,
+    std::function<void(const Session&)> on_create, uint32_t ttl_sec) const {
   CheckEnabled();
-  return std::make_unique<Session>(*this, name, ttl_sec);
+  return std::make_unique<Session>(*this, name, on_create, ttl_sec);
 }
 
 std::unique_ptr<Service> Consul::RegisterService(const std::string& name, uint16_t port, uint32_t ttl_sec, bool auto_hc) const {
@@ -44,6 +45,22 @@ std::unique_ptr<LeaderElector> Consul::ElectLeader(const Session& session, const
 std::unique_ptr<Watch> Consul::WatchKey(const std::string& key) const {
   CheckEnabled();
   return std::make_unique<Watch>(*this, key);
+}
+
+std::vector<std::string> Consul::ListKeys(const std::string& key) const {
+  auto r = cpr::Get(
+    cpr::Url { url_ + "/" + prefix_ + "/" + key }
+  );
+  if (r.status_code != 200) {
+    if (r.status_code == 0) {
+      throw std::runtime_error("Can't contact Consul (host is unreachable)");
+    }
+    if (r.status_code == 404) {
+      return std::move(std::vector<std::string> {});
+    }
+    throw std::runtime_error("Can't list keys (" + r.text + ")");
+  }
+  return std::move(json::parse(r.text)[0].get<std::vector<std::string>>());
 }
 
 }}

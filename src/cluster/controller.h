@@ -15,6 +15,8 @@ class Controller {
     Controller(const util::Config& config);
     Controller(const Controller& other) = delete;
 
+    void GeneratePlan() const;
+
   private:
     const std::string cluster_id_;
     const Consul consul_;

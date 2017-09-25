@@ -17,7 +17,7 @@ class LeaderElector {
     LeaderElector(const Consul& consul, const Session& session, const std::string& key);
     LeaderElector(const LeaderElector& other) = delete;
 
-    bool IsLeader() const { return leader_; }
+    bool Leader() const { return leader_; }
 
   private:
     void Start();
