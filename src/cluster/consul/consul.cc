@@ -52,20 +52,40 @@ std::vector<std::string> Consul::ListKeys(const std::string& key) const {
     cpr::Url { url_ + "/v1/kv/" + prefix_ + "/" + key },
     cpr::Parameters {{ "keys", "true" }}
   );
-  if (r.status_code == 0) {
-    throw std::runtime_error("Can't contact Consul (host is unreachable)");
-  }
-  if (r.status_code == 404) {
-    return std::move(std::vector<std::string> {});
-  }
-  if (r.status_code != 200) {
-    throw std::runtime_error("Can't list keys (" + r.text + ")");
+  switch (r.status_code) {
+    case 200: break;
+    case 0:
+      throw std::runtime_error("Can't contact Consul (host is unreachable)");
+    case 404:
+      return std::move(std::vector<std::string> {});
+    default:
+      throw std::runtime_error("Can't list keys (" + r.text + ")");
   }
   auto keys = json::parse(r.text).get<std::vector<std::string>>();
   std::for_each(keys.begin(), keys.end(), [](std::string& key) {
     key.erase(0, key.rfind("/") + 1);
   });
   return std::move(keys);
+}
+
+std::string Consul::GetKey(const std::string& key, bool throw_if_not_exists, std::string default_value) const {
+  auto r = cpr::Get(
+    cpr::Url { url_ + "/v1/kv/" + prefix_ + "/" + key },
+    cpr::Parameters {{ "raw", "true" }}
+  );
+  switch (r.status_code) {
+    case 200: break;
+    case 0:
+      throw std::runtime_error("Can't contact Consul (host is unreachable)");
+    case 404:
+      if (throw_if_not_exists) {
+        throw std::runtime_error("Key doesn't exist: " + prefix_ + "/" + key);
+      }
+      return default_value;
+    default:
+      throw std::runtime_error("Can't get key contents (" + r.text + ")");
+  }
+  return r.text;
 }
 
 }}

@@ -32,6 +32,9 @@ class Consul {
     std::unique_ptr<Watch> WatchKey(const std::string& key) const;
     std::vector<std::string> ListKeys(const std::string& key) const;
 
+    std::string GetKey(const std::string& key, bool throw_if_not_exists = true,
+                       std::string default_value = {}) const;
+
     const std::string& url() const { return url_; }
     const std::string& prefix() const { return prefix_; }
 

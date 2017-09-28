@@ -87,7 +87,8 @@ bool Session::EphemeralKey(const std::string& key, const std::string& value) con
     cpr::Body { value },
     cpr::Parameters {{ "acquire", id_ }},
     cpr::Header {{ "Content-Type", "application/json" }}
-    );
+  );
+
   if (r.status_code != 200) {
     if (r.status_code == 0) {
       throw std::runtime_error("Can't contact Consul (host is unreachable)");

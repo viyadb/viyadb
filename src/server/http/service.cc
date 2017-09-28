@@ -1,4 +1,3 @@
-#include <boost/algorithm/string/join.hpp>
 #include <algorithm>
 #include <glog/logging.h>
 #include "server/http/service.h"

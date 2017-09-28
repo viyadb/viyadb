@@ -17,14 +17,14 @@ json Watch::LastChanges() {
     cpr::Url { url_ },
     cpr::Parameters {{ "index", std::to_string(index_) }}
   );
-  if (r.status_code != 200) {
-    if (r.status_code == 0) {
+  switch (r.status_code) {
+    case 200: break;
+    case 0:
       throw std::runtime_error("Can't contact Consul (host is unreachable)");
-    }
-    if (r.status_code == 404) {
+    case 404:
       throw std::runtime_error("Key doesn't exist: " + key_);
-    }
-    throw std::runtime_error("Can't watch key (" + r.text + ")");
+    default:
+      throw std::runtime_error("Can't watch key (" + r.text + ")");
   }
   json response = json::parse(r.text)[0].get<json>();
   index_ = response["ModifyIndex"].get<long>();
