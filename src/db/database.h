@@ -3,7 +3,6 @@
 
 #include <unordered_map>
 #include <CTPL/ctpl.h>
-#include "db/table.h"
 #include "db/dictionary.h"
 #include "query/output.h"
 #include "query/stats.h"
@@ -19,6 +18,8 @@ namespace db {
 namespace cg = viya::codegen;
 namespace query = viya::query;
 namespace input = viya::input;
+
+class Table;
 
 class Database {
   public:

@@ -2,6 +2,7 @@
 #define VIYA_CODEGEN_DB_UPSERT_H_
 
 #include "db/table.h"
+#include "db/column.h"
 #include "codegen/generator.h"
 
 namespace viya {

@@ -1,4 +1,5 @@
 #include "db/column.h"
+#include "db/table.h"
 #include "db/defs.h"
 #include "codegen/db/store.h"
 

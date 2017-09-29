@@ -1,7 +1,5 @@
 #include <sys/types.h>
-#include <arpa/inet.h>
 #include <sys/socket.h>
-#include <arpa/inet.h>
 #include <netdb.h>
 #include <cerrno>
 #include <cstring>
@@ -10,7 +8,7 @@
 #include <algorithm>
 #include <sstream>
 #include <iomanip>
-#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/replace.hpp>
 #include "util/statsd.h"
 #include "util/hostname.h"
 

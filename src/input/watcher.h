@@ -4,8 +4,15 @@
 #include <vector>
 #include <thread>
 #include <mutex>
-#include "db/table.h"
 #include "util/config.h"
+
+namespace viya {
+namespace db {
+
+class Database;
+class Table;
+
+}}
 
 namespace viya {
 namespace input {

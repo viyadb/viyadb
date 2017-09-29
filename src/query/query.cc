@@ -1,3 +1,5 @@
+#include "db/table.h"
+#include "db/database.h"
 #include "query/filter.h"
 #include "query/query.h"
 #include "util/sanitize.h"

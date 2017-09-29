@@ -1,7 +1,6 @@
 #include <json.hpp>
 #include <sstream>
 #include <unordered_map>
-#include <glog/logging.h>
 #include "cluster/plan.h"
 
 namespace viya {

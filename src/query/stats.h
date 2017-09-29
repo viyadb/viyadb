@@ -2,7 +2,8 @@
 #define VIYA_QUERY_STATS_H_
 
 #include <chrono>
-#include "util/statsd.h"
+
+namespace viya { namespace util { class Statsd; }}
 
 namespace viya {
 namespace query {

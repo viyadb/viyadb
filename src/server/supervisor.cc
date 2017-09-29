@@ -3,7 +3,6 @@
 #include <signal.h>
 #include <stdexcept>
 #include <vector>
-#include <thread>
 #include <chrono>
 #include <csetjmp>
 #if __linux__

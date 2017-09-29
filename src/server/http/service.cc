@@ -1,5 +1,7 @@
 #include <algorithm>
 #include <glog/logging.h>
+#include "db/database.h"
+#include "db/table.h"
 #include "server/http/service.h"
 #include "server/http/output.h"
 #include "util/config.h"

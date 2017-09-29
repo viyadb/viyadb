@@ -1,3 +1,4 @@
+#include "db/table.h"
 #include "query/runner.h"
 #include "codegen/query/filter.h"
 #include "codegen/query/query.h"

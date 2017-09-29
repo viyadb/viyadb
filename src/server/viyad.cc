@@ -1,8 +1,10 @@
+#include <sys/types.h>
+#include <unistd.h>
 #include <sched.h>
-#include <sstream>
 #include <json.hpp>
+#include "db/database.h"
+#include "server/http/service.h"
 #include "server/viyad.h"
-#include "util/hostname.h"
 
 namespace viya {
 namespace server {

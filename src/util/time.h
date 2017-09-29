@@ -1,9 +1,9 @@
 #ifndef VIYA_UTIL_TIME_H_
 #define VIYA_UTIL_TIME_H_
 
+#include <stdint.h>
 #include <string>
 #include <ctime>
-#include <type_traits>
 
 namespace viya {
 namespace util {

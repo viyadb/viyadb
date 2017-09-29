@@ -1,13 +1,11 @@
 #include <stdexcept>
-#include <memory>
 #include <chrono>
-#include <json.hpp>
-#include "codegen/db/store.h"
 #include "codegen/db/metadata.h"
 #include "codegen/db/upsert.h"
 #include "db/table.h"
+#include "db/column.h"
+#include "db/store.h"
 #include "db/database.h"
-#include "query/query.h"
 #include "util/sanitize.h"
 
 namespace viya {

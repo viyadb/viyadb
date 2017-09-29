@@ -1,6 +1,7 @@
 #include <glog/logging.h>
 #include <sstream>
 #include "query/stats.h"
+#include "util/statsd.h"
 
 namespace viya {
 namespace query {

@@ -3,7 +3,6 @@
 
 #include <memory>
 #include <json.hpp>
-#include "util/config.h"
 #include "util/schedule.h"
 
 namespace viya {

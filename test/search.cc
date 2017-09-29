@@ -1,5 +1,5 @@
-#include <sstream>
 #include <algorithm>
+#include "db/table.h"
 #include "util/config.h"
 #include "query/output.h"
 #include "db.h"

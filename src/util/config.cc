@@ -1,6 +1,5 @@
 #include <stdexcept>
 #include <json.hpp>
-#include <glog/logging.h>
 #include "util/config.h"
 
 namespace viya {

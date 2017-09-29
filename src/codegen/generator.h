@@ -1,7 +1,6 @@
 #ifndef VIYA_CODEGEN_GENERATOR_H_
 #define VIYA_CODEGEN_GENERATOR_H_
 
-#include <stdint.h>
 #include <sstream>
 #include <vector>
 #include "codegen/compiler.h"

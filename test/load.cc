@@ -1,10 +1,10 @@
 #include <fstream>
 #include <unistd.h>
+#include "db/table.h"
+#include "db/store.h"
 #include "gtest/gtest.h"
 #include "db.h"
-#include "input/file.h"
 
-namespace input = viya::input;
 namespace query = viya::query;
 
 TEST_F(InappEvents, LoadEvents)

@@ -3,7 +3,8 @@
 
 #include <server_http.hpp>
 #include "util/config.h"
-#include "db/database.h"
+
+namespace viya { namespace db { class Database; }}
 
 namespace viya {
 namespace server {

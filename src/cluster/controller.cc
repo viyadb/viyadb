@@ -19,7 +19,7 @@ Controller::Controller(const util::Config& config)
     session_ = consul_.CreateSession(std::string("viyadb-controller"));
     le_ = consul_.ElectLeader(*session_, cluster_id_ + "/nodes/controller/leader");
 
-    repeat_ = std::make_unique<util::Repeat>(6000, [this]() {
+    repeat_ = std::make_unique<util::Repeat>(30000, [this]() {
       if (le_->Leader()) {
         try {
           GeneratePlan();
@@ -44,27 +44,36 @@ void Controller::ReadClusterConfig() {
 }
 
 void Controller::GeneratePlan() {
-  PlanGenerator plan_generator(cluster_config_);
-  std::unordered_map<std::string, Plan> plans;
+  DLOG(INFO)<<"Finding active workers";
+  auto active_workers = consul_.ListKeys(cluster_id_ + "/nodes/workers");
+  if (active_workers != cached_workers_) {
 
-  LOG(INFO)<<"Finding active workers";
-  std::vector<util::Config> worker_configs;
-  for (auto key : consul_.ListKeys(cluster_id_ + "/nodes/workers")) {
-    worker_configs.emplace(worker_configs.end(), consul_.GetKey(cluster_id_ + "/nodes/workers/" + key, "{}"));
-  }
-
-  for (auto& table_conf : table_configs_) {
-    auto table = table_conf.first;
-
-    LOG(INFO)<<"Retreiving partitioning for table: "<<table;
-    auto partitions = json::parse(consul_.GetKey(
-        "tables/" + table + "/partitions/" + cluster_config_.str("batch"))).get<std::map<std::string, int>>();
-    std::set<int> dist_parts;
-    for (auto& p : partitions) {
-      dist_parts.insert(p.second);
+    LOG(INFO)<<"Found new active workers";
+    std::vector<util::Config> worker_configs;
+    for (auto worker : active_workers) {
+      // TODO: Validate worker configuration
+      worker_configs.emplace(worker_configs.end(),
+                             consul_.GetKey(cluster_id_ + "/nodes/workers/" + worker, "{}"));
     }
 
-    plans.emplace(table, plan_generator.Generate(dist_parts.size(), worker_configs));
+    PlanGenerator plan_generator(cluster_config_);
+    std::unordered_map<std::string, Plan> plans;
+
+    for (auto& table_conf : table_configs_) {
+      auto table = table_conf.first;
+
+      LOG(INFO)<<"Retreiving partitioning for table: "<<table;
+      auto partitions = json::parse(consul_.GetKey(
+          "tables/" + table + "/partitions/" + cluster_config_.str("batch"))).get<std::map<std::string, int>>();
+      std::set<int> dist_parts;
+      for (auto& p : partitions) {
+        dist_parts.insert(p.second);
+      }
+
+      plans.emplace(table, plan_generator.Generate(dist_parts.size(), worker_configs));
+      // TODO: Store plan to Consul
+    }
+    cached_workers_ = active_workers;
   }
 }
 

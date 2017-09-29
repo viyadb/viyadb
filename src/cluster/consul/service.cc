@@ -1,5 +1,3 @@
-#include <unistd.h>
-#include <limits.h>
 #include <stdexcept>
 #include <json.hpp>
 #include <cpr/cpr.h>

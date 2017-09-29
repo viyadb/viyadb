@@ -4,8 +4,6 @@
 #include <string>
 #include <vector>
 #include "util/config.h"
-#include "db/column.h"
-#include "db/store.h"
 #include "db/stats.h"
 
 namespace viya {
@@ -13,7 +11,12 @@ namespace db {
 
 namespace util = viya::util;
 
+class Column;
 class Table;
+class Database;
+class Dimension;
+class Metric;
+class SegmentStore;
 
 class CardinalityGuard {
   public:

@@ -13,7 +13,6 @@ namespace util = viya::util;
 
 class Dictionaries;
 class DimensionDict;
-class Table;
 
 class NumericType {
   public:

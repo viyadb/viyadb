@@ -1,4 +1,5 @@
 #include "db/defs.h"
+#include "db/column.h"
 #include "codegen/db/upsert.h"
 #include "codegen/db/store.h"
 #include "codegen/db/rollup.h"
@@ -129,7 +130,7 @@ Code UpsertGenerator::SetupFunctionCode() const {
   Code code;
   auto& cardinality_guards = table_.cardinality_guards();
 
-  code.AddHeaders({"vector", "string", "util/likely.h", "db/table.h", "db/dictionary.h"});
+  code.AddHeaders({"vector", "string", "util/likely.h", "db/store.h", "db/table.h", "db/dictionary.h"});
   if (!cardinality_guards.empty()) {
     code.AddHeaders({"util/bitset.h"});
   }

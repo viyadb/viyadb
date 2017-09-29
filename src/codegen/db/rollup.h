@@ -5,6 +5,14 @@
 #include "codegen/generator.h"
 
 namespace viya {
+namespace db {
+
+class Dimension;
+class TimeDimension;
+
+}}
+
+namespace viya {
 namespace codegen {
 
 namespace db = viya::db;

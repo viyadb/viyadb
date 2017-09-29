@@ -2,7 +2,6 @@
 #include <stdexcept>
 #include <ctime>
 #include "db/column.h"
-#include "db/table.h"
 #include "db/dictionary.h"
 #include "util/sanitize.h"
 

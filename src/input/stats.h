@@ -3,7 +3,8 @@
 
 #include <chrono>
 #include "db/stats.h"
-#include "util/statsd.h"
+
+namespace viya { namespace util { class Statsd; } }
 
 namespace viya {
 namespace input {

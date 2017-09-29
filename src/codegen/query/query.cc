@@ -239,7 +239,7 @@ void ScanGenerator::Materialize(query::AggregateQuery* query) {
 void ScanGenerator::Visit(query::AggregateQuery* query) {
   code_.AddHeaders({
     "unordered_map", "query/output.h", "query/stats.h", "db/table.h",
-      "db/dictionary.h", "util/format.h", "util/string.h"
+      "db/dictionary.h", "db/store.h", "util/format.h", "util/string.h"
   });
 
   code_<<"namespace query = viya::query;\n";
@@ -318,7 +318,8 @@ void ScanGenerator::Materialize(query::SearchQuery* query __attribute__((unused)
 
 void ScanGenerator::Visit(query::SearchQuery* query) {
   code_.AddHeaders({
-    "unordered_set", "query/output.h", "query/stats.h", "db/table.h", "db/dictionary.h", "util/format.h"});
+    "unordered_set", "query/output.h", "query/stats.h", "db/table.h",
+    "db/dictionary.h", "db/store.h", "util/format.h"});
 
   code_<<"namespace query = viya::query;\n";
   code_<<"namespace util = viya::util;\n";

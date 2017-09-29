@@ -3,7 +3,6 @@
 
 #include "util/config.h"
 #include "cluster/worker.h"
-#include "server/http/service.h"
 
 namespace viya {
 namespace server {

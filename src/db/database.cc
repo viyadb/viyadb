@@ -1,9 +1,9 @@
 #include <json.hpp>
 #include <glog/logging.h>
 #include "db/database.h"
+#include "db/table.h"
 #include "query/runner.h"
 #include "input/loader.h"
-#include "codegen/db/metadata.h"
 
 namespace viya {
 namespace db {

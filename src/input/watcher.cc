@@ -1,6 +1,5 @@
 #include <glog/logging.h>
 #include <dirent.h>
-#include <sys/types.h>
 #include <sys/inotify.h>
 #include <unistd.h>
 #include <cerrno>
@@ -8,8 +7,9 @@
 #include <stdexcept>
 #include <algorithm>
 #include <boost/algorithm/string/predicate.hpp>
+#include "db/database.h"
+#include "db/table.h"
 #include "input/watcher.h"
-#include "input/file.h"
 
 namespace viya {
 namespace input {

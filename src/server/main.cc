@@ -1,11 +1,6 @@
-#include <sys/types.h>
-#include <signal.h>
-#include <iostream>
-#include <memory>
 #include <glog/logging.h>
 #include "server/viyad.h"
 #include "server/supervisor.h"
-#include "util/config.h"
 
 namespace server = viya::server;
 namespace util = viya::util;

@@ -8,6 +8,8 @@
 namespace viya {
 namespace db {
 
+class Table;
+
 using CreateSegmentFn = SegmentBase* (*)();
 
 class SegmentStore {

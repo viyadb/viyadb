@@ -2,8 +2,14 @@
 #define VIYA_QUERY_FILTER_H_
 
 #include <vector>
-#include "db/table.h"
-#include "db/column.h"
+
+namespace viya {
+namespace db {
+
+class Column;
+class Table;
+
+}}
 
 namespace viya {
 namespace query {

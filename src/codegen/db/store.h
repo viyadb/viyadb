@@ -1,13 +1,27 @@
 #ifndef VIYA_CODEGEN_DB_STORE_H_
 #define VIYA_CODEGEN_DB_STORE_H_
 
-#include "db/table.h"
+#include <string>
+#include <vector>
+#include "db/rollup.h"
+#include "db/store.h"
 #include "codegen/generator.h"
+
+namespace viya {
+namespace db {
+
+  class Dimension;
+  class Metric;
+  class Table;
+
+}}
 
 namespace viya {
 namespace codegen {
 
 namespace db = viya::db;
+
+class Compiler;
 
 class DimensionsStruct: public CodeGenerator {
   public:

@@ -1,4 +1,5 @@
 #include "util/config.h"
+#include "db/table.h"
 #include "db/database.h"
 #include "query/output.h"
 #include "gtest/gtest.h"

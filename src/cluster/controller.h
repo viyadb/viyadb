@@ -29,6 +29,7 @@ class Controller {
     std::unique_ptr<LeaderElector> le_;
     std::unique_ptr<util::Repeat> repeat_;
     std::unordered_map<std::string, util::Config> table_configs_;
+    std::vector<std::string> cached_workers_;
 };
 
 }}

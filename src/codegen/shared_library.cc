@@ -1,6 +1,5 @@
 #include <stdexcept>
 #include <dlfcn.h>
-#include <algorithm>
 #include <glog/logging.h>
 #include "codegen/shared_library.h"
 

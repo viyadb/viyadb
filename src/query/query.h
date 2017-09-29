@@ -1,11 +1,20 @@
 #ifndef VIYA_QUERY_QUERY_H_
 #define VIYA_QUERY_QUERY_H_
 
-#include "db/database.h"
-#include "db/table.h"
 #include "db/rollup.h"
 #include "query/filter.h"
 #include "util/config.h"
+
+namespace viya {
+namespace db {
+
+class Column;
+class Database;
+class Dimension;
+class Metric;
+class Table;
+
+}}
 
 namespace viya {
 namespace query {

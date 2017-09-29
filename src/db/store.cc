@@ -1,5 +1,6 @@
 #include "codegen/db/store.h"
 #include "db/database.h"
+#include "db/table.h"
 #include "db/store.h"
 
 namespace viya {

@@ -1,6 +1,8 @@
 #ifndef VIYA_UTIL_HOSTNAME_H_
 #define VIYA_UTIL_HOSTNAME_H_
 
+#include <string>
+
 namespace viya {
 namespace util {
 
