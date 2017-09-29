@@ -15,6 +15,7 @@ target_link_libraries(unit_tests
   viya_query
   viya_codegen
   viya_util
+  viya_cluster
   gtest
   glog
 )

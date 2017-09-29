@@ -1,3 +1,4 @@
+#include <json.hpp>
 #include <sstream>
 #include <unordered_map>
 #include <glog/logging.h>
@@ -6,11 +7,28 @@
 namespace viya {
 namespace cluster {
 
-PlanGenerator::PlanGenerator(const util::Config& cluster_config):cluster_config_(cluster_config) {
+using json = nlohmann::json;
+
+std::string Plan::ToJson() const {
+  json plan = json::array();
+  for (auto& v : placements_) {
+    json placements = json::array();
+    for (auto p : v) {
+      placements.push_back({{"hostname", p.hostname()}, {"port", p.port()}});
+    } 
+    std::sort(placements.begin(), placements.end());
+    plan.push_back(placements);
+  }
+  std::sort(plan.begin(), plan.end());
+  return plan.dump(2);
 }
 
-json PlanGenerator::Generate(const json& partitions,
-                    const std::vector<util::Config>& worker_configs) {
+PlanGenerator::PlanGenerator(const util::Config& cluster_config)
+  :cluster_config_(cluster_config) {
+}
+
+Plan PlanGenerator::Generate(
+  size_t partitions_num, const std::vector<util::Config>& worker_configs) {
 
   typedef std::vector<util::Config> workers;
   typedef std::unordered_map<std::string, workers> workers_by_host;
@@ -38,10 +56,10 @@ json PlanGenerator::Generate(const json& partitions,
   size_t replicas_num = cluster_config_.num("replication_factor", 3);
 
   // Validate configuration:
-  if (partitions.size() * replicas_num > total_workers) {
+  if (partitions_num * replicas_num > total_workers) {
     std::ostringstream s;
     s<<"Can't place "<<std::to_string(replicas_num)
-      <<" copies of "<<std::to_string(partitions.size())
+      <<" copies of "<<std::to_string(partitions_num)
       <<" partitions on "<<std::to_string(total_workers)<<" workers";
     throw std::runtime_error(s.str());
   }
@@ -75,15 +93,13 @@ json PlanGenerator::Generate(const json& partitions,
     worker_idxs[i].resize(rh[i].size(), 0);
   }
 
-  json table_plan = json({});
-  auto partition_it = partitions.begin();
+  Plan table_plan(partitions_num);
+  size_t partition = 0;
 
-  while (partition_it != partitions.end()) {
+  while (partition < partitions_num) {
     // Iterate on every rack and on every host in cycles.
     // Let's say we have two racks, two hosts under each rack and two workers under each host:
     // r1:h1:w1 -> r2:h1:w1 -> r1:h2:w1 -> r2:h2:w1 -> r1:h1:w2 -> r2:h1:w2 -> r1:h2:w2 -> r2:h2:w2
-    json placements = json::array();
-
     for (size_t ri = 0, w = 0, p = 0; p < replicas_num && w < total_workers; ++w) {
       size_t hi = host_idxs[ri];
       size_t wi = worker_idxs[ri][hi];
@@ -92,17 +108,15 @@ json PlanGenerator::Generate(const json& partitions,
       if (wi < rh[ri][hi].size()) {
         auto next_worker = rh[ri][hi][wi];
         worker_idxs[ri][hi] = wi + 1;
-        placements.push_back(json {
-          {"hostname", next_worker.str("hostname")},
-          {"http_port", next_worker.num("http_port")}
-        });
+        table_plan.AddPlacement(partition, Placement(
+            next_worker.str("hostname"), next_worker.num("http_port")
+        ));
         ++p;
       }
       host_idxs[ri] = (hi + 1) % rh[ri].size();
       ri = (ri + 1) % rh.size();
     }
-    table_plan[partition_it.key()] = placements;
-    ++partition_it;
+    ++partition;
   }
 
   return table_plan;

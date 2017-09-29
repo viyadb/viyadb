@@ -1,4 +1,5 @@
 #include <sstream>
+#include <set>
 #include <json.hpp>
 #include <glog/logging.h>
 #include "cluster/controller.h"
@@ -18,7 +19,7 @@ Controller::Controller(const util::Config& config)
     session_ = consul_.CreateSession(std::string("viyadb-controller"));
     le_ = consul_.ElectLeader(*session_, cluster_id_ + "/nodes/controller/leader");
 
-    repeat_ = std::make_unique<util::Repeat>(5000, [this]() {
+    repeat_ = std::make_unique<util::Repeat>(6000, [this]() {
       if (le_->Leader()) {
         try {
           GeneratePlan();
@@ -44,7 +45,7 @@ void Controller::ReadClusterConfig() {
 
 void Controller::GeneratePlan() {
   PlanGenerator plan_generator(cluster_config_);
-  json plan = json({});
+  std::unordered_map<std::string, Plan> plans;
 
   LOG(INFO)<<"Finding active workers";
   std::vector<util::Config> worker_configs;
@@ -57,12 +58,14 @@ void Controller::GeneratePlan() {
 
     LOG(INFO)<<"Retreiving partitioning for table: "<<table;
     auto partitions = json::parse(consul_.GetKey(
-        "tables/" + table + "/partitions/" + cluster_config_.str("batch"))).get<json>();
+        "tables/" + table + "/partitions/" + cluster_config_.str("batch"))).get<std::map<std::string, int>>();
+    std::set<int> dist_parts;
+    for (auto& p : partitions) {
+      dist_parts.insert(p.second);
+    }
 
-    plan[table] = plan_generator.Generate(partitions, worker_configs);
+    plans.emplace(table, plan_generator.Generate(dist_parts.size(), worker_configs));
   }
-
-  DLOG(INFO)<<"Generated plan: "<<plan.dump(2);
 }
 
 }}
