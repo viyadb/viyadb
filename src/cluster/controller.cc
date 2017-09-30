@@ -63,8 +63,9 @@ void Controller::GeneratePlan() {
       auto table = table_conf.first;
 
       LOG(INFO)<<"Retreiving partitioning for table: "<<table;
-      auto partitions = json::parse(consul_.GetKey(
-          "tables/" + table + "/partitions/" + cluster_config_.str("batch"))).get<std::map<std::string, int>>();
+      std::ostringstream key;
+      key<<"tables/"<<table<<"/batch/"<<cluster_config_.str("batch")<<"/partitions";
+      auto partitions = json::parse(consul_.GetKey(key.str())).get<std::map<std::string, int>>();
       std::set<int> dist_parts;
       for (auto& p : partitions) {
         dist_parts.insert(p.second);
