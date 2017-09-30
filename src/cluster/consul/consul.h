@@ -35,6 +35,8 @@ class Consul {
     std::string GetKey(const std::string& key, bool throw_if_not_exists = true,
                        std::string default_value = {}) const;
 
+    void PutKey(const std::string& key, const std::string& content) const;
+
     const std::string& url() const { return url_; }
     const std::string& prefix() const { return prefix_; }
 

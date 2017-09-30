@@ -1,4 +1,3 @@
-#include <json.hpp>
 #include <sstream>
 #include <unordered_map>
 #include "cluster/plan.h"
@@ -6,9 +5,7 @@
 namespace viya {
 namespace cluster {
 
-using json = nlohmann::json;
-
-std::string Plan::ToJson() const {
+json Plan::ToJson() const {
   json plan = json::array();
   for (auto& v : placements_) {
     json placements = json::array();
@@ -19,7 +16,7 @@ std::string Plan::ToJson() const {
     plan.push_back(placements);
   }
   std::sort(plan.begin(), plan.end());
-  return plan.dump(2);
+  return std::move(plan);
 }
 
 PlanGenerator::PlanGenerator(const util::Config& cluster_config)

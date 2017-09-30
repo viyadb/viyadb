@@ -57,7 +57,7 @@ void Controller::GeneratePlan() {
     }
 
     PlanGenerator plan_generator(cluster_config_);
-    std::unordered_map<std::string, Plan> plans;
+    json plan = json({});
 
     for (auto& table_conf : table_configs_) {
       auto table = table_conf.first;
@@ -71,9 +71,10 @@ void Controller::GeneratePlan() {
         dist_parts.insert(p.second);
       }
 
-      plans.emplace(table, plan_generator.Generate(dist_parts.size(), worker_configs));
-      // TODO: Store plan to Consul
+      plan[table] = plan_generator.Generate(dist_parts.size(), worker_configs).ToJson();
     }
+
+    consul_.PutKey(cluster_id_ + "/plan", plan.dump());
     cached_workers_ = active_workers;
   }
 }

@@ -42,7 +42,7 @@ class Plan {
       placements_[partition].push_back(placement);
     }
 
-    std::string ToJson() const;
+    json ToJson() const;
 
   private:
     std::vector<std::vector<Placement>> placements_;

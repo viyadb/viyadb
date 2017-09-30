@@ -88,4 +88,17 @@ std::string Consul::GetKey(const std::string& key, bool throw_if_not_exists, std
   return r.text;
 }
 
+void Consul::PutKey(const std::string& key, const std::string& content) const {
+  auto r = cpr::Put(
+    cpr::Url { url_ + "/v1/kv/" + prefix_ + "/" + key },
+    cpr::Body { content }
+  );
+  if (r.status_code != 200) {
+    if (r.status_code == 0) {
+      throw std::runtime_error("Can't contact Consul (host is unreachable)");
+    }
+    throw std::runtime_error("Can't put key contents (" + r.text + ")");
+  }
+}
+
 }}
