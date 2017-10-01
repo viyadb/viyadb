@@ -24,6 +24,10 @@ Supervisor::Supervisor(const std::vector<std::string>& args):args_(args) {
   supervisor_ = this;
 }
 
+void stop(int signal __attribute__((unused))) {
+  exit(0);
+}
+
 void restart(int signal __attribute__((unused))) {
   if (supervisor_ != nullptr) {
     supervisor_->Restart();
@@ -38,8 +42,18 @@ void Supervisor::EnableRestartHandler() {
   sigaction(SIGHUP, &sig_action, NULL);
 }
 
+void Supervisor::EnableStopHandler() {
+  struct sigaction sig_action;
+  sig_action.sa_handler = stop;
+  sigemptyset(&sig_action.sa_mask);
+  sig_action.sa_flags = SA_RESETHAND;
+  sigaction(SIGINT, &sig_action, NULL);
+}
+
 void Supervisor::Start() {
   sigsetjmp(jump_, 1);
+
+  EnableStopHandler();
 
   util::Config config = server::CmdlineArgs().Parse(args_);
   LOG(INFO)<<"Using configuration:\n"<<config.dump();

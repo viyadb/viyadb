@@ -32,6 +32,7 @@ class Supervisor {
 
   private:
     void EnableRestartHandler();
+    void EnableStopHandler();
     util::Config PrepareWorkerConfig(const util::Config& config, size_t worker_idx);
     void StartWorker(util::Config worker_config, Supervisor::Worker& info);
 
