@@ -24,10 +24,6 @@ Supervisor::Supervisor(const std::vector<std::string>& args):args_(args) {
   supervisor_ = this;
 }
 
-void stop(int signal __attribute__((unused))) {
-  exit(0);
-}
-
 void restart(int signal __attribute__((unused))) {
   if (supervisor_ != nullptr) {
     supervisor_->Restart();
@@ -40,6 +36,13 @@ void Supervisor::EnableRestartHandler() {
   sigemptyset(&sig_action.sa_mask);
   sig_action.sa_flags = SA_RESETHAND;
   sigaction(SIGHUP, &sig_action, NULL);
+}
+
+void stop(int signal __attribute__((unused))) {
+  if (supervisor_ != nullptr) {
+    delete supervisor_;
+  }
+  exit(0);
 }
 
 void Supervisor::EnableStopHandler() {
