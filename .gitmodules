@@ -16,9 +16,6 @@
 [submodule "third_party/googletest"]
 	path = third_party/googletest
 	url = https://github.com/google/googletest.git
-[submodule "third_party/CTPL"]
-	path = third_party/CTPL
-	url = https://github.com/vit-vit/CTPL.git
 [submodule "third_party/fmt"]
 	path = third_party/fmt
 	url = https://github.com/fmtlib/fmt.git
@@ -31,3 +28,6 @@
 [submodule "third_party/cpr"]
 	path = third_party/cpr
 	url = https://github.com/whoshuu/cpr.git
+[submodule "third_party/ThreadPool"]
+	path = third_party/ThreadPool
+	url = https://github.com/progschj/ThreadPool.git

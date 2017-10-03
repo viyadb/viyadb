@@ -27,8 +27,8 @@ DimensionDict::DimensionDict(const NumericType& code_type):code_type_(code_type)
 
 // Using this method should be reduced to non-intensive parts only:
 AnyNum DimensionDict::Decode(const std::string& value) {
+  folly::RWSpinLock::ReadHolder guard(lock_);
   AnyNum code;
-  lock_.lock_shared();
   switch (code_type_.size()) {
     case NumericType::Size::_1:
       {
@@ -59,7 +59,6 @@ AnyNum DimensionDict::Decode(const std::string& value) {
       }
       break;
   }
-  lock_.unlock_shared();
   return code;
 }
 
@@ -87,8 +86,8 @@ Dictionaries::~Dictionaries() {
 }
 
 DimensionDict* Dictionaries::GetOrCreate(const std::string& dim_name, const NumericType& code_type) {
+  folly::RWSpinLock::WriteHolder guard(lock_);
   DimensionDict* dict = nullptr;
-  lock_.lock();
   auto it = dicts_.find(dim_name);
   if (it == dicts_.end()) {
     dict = new DimensionDict(code_type);
@@ -96,7 +95,6 @@ DimensionDict* Dictionaries::GetOrCreate(const std::string& dim_name, const Nume
   } else {
     dict = it->second;
   }
-  lock_.unlock();
   return dict;
 }
 

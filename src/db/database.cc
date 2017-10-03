@@ -32,56 +32,50 @@ Database::~Database() {
 }
 
 void Database::CreateTable(const util::Config& table_conf) {
-  lock_.lock();
+  folly::RWSpinLock::WriteHolder guard(lock_);
   std::string name = table_conf.str("name");
   LOG(INFO)<<"Creating table: "<<name;
   auto it = tables_.find(name);
   if (it != tables_.end()) {
-    lock_.unlock();
     throw std::runtime_error("Table already exists: " + name);
   }
   tables_.insert(std::make_pair(name, new Table(table_conf, *this)));
-  lock_.unlock();
 }
 
 void Database::DropTable(const std::string& name) {
   LOG(INFO)<<"Dropping table: "<<name;
-  lock_.lock();
+  folly::RWSpinLock::WriteHolder guard(lock_);
   auto it = tables_.find(name);
   if (it == tables_.end()) {
-    lock_.unlock();
     throw std::invalid_argument("No such table: " + name);
   }
   auto table = it->second;
   tables_.erase(it);
   delete table;
-  lock_.unlock();
 }
 
 Table* Database::GetTable(const std::string& name) {
-  lock_.lock_shared();
+  folly::RWSpinLock::ReadHolder guard(lock_);
   auto it = tables_.find(name);
   if (it == tables_.end()) {
-    lock_.unlock_shared();
     throw std::invalid_argument("No such table: " + name);
   }
-  auto table = it->second;
-  lock_.unlock_shared();
-  return table;
+  return it->second;
 }
 
 void Database::PrintMetadata(std::string& metadata) {
   using json = nlohmann::json;
   json meta;
   meta["tables"] = json::array();
-  lock_.lock_shared();
-  for (auto& it : tables_) {
-    auto table = it.second;
-    json table_meta;
-    table_meta["name"] = table->name();
-    meta["tables"].push_back(table_meta);
+  {
+    folly::RWSpinLock::ReadHolder guard(lock_);
+    for (auto& it : tables_) {
+      auto table = it.second;
+      json table_meta;
+      table_meta["name"] = table->name();
+      meta["tables"].push_back(table_meta);
+    }
   }
-  lock_.unlock_shared();
   metadata = meta.dump();
 }
 

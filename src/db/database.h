@@ -2,7 +2,7 @@
 #define VIYA_DB_DATABASE_H_
 
 #include <unordered_map>
-#include <CTPL/ctpl.h>
+#include <ThreadPool/ThreadPool.h>
 #include "db/dictionary.h"
 #include "query/output.h"
 #include "query/stats.h"
@@ -35,8 +35,8 @@ class Database {
 
     cg::Compiler& compiler() { return compiler_; }
     Dictionaries& dicts() { return dicts_; }
-    ctpl::thread_pool& read_pool() { return read_pool_; }
-    ctpl::thread_pool& write_pool() { return write_pool_; }
+    ThreadPool& read_pool() { return read_pool_; }
+    ThreadPool& write_pool() { return write_pool_; }
     input::Watcher& watcher() { return watcher_; }
     const util::Statsd& statsd() const { return statsd_; }
 
@@ -49,8 +49,8 @@ class Database {
     folly::RWSpinLock lock_;
     Dictionaries dicts_;
 
-    ctpl::thread_pool write_pool_;
-    ctpl::thread_pool read_pool_;
+    ThreadPool write_pool_;
+    ThreadPool read_pool_;
 
     input::Watcher watcher_;
     util::Statsd statsd_;

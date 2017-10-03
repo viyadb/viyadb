@@ -70,7 +70,7 @@ std::vector<std::string> Watcher::ScanFiles(Watch& watch) {
 void Watcher::ProcessEvent(Watch& watch) {
   for (auto& file : ScanFiles(watch)) {
     if (watch.last_file.empty() || watch.last_file < file) {
-      db_.write_pool().push([=](int id __attribute__((unused))) {
+      db_.write_pool().enqueue([=] {
         try {
           util::Config load_conf;
           load_conf.set_str("type", "file");

@@ -13,6 +13,7 @@ namespace util = viya::util;
 
 Http::Http(const util::Config& config, db::Database& database):database_(database) {
   server_.config.port = port_ = config.num("http_port");
+  server_.config.reuse_address = true;
 }
 
 void Http::SendError(ResponsePtr response, const std::string& error) {
@@ -22,7 +23,7 @@ void Http::SendError(ResponsePtr response, const std::string& error) {
 
 void Http::Start() {
   server_.resource["^/tables$"]["POST"] = [&](ResponsePtr response, RequestPtr request) {
-    database_.write_pool().push([=](int id __attribute__((unused))) {
+    database_.write_pool().enqueue([=] {
       try {
         util::Config table_conf(request->content.string());
         database_.CreateTable(table_conf);
@@ -34,7 +35,7 @@ void Http::Start() {
   };
 
   server_.resource["^/tables/([^/]+)/meta$"]["GET"] = [&](ResponsePtr response, RequestPtr request) {
-    database_.read_pool().push([=](int id __attribute__((unused))) {
+    database_.read_pool().enqueue([=] {
       try {
         auto table = database_.GetTable(request->path_match[1]);
         std::string meta;
@@ -48,7 +49,7 @@ void Http::Start() {
   };
 
   server_.resource["^/database/meta$"]["GET"] = [&](ResponsePtr response, RequestPtr request __attribute__((unused))) {
-    database_.read_pool().push([=](int id __attribute__((unused))) {
+    database_.read_pool().enqueue([=] {
       try {
         std::string meta;
         database_.PrintMetadata(meta);
@@ -61,7 +62,7 @@ void Http::Start() {
   };
 
   server_.resource["^/load$"]["POST"] = [&](ResponsePtr response, RequestPtr request) {
-    database_.write_pool().push([=](int id __attribute__((unused))) {
+    database_.write_pool().enqueue([=] {
       try {
         util::Config load_conf(request->content.string());
         database_.Load(load_conf);
@@ -73,7 +74,7 @@ void Http::Start() {
   };
 
   server_.resource["^/query(\\?.*)?$"]["POST"] = [&](ResponsePtr response, RequestPtr request) {
-    database_.read_pool().push([=](int id __attribute__((unused))) {
+    database_.read_pool().enqueue([=] {
       try {
         util::Config query_conf(request->content.string());
         auto params = request->parse_query_string();

@@ -21,17 +21,15 @@ class SegmentStore {
     std::vector<SegmentBase*>& segments() { return segments_; }
 
     const std::vector<SegmentBase*> segments_copy() {
-      lock_.lock_shared();
+      folly::RWSpinLock::ReadHolder guard(lock_);
       std::vector<SegmentBase*> copy = segments_;
-      lock_.unlock_shared();
-      return copy;
+      return std::move(copy);
     }
 
     SegmentBase* last() {
       if (segments_.empty() || segments_.back()->full()) {
-        lock_.lock();
+        folly::RWSpinLock::WriteHolder guard(lock_);
         segments_.push_back(create_segment_());
-        lock_.unlock();
       }
       return segments_.back();
     }
