@@ -19,7 +19,7 @@ class DictImpl: public std::unordered_map<std::string, V> {
 
 class DimensionDict {
   public:
-    DimensionDict(const NumericType& code_type);
+    DimensionDict(const BaseNumType& code_type);
     ~DimensionDict();
 
     void* v2c() const { return v2c_; }
@@ -29,7 +29,7 @@ class DimensionDict {
     AnyNum Decode(const std::string& value);
 
   private:
-    const NumericType& code_type_;
+    const BaseNumType& code_type_;
     folly::RWSpinLock lock_;
     std::vector<std::string> c2v_; // code to value
     void* v2c_;                    // value to code
@@ -40,7 +40,7 @@ class Dictionaries {
     Dictionaries() {}
     ~Dictionaries();
 
-    DimensionDict* GetOrCreate(const std::string& dim_name, const NumericType& code_type);
+    DimensionDict* GetOrCreate(const std::string& dim_name, const BaseNumType& code_type);
 
   private:
     std::unordered_map<std::string, DimensionDict*> dicts_;

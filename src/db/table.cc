@@ -37,8 +37,6 @@ Table::Table(const util::Config& config, Database& database)
     std::string dim_type = dim_config.str("type", "string");
     if (dim_type == "string") {
       dimensions_.push_back(new StrDimension(dim_config, dim_idx++, database.dicts()));
-    } else if (dim_type == "numeric") {
-      dimensions_.push_back(new NumDimension(dim_config, dim_idx++));
     } else if (dim_type == "boolean") {
       dimensions_.push_back(new BoolDimension(dim_config, dim_idx++));
     } else if (dim_type == "time") {
@@ -46,7 +44,7 @@ Table::Table(const util::Config& config, Database& database)
     } else if (dim_type == "microtime") {
       dimensions_.push_back(new TimeDimension(dim_config, dim_idx++, true));
     } else {
-      throw std::invalid_argument("Unsupported dimension type: " + dim_type);
+      dimensions_.push_back(new NumDimension(dim_config, dim_idx++));
     }
   }
 

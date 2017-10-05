@@ -14,12 +14,12 @@ namespace util = viya::util;
 class Dictionaries;
 class DimensionDict;
 
-class NumericType {
+class BaseNumType {
   public:
     // size in bytes:
     enum Size { _1 = 1, _2 = 2, _4 = 4, _8 = 8 };
 
-    NumericType(Size size):size_(size) {}
+    BaseNumType(Size size):size_(size) {}
 
     Size size() const { return size_; }
     virtual const std::string cpp_parse_fn() const = 0;
@@ -32,9 +32,9 @@ class NumericType {
     Size size_;
 };
 
-class UIntType: public NumericType {
+class UIntType: public BaseNumType {
   public:
-    UIntType(Size size):NumericType(size) {}
+    UIntType(Size size):BaseNumType(size) {}
 
     const std::string cpp_parse_fn() const;
     const std::string cpp_type() const { return "uint" + std::to_string(size() * 8) + "_t"; }
@@ -42,6 +42,25 @@ class UIntType: public NumericType {
     const std::string cpp_min_value() const { return "0"; }
 
     const class AnyNum Parse(const std::string& value) const;
+};
+
+class NumericType: public BaseNumType {
+  public:
+    enum Type { BYTE, UBYTE, SHORT, USHORT, INT, UINT, LONG, ULONG, DOUBLE };
+
+    NumericType(const Type type);
+    NumericType(const std::string& type_name);
+
+    const std::string cpp_parse_fn() const;
+    const std::string cpp_type() const;
+    const std::string cpp_max_value() const;
+    const std::string cpp_min_value() const;
+    Type type() const { return type_; }
+
+    const AnyNum Parse(const std::string& value) const;
+
+  private:
+    Type type_;
 };
 
 class AnyNum {
@@ -76,7 +95,7 @@ class Column {
     Column(const Column& other) = delete;
     virtual ~Column() {}
 
-    virtual const NumericType& num_type() const = 0;
+    virtual const BaseNumType& num_type() const = 0;
     virtual void Accept(class ColumnVisitor& visitor) const = 0;
 
     const std::string& name() const { return name_; }
@@ -94,17 +113,17 @@ class Dimension: public Column {
   public:
     enum DimType { STRING, NUMERIC, TIME, BOOLEAN };
 
-    Dimension(const util::Config& config, size_t index, DimType dim_type, const UIntType& num_type)
-      :Column(config, Column::Type::DIMENSION, index),dim_type_(dim_type),num_type_(num_type) {}
+    Dimension(const util::Config& config, size_t index, DimType dim_type)
+      :Column(config, Column::Type::DIMENSION, index),dim_type_(dim_type) {}
 
     Dimension(const Dimension& other) = delete;
 
-    const NumericType& num_type() const { return num_type_; }
+    virtual const BaseNumType& num_type() const = 0;
+
     DimType dim_type() const { return dim_type_; }
 
   private:
     DimType dim_type_;
-    const UIntType num_type_;
 };
 
 class StrDimension: public Dimension {
@@ -117,11 +136,13 @@ class StrDimension: public Dimension {
     int length() const { return length_; }
     uint64_t cardinality() const { return cardinality_; }
     DimensionDict* dict() const { return dict_; }
+    const BaseNumType& num_type() const { return num_type_; }
     SortType sort_type() const { return SortType::STRING; }
 
   private:
-    int length_;
+    const UIntType num_type_;
     uint64_t cardinality_;
+    int length_;
     DimensionDict* dict_;
 };
 
@@ -132,7 +153,14 @@ class NumDimension: public Dimension {
 
     void Accept(class ColumnVisitor& visitor) const;
 
-    SortType sort_type() const { return SortType::INTEGER; }
+    const NumericType& num_type() const { return num_type_; }
+
+    SortType sort_type() const {
+      return num_type_.type() == NumericType::DOUBLE ? SortType::FLOAT : SortType::INTEGER;
+    }
+
+  private:
+    const NumericType num_type_;
 };
 
 class TimeDimension: public Dimension {
@@ -144,6 +172,7 @@ class TimeDimension: public Dimension {
     const std::vector<RollupRule>& rollup_rules() const { return rollup_rules_; }
     const Granularity& granularity() const { return granularity_; }
     bool micro_precision() const { return micro_precision_; }
+    const BaseNumType& num_type() const { return num_type_; }
     SortType sort_type() const { return SortType::STRING; }
 
     void Accept(class ColumnVisitor& visitor) const;
@@ -151,6 +180,7 @@ class TimeDimension: public Dimension {
   private:
     std::string format_;
     Granularity granularity_;
+    const UIntType num_type_;
     std::vector<RollupRule> rollup_rules_;
     bool micro_precision_;
 };
@@ -162,7 +192,11 @@ class BoolDimension: public Dimension {
 
     void Accept(class ColumnVisitor& visitor) const;
 
+    const BaseNumType& num_type() const { return num_type_; }
     SortType sort_type() const { return SortType::INTEGER; }
+
+  private:
+    const UIntType num_type_;
 };
 
 class Metric: public Column {
@@ -180,25 +214,6 @@ class Metric: public Column {
     const AggregationType agg_type_;
 };
 
-class MetricType: public NumericType {
-  public:
-    enum Type { INT, UINT, LONG, ULONG, DOUBLE };
-
-    MetricType(const Type type);
-    MetricType(const std::string& type_name);
-
-    const std::string cpp_parse_fn() const;
-    const std::string cpp_type() const;
-    const std::string cpp_max_value() const;
-    const std::string cpp_min_value() const;
-    Type type() const { return type_; }
-
-    const AnyNum Parse(const std::string& value) const;
-
-  private:
-    Type type_;
-};
-
 class ValueMetric: public Metric {
   public:
     ValueMetric(const util::Config& config, size_t index);
@@ -206,13 +221,14 @@ class ValueMetric: public Metric {
 
     void Accept(class ColumnVisitor& visitor) const;
 
-    const NumericType& num_type() const { return num_type_; }
+    const BaseNumType& num_type() const { return num_type_; }
+
     SortType sort_type() const {
-      return num_type_.type() == MetricType::DOUBLE ? SortType::FLOAT : SortType::INTEGER;
+      return num_type_.type() == NumericType::DOUBLE ? SortType::FLOAT : SortType::INTEGER;
     }
 
   private:
-    const MetricType num_type_;
+    const NumericType num_type_;
 };
 
 class BitsetMetric: public Metric {
@@ -223,7 +239,7 @@ class BitsetMetric: public Metric {
 
     void Accept(class ColumnVisitor& visitor) const;
 
-    const NumericType& num_type() const { return num_type_; }
+    const BaseNumType& num_type() const { return num_type_; }
     SortType sort_type() const { return SortType::INTEGER; }
 
   private:

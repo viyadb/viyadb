@@ -15,7 +15,7 @@ class InappEvents : public testing::Test {
               "{\"tables\": [{\"name\": \"events\","
               "               \"dimensions\": [{\"name\": \"country\"},"
               "                                {\"name\": \"event_name\", \"length\": 20},"
-              "                                {\"name\": \"install_time\", \"type\": \"numeric\"}],"
+              "                                {\"name\": \"install_time\", \"type\": \"uint\"}],"
               "               \"metrics\": [{\"name\": \"count\", \"type\": \"count\"},"
               "                             {\"name\": \"revenue\", \"type\": \"double_sum\"}]}]}"))) {}
     db::Database db;
@@ -26,7 +26,7 @@ class LiteEvents : public testing::Test {
     LiteEvents()
       :db(std::move(util::Config(
               "{\"tables\": [{\"name\": \"events\","
-              "               \"dimensions\": [{\"name\": \"time\", \"type\": \"numeric\", \"max\": 4000000},"
+              "               \"dimensions\": [{\"name\": \"time\", \"type\": \"ulong\", \"max\": 4000000},"
               "                                {\"name\": \"dummy\", \"max\": 1}],"
               "               \"metrics\": [{\"name\": \"count\", \"type\": \"count\"}]}]}"))) {}
     db::Database db;
@@ -61,8 +61,26 @@ class UserEvents : public testing::Test {
               "{\"tables\": [{\"name\": \"events\","
               "               \"dimensions\": [{\"name\": \"country\"},"
               "                                {\"name\": \"event_name\"},"
-              "                                {\"name\": \"time\", \"type\": \"numeric\"}],"
+              "                                {\"name\": \"time\", \"type\": \"uint\"}],"
               "               \"metrics\": [{\"name\": \"user_id\", \"type\": \"bitset\"}]}]}"))) {}
+    db::Database db;
+};
+
+class NumericDimensions : public testing::Test {
+  protected:
+    NumericDimensions()
+      :db(std::move(util::Config(
+              "{\"tables\": [{\"name\": \"events\","
+              "               \"dimensions\": [{\"name\": \"byte\", \"type\": \"byte\"},"
+              "                                {\"name\": \"ubyte\", \"type\": \"ubyte\"},"
+              "                                {\"name\": \"short\", \"type\": \"short\"},"
+              "                                {\"name\": \"ushort\", \"type\": \"ushort\"},"
+              "                                {\"name\": \"int\", \"type\": \"int\"},"
+              "                                {\"name\": \"uint\", \"type\": \"uint\"},"
+              "                                {\"name\": \"long\", \"type\": \"long\"},"
+              "                                {\"name\": \"ulong\", \"type\": \"ulong\"},"
+              "                                {\"name\": \"double\", \"type\": \"double\"}],"
+              "               \"metrics\": [{\"name\": \"count\", \"type\": \"count\"}]}]}"))) {}
     db::Database db;
 };
 

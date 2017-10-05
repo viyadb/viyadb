@@ -57,7 +57,14 @@ Code DimensionsStruct::GenerateCode() const {
   code<<" std::size_t operator()(const "<<struct_name_<<"& k) const {\n";
   code<<"  size_t h = 0L;\n";
   for (auto* dim : dimensions_) {
-    code<<"  h ^= k._"<<std::to_string(dim->index())<<" + 0x9e3779b9 + (h<<6) + (h>>2);\n";
+    code<<"  h ^= ";
+    if (dim->dim_type() == db::Dimension::DimType::NUMERIC
+        && static_cast<const db::NumDimension*>(dim)->num_type().type() == db::NumericType::Type::DOUBLE) {
+      code<<"std::hash<double>{} (k._"<<std::to_string(dim->index())<<")";
+    } else {
+      code<<"k._"<<std::to_string(dim->index());
+    }
+    code<<" + 0x9e3779b9 + (h<<6) + (h>>2);\n";
   }
   code<<"  return h;\n";
   code<<" }\n};\n";

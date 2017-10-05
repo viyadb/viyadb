@@ -3,21 +3,21 @@
 namespace viya {
 namespace db {
 
-DimensionDict::DimensionDict(const NumericType& code_type):code_type_(code_type) {
+DimensionDict::DimensionDict(const BaseNumType& code_type):code_type_(code_type) {
   std::string exceeded_value("__exceeded");
   c2v_.push_back(exceeded_value);
 
   switch (code_type.size()) {
-    case NumericType::Size::_1:
+    case BaseNumType::Size::_1:
       v2c_ = new DictImpl<uint8_t>(exceeded_value);
       break;
-    case NumericType::Size::_2:
+    case BaseNumType::Size::_2:
       v2c_ = new DictImpl<uint16_t>(exceeded_value);
       break;
-    case NumericType::Size::_4:
+    case BaseNumType::Size::_4:
       v2c_ = new DictImpl<uint32_t>(exceeded_value);
       break;
-    case NumericType::Size::_8:
+    case BaseNumType::Size::_8:
       v2c_ = new DictImpl<uint64_t>(exceeded_value);
       break;
     default:
@@ -30,28 +30,28 @@ AnyNum DimensionDict::Decode(const std::string& value) {
   folly::RWSpinLock::ReadHolder guard(lock_);
   AnyNum code;
   switch (code_type_.size()) {
-    case NumericType::Size::_1:
+    case BaseNumType::Size::_1:
       {
         auto typed_dict = reinterpret_cast<DictImpl<uint8_t>*>(v2c_);
         auto it = typed_dict->find(value);
         code = AnyNum((uint8_t)(it != typed_dict->end() ? it->second : UINT8_MAX));
       }
       break;
-    case NumericType::Size::_2:
+    case BaseNumType::Size::_2:
       {
         auto typed_dict = reinterpret_cast<DictImpl<uint16_t>*>(v2c_);
         auto it = typed_dict->find(value);
         code = AnyNum((uint16_t)(it != typed_dict->end() ? it->second : UINT16_MAX));
       }
       break;
-    case NumericType::Size::_4:
+    case BaseNumType::Size::_4:
       {
         auto typed_dict = reinterpret_cast<DictImpl<uint32_t>*>(v2c_);
         auto it = typed_dict->find(value);
         code = AnyNum((uint32_t)(it != typed_dict->end() ? it->second : UINT32_MAX));
       }
       break;
-    case NumericType::Size::_8:
+    case BaseNumType::Size::_8:
       {
         auto typed_dict = reinterpret_cast<DictImpl<uint64_t>*>(v2c_);
         auto it = typed_dict->find(value);
@@ -64,16 +64,16 @@ AnyNum DimensionDict::Decode(const std::string& value) {
 
 DimensionDict::~DimensionDict() {
   switch (code_type_.size()) {
-    case NumericType::Size::_1:
+    case BaseNumType::Size::_1:
       delete reinterpret_cast<DictImpl<uint8_t>*>(v2c_);
       break;
-    case NumericType::Size::_2:
+    case BaseNumType::Size::_2:
       delete reinterpret_cast<DictImpl<uint16_t>*>(v2c_);
       break;
-    case NumericType::Size::_4:
+    case BaseNumType::Size::_4:
       delete reinterpret_cast<DictImpl<uint32_t>*>(v2c_);
       break;
-    case NumericType::Size::_8:
+    case BaseNumType::Size::_8:
       delete reinterpret_cast<DictImpl<uint64_t>*>(v2c_);
       break;
   }
@@ -85,7 +85,7 @@ Dictionaries::~Dictionaries() {
   }
 }
 
-DimensionDict* Dictionaries::GetOrCreate(const std::string& dim_name, const NumericType& code_type) {
+DimensionDict* Dictionaries::GetOrCreate(const std::string& dim_name, const BaseNumType& code_type) {
   folly::RWSpinLock::WriteHolder guard(lock_);
   DimensionDict* dict = nullptr;
   auto it = dicts_.find(dim_name);

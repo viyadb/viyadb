@@ -4,6 +4,7 @@
 #define FMT_HEADER_ONLY
 #include <fmt/string.h>
 #include <ctime>
+#include <cstdio>
 
 namespace viya {
 namespace util {
@@ -17,6 +18,11 @@ class Format {
       w_.clear();
       w_<<n;
       return w_.c_str();
+    }
+
+    const char* num(double n) {
+      snprintf(buf_, sizeof(buf_), "%.15g", n);
+      return buf_;
     }
 
     const char* num(uint8_t n) {
