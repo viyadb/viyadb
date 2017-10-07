@@ -52,6 +52,7 @@ void FileLoader::LoadTsv() {
     s.reserve(MAX_TUPLE_SIZE / cols_num);
   }
 
+  size_t line_num = 1;
   size_t remaining = 0, start = 0;
   char* f;
 
@@ -98,7 +99,14 @@ void FileLoader::LoadTsv() {
         }
       }
 
-      table_.Load(tuple);
+      try {
+        table_.Load(tuple);
+        ++line_num;
+      } catch (std::exception& e) {
+        throw std::runtime_error(
+          "reading TSV file at line " + std::to_string(line_num) +
+          " (" + std::string(e.what()) + ")");
+      }
       ++stats_.total_recs;
 
       p = f;

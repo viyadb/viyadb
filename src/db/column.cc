@@ -47,6 +47,7 @@ NumericType::Type parse_metric_type(const std::string& type_name) {
   if (type_name == "uint")   { return NumericType::Type::UINT; }
   if (type_name == "long")   { return NumericType::Type::LONG; }
   if (type_name == "ulong")  { return NumericType::Type::ULONG; }
+  if (type_name == "float")  { return NumericType::Type::FLOAT; }
   if (type_name == "double") { return NumericType::Type::DOUBLE; }
   throw std::invalid_argument("Unsupported metric type: " + type_name);
 }
@@ -61,6 +62,7 @@ BaseNumType::Size numeric_type_to_size(NumericType::Type type) {
       return BaseNumType::Size::_2;
     case NumericType::Type::INT:
     case NumericType::Type::UINT:
+    case NumericType::Type::FLOAT:
       return BaseNumType::Size::_4;
     default:
       return BaseNumType::Size::_8;
@@ -83,6 +85,7 @@ const std::string NumericType::cpp_type() const {
   if (type_ == Type::UINT)   { return "uint32_t"; }
   if (type_ == Type::LONG)   { return "int64_t"; }
   if (type_ == Type::ULONG)  { return "uint64_t"; }
+  if (type_ == Type::FLOAT)  { return "float"; }
   if (type_ == Type::DOUBLE) { return "double"; }
   throw std::runtime_error("Unsupported type");
 }
@@ -96,6 +99,7 @@ const std::string NumericType::cpp_max_value() const {
   if (type_ == Type::UINT)   { return "UINT32_MAX"; }
   if (type_ == Type::LONG)   { return "INT64_MAX"; }
   if (type_ == Type::ULONG)  { return "UINT64_MAX"; }
+  if (type_ == Type::FLOAT)  { return "FLT_MAX"; }
   if (type_ == Type::DOUBLE) { return "DBL_MAX"; }
   throw std::runtime_error("Unsupported type");
 }
@@ -109,6 +113,7 @@ const std::string NumericType::cpp_min_value() const {
   if (type_ == Type::UINT)   { return "0U"; }
   if (type_ == Type::LONG)   { return "INT64_MIN"; }
   if (type_ == Type::ULONG)  { return "0UL"; }
+  if (type_ == Type::FLOAT)  { return "FLT_MIN"; }
   if (type_ == Type::DOUBLE) { return "DBL_MIN"; }
   throw std::runtime_error("Unsupported type");
 }
@@ -123,6 +128,7 @@ const std::string NumericType::cpp_parse_fn() const {
     case Type::UINT:   return "std::stoul";
     case Type::LONG:   return "std::stoll";
     case Type::ULONG:  return "std::stoull";
+    case Type::FLOAT:  return "std::stof";
     case Type::DOUBLE: return "std::stod";
   }
   throw std::runtime_error("Unsupported type");
@@ -138,6 +144,7 @@ const AnyNum NumericType::Parse(const std::string& value) const {
     case Type::UINT:   return AnyNum((uint32_t)std::stoul(value));
     case Type::LONG:   return AnyNum((int64_t)std::stoll(value));
     case Type::ULONG:  return AnyNum((uint64_t)std::stoull(value));
+    case Type::FLOAT:  return AnyNum(std::stof(value));
     case Type::DOUBLE: return AnyNum(std::stod(value));
   }
   throw std::runtime_error("Unsupported type");

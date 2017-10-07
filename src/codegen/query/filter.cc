@@ -161,6 +161,7 @@ void SegmentSkipBuilder::Visit(const query::RelOpFilter* filter) {
         || dim->dim_type() == db::Dimension::DimType::TIME) {
 
       auto dim_idx = std::to_string(dim->index());
+      applied = true;
       switch (filter->op()) {
         case query::RelOpFilter::Operator::EQUAL:
           code_<<"((segment->stats.dmin"<<dim_idx<<"<=farg"<<arg_idx<<") & "
@@ -175,9 +176,8 @@ void SegmentSkipBuilder::Visit(const query::RelOpFilter* filter) {
           code_<<"(segment->stats.dmax"<<dim_idx<<">=farg"<<arg_idx<<")";
           break;
         default:
-          throw std::runtime_error("Unsupported operator");
+          applied = false;
       }
-      applied = true;
     }
   }
   if (!applied) {

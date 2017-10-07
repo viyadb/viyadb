@@ -79,6 +79,7 @@ class NumericDimensions : public testing::Test {
               "                                {\"name\": \"uint\", \"type\": \"uint\"},"
               "                                {\"name\": \"long\", \"type\": \"long\"},"
               "                                {\"name\": \"ulong\", \"type\": \"ulong\"},"
+              "                                {\"name\": \"float\", \"type\": \"float\"},"
               "                                {\"name\": \"double\", \"type\": \"double\"}],"
               "               \"metrics\": [{\"name\": \"count\", \"type\": \"count\"}]}]}"))) {}
     db::Database db;

@@ -26,7 +26,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 ARG tarball
 ADD $tarball /opt/
-RUN mv /opt/viyadb* /opt/viyadb
+RUN mv /opt/viyadb* /opt/viyadb \
+  && strip /opt/viyadb/bin/viyad
 
 RUN mkdir /opt/viyadb/conf
 ADD store.json /opt/viyadb/conf/store.json

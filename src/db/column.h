@@ -46,7 +46,7 @@ class UIntType: public BaseNumType {
 
 class NumericType: public BaseNumType {
   public:
-    enum Type { BYTE, UBYTE, SHORT, USHORT, INT, UINT, LONG, ULONG, DOUBLE };
+    enum Type { BYTE, UBYTE, SHORT, USHORT, INT, UINT, LONG, ULONG, FLOAT, DOUBLE };
 
     NumericType(const Type type);
     NumericType(const std::string& type_name);
@@ -66,21 +66,23 @@ class NumericType: public BaseNumType {
 class AnyNum {
   public:
     AnyNum() {}
-    AnyNum(uint8_t num) { *reinterpret_cast<uint8_t*>(s_.data()) = num; }
+    AnyNum(uint8_t num)  { *reinterpret_cast<uint8_t*>(s_.data()) = num; }
     AnyNum(uint16_t num) { *reinterpret_cast<uint16_t*>(s_.data()) = num; }
     AnyNum(uint32_t num) { *reinterpret_cast<uint32_t*>(s_.data()) = num; }
     AnyNum(uint64_t num) { *reinterpret_cast<uint64_t*>(s_.data()) = num; }
-    AnyNum(int32_t num) { *reinterpret_cast<int32_t*>(s_.data()) = num; }
-    AnyNum(int64_t num) { *reinterpret_cast<int64_t*>(s_.data()) = num; }
-    AnyNum(double num) { *reinterpret_cast<double*>(s_.data()) = num; }
+    AnyNum(int32_t num)  { *reinterpret_cast<int32_t*>(s_.data()) = num; }
+    AnyNum(int64_t num)  { *reinterpret_cast<int64_t*>(s_.data()) = num; }
+    AnyNum(float num)    { *reinterpret_cast<float*>(s_.data()) = num; }
+    AnyNum(double num)   { *reinterpret_cast<double*>(s_.data()) = num; }
 
-    uint8_t get_uint8_t() { return *reinterpret_cast<uint8_t*>(s_.data()); }
+    uint8_t  get_uint8_t()  { return *reinterpret_cast<uint8_t*>(s_.data()); }
     uint16_t get_uint16_t() { return *reinterpret_cast<uint16_t*>(s_.data()); }
     uint32_t get_uint32_t() { return *reinterpret_cast<uint32_t*>(s_.data()); }
     uint64_t get_uint64_t() { return *reinterpret_cast<uint64_t*>(s_.data()); }
-    int32_t get_int32_t() { return *reinterpret_cast<int32_t*>(s_.data()); }
-    int64_t get_int64_t() { return *reinterpret_cast<int64_t*>(s_.data()); }
-    double get_double() { return *reinterpret_cast<double*>(s_.data()); }
+    int32_t  get_int32_t()  { return *reinterpret_cast<int32_t*>(s_.data()); }
+    int64_t  get_int64_t()  { return *reinterpret_cast<int64_t*>(s_.data()); }
+    double   get_float()    { return *reinterpret_cast<float*>(s_.data()); }
+    double   get_double()   { return *reinterpret_cast<double*>(s_.data()); }
 
   private:
     std::array<char, 8> s_;
@@ -155,8 +157,10 @@ class NumDimension: public Dimension {
 
     const NumericType& num_type() const { return num_type_; }
 
+    bool fp() const { return num_type_.type() == NumericType::DOUBLE || num_type_.type() == NumericType::FLOAT; }
+
     SortType sort_type() const {
-      return num_type_.type() == NumericType::DOUBLE ? SortType::FLOAT : SortType::INTEGER;
+      return fp() ? SortType::FLOAT : SortType::INTEGER;
     }
 
   private:
@@ -223,8 +227,10 @@ class ValueMetric: public Metric {
 
     const BaseNumType& num_type() const { return num_type_; }
 
+    bool fp() const { return num_type_.type() == NumericType::DOUBLE || num_type_.type() == NumericType::FLOAT; }
+
     SortType sort_type() const {
-      return num_type_.type() == NumericType::DOUBLE ? SortType::FLOAT : SortType::INTEGER;
+      return fp() ? SortType::FLOAT : SortType::INTEGER;
     }
 
   private:

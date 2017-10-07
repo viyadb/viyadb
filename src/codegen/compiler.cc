@@ -74,7 +74,8 @@ Compiler::Compiler(const util::Config& config) {
 }
 
 std::shared_ptr<SharedLibrary> Compiler::Compile(const std::string& code) {
-  uint64_t code_hash = CityHash64(code.c_str(), code.size());
+  std::string code_and_version(code + GIT_SHA1);
+  uint64_t code_hash = CityHash64(code_and_version.c_str(), code_and_version.size());
 
   std::lock_guard<std::mutex> lock(mutex_);
 
