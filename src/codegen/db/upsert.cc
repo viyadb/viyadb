@@ -297,17 +297,26 @@ Code UpsertGenerator::GenerateCode() const {
 
   size_t value_idx = 0;
   bool add_optimize = AddOptimize();
+  ValueParser value_parser(code, value_idx);
 
   for (auto* dimension : table_.dimensions()) {
     code<<"{\n";
-    ValueParser value_parser(code, value_idx);
     dimension->Accept(value_parser);
     code<<"}\n";
   }
 
+  bool has_count_metric = false;
+  bool has_avg_metric = false;
   for (auto* metric : table_.metrics()) {
-    ValueParser value_parser(code, value_idx);
+    if (metric->agg_type() == db::Metric::AggregationType::AVG) {
+      has_avg_metric = true;
+    } else if (metric->agg_type() == db::Metric::AggregationType::COUNT) {
+      has_count_metric = true;
+    }
     metric->Accept(value_parser);
+  }
+  if (has_avg_metric && !has_count_metric) {
+    code<<" upsert_metrics._count = 1;\n";
   }
 
   code<<CardinalityProtection();

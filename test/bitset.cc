@@ -1,12 +1,25 @@
 #include <algorithm>
 #include "db/table.h"
+#include "db/database.h"
 #include "util/config.h"
 #include "query/output.h"
-#include "db.h"
 #include "gtest/gtest.h"
 
 namespace util = viya::util;
+namespace db = viya::db;
 namespace query = viya::query;
+
+class UserEvents : public testing::Test {
+  protected:
+    UserEvents()
+      :db(std::move(util::Config(
+              "{\"tables\": [{\"name\": \"events\","
+              "               \"dimensions\": [{\"name\": \"country\"},"
+              "                                {\"name\": \"event_name\"},"
+              "                                {\"name\": \"time\", \"type\": \"uint\"}],"
+              "               \"metrics\": [{\"name\": \"user_id\", \"type\": \"bitset\"}]}]}"))) {}
+    db::Database db;
+};
 
 void bitset_load_events(db::Table* table) {
   table->Load({

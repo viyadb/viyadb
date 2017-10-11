@@ -205,7 +205,7 @@ class BoolDimension: public Dimension {
 
 class Metric: public Column {
   public:
-    enum AggregationType { MAX, MIN, SUM, COUNT, BITSET };
+    enum AggregationType { MAX, MIN, SUM, AVG, COUNT, BITSET };
 
     Metric(const util::Config& config, size_t index, AggregationType agg_type)
       :Column(config, Column::Type::METRIC, index),agg_type_(agg_type) {}

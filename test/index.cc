@@ -1,12 +1,24 @@
 #include <algorithm>
 #include "db/table.h"
+#include "db/database.h"
 #include "util/config.h"
 #include "query/output.h"
-#include "db.h"
 #include "gtest/gtest.h"
 
+namespace db = viya::db;
 namespace util = viya::util;
 namespace query = viya::query;
+
+class LiteEvents : public testing::Test {
+  protected:
+    LiteEvents()
+      :db(std::move(util::Config(
+              "{\"tables\": [{\"name\": \"events\","
+              "               \"dimensions\": [{\"name\": \"time\", \"type\": \"ulong\", \"max\": 4000000},"
+              "                                {\"name\": \"dummy\", \"max\": 1}],"
+              "               \"metrics\": [{\"name\": \"count\", \"type\": \"count\"}]}]}"))) {}
+    db::Database db;
+};
 
 TEST_F(LiteEvents, SegmentsSkipped)
 {

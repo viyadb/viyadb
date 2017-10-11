@@ -244,6 +244,7 @@ Metric::AggregationType parse_agg_type(const util::Config& config) {
     if (agg_type == "sum") { return Metric::AggregationType::SUM; }
     if (agg_type == "max") { return Metric::AggregationType::MAX; }
     if (agg_type == "min") { return Metric::AggregationType::MIN; }
+    if (agg_type == "avg") { return Metric::AggregationType::AVG; }
   }
   if (type == "count")  { return Metric::AggregationType::COUNT; }
   if (type == "bitset") { return Metric::AggregationType::BITSET; }

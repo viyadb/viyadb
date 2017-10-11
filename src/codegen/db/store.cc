@@ -24,9 +24,13 @@ Code DimensionsStruct::GenerateCode() const {
   // Equality operator:
   code<<" bool operator==(const "<<struct_name_<<" &other) const {\n";
   code<<"  return \n";
-  for (auto* dim : dimensions_) {
-    auto dim_idx = std::to_string(dim->index());
-    code<<"   _"<<dim_idx<<"==other._"<<dim_idx<<(dim == last_dim ? ";" : " &&")<<"\n";
+  if (dimensions_.empty()) {
+    code<<"   true;\n";
+  } else {
+    for (auto* dim : dimensions_) {
+      auto dim_idx = std::to_string(dim->index());
+      code<<"   _"<<dim_idx<<"==other._"<<dim_idx<<(dim == last_dim ? ";" : " &&")<<"\n";
+    }
   }
   code<<" }\n";
 
@@ -85,6 +89,8 @@ Code MetricsStruct::GenerateCode() const {
   code<<"struct "<<struct_name_<<" {\n";
 
   // Field declarations:
+  bool has_count_metric = false;
+  bool has_avg_metric = false;
   for (auto* metric : metrics_) {
     auto metric_idx = std::to_string(metric->index());
     auto& num_type = metric->num_type();
@@ -104,8 +110,17 @@ Code MetricsStruct::GenerateCode() const {
           code<<"0";
           break;
       }
+      if (metric->agg_type() == db::Metric::AggregationType::AVG) {
+        has_avg_metric = true;
+      } else if (metric->agg_type() == db::Metric::AggregationType::COUNT) {
+        has_count_metric = true;
+      }
     }
     code<<";\n";
+  }
+  if (has_avg_metric && !has_count_metric) {
+    // Add special count metric for calculating averages:
+    code<<" uint64_t _count = 0;\n";
   }
 
   // Aggregate function:
@@ -115,6 +130,7 @@ Code MetricsStruct::GenerateCode() const {
     code<<"  _"<<metric_idx;
     switch (metric->agg_type()) {
       case db::Metric::AggregationType::SUM:
+      case db::Metric::AggregationType::AVG:
       case db::Metric::AggregationType::COUNT:
         code<<" += metrics._"<<metric_idx;
         break;
@@ -131,6 +147,9 @@ Code MetricsStruct::GenerateCode() const {
         throw std::runtime_error("Unsupported metric aggregation type!");
     }
     code<<";\n";
+  }
+  if (has_avg_metric && !has_count_metric) {
+    code<<"  _count += metrics._count;\n";
   }
   code<<" }\n";
 

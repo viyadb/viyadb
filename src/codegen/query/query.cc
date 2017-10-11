@@ -90,9 +90,19 @@ void ScanGenerator::Scan(query::AggregateQuery* query) {
     }
   }
 
+  bool has_count_metric = false;
+  bool has_avg_metric = false;
   for (auto& metric_col : query->metric_cols()) {
     auto metric_idx = std::to_string(metric_col.metric()->index());
     code_<<"agg_metrics._"<<metric_idx<<" = tuple_metrics._"<<metric_idx<<";\n";
+    if (metric_col.metric()->agg_type() == db::Metric::AggregationType::AVG) {
+      has_avg_metric = true;
+    } else if (metric_col.metric()->agg_type() == db::Metric::AggregationType::COUNT) {
+      has_count_metric = true;
+    }
+  }
+  if (has_avg_metric && !has_count_metric) {
+    code_<<"agg_metrics._count = tuple_metrics._count;\n";
   }
 
   code_<<"agg_map[agg_dims].Update(agg_metrics);\n";
@@ -215,11 +225,23 @@ void ScanGenerator::Materialize(query::AggregateQuery* query) {
     }
   }
 
+  // Detect count column to divide by for calculating averages:
+  std::string count_field("count");
+  for (auto& metric_col : query->metric_cols()) {
+    if (metric_col.metric()->agg_type() == db::Metric::AggregationType::COUNT) {
+      count_field = std::to_string(metric_col.metric()->index());
+      break;
+    }
+  }
+
+  // Output metrics:
   for (auto& metric_col : query->metric_cols()) {
     auto metric = metric_col.metric();
     auto metric_idx = std::to_string(metric->index());
     code_<<"  row["<<std::to_string(metric_col.index())<<"] = fmt.num(agg_it->second._"<<metric_idx;
-    if (metric->agg_type() == db::Metric::AggregationType::BITSET) {
+    if (metric->agg_type() == db::Metric::AggregationType::AVG) {
+      code_<<"/(double)agg_it->second._"<<count_field;
+    } else if (metric->agg_type() == db::Metric::AggregationType::BITSET) {
       code_<<".cardinality()";
     }
     code_<<");\n";

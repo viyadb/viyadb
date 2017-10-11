@@ -1,12 +1,34 @@
 #include <algorithm>
 #include "db/table.h"
+#include "db.h"
 #include "util/config.h"
 #include "query/output.h"
-#include "db.h"
 #include "gtest/gtest.h"
 
 namespace util = viya::util;
 namespace query = viya::query;
+
+class LowCardColumn : public testing::Test {
+  protected:
+    LowCardColumn()
+      :db(std::move(util::Config(
+              "{\"tables\": [{\"name\": \"events\","
+              "               \"dimensions\": [{\"name\": \"http_method\", \"cardinality\": 5}],"
+              "               \"metrics\": [{\"name\": \"count\", \"type\": \"count\"}]}]}"))) {}
+    db::Database db;
+};
+
+class CardinalityGuard : public testing::Test {
+  protected:
+    CardinalityGuard()
+      :db(std::move(util::Config(
+              "{\"tables\": [{\"name\": \"events\","
+              "               \"dimensions\": [{\"name\": \"device_id\"},"
+              "                                {\"name\": \"event_name\","
+              "                                 \"cardinality_guard\": {\"dimensions\": [\"device_id\"], \"limit\": 3}}],"
+              "               \"metrics\": [{\"name\": \"count\", \"type\": \"count\"}]}]}"))) {}
+    db::Database db;
+};
 
 TEST_F(LowCardColumn, Exceeded)
 {
