@@ -33,6 +33,9 @@ void FilterArgsPacker::Visit(const query::NotFilter* filter) {
   filter->filter()->Accept(*this);
 }
 
+void FilterArgsPacker::Visit(const query::EmptyFilter* filter __attribute__((unused))) {
+}
+
 void ArgsUnpacker::UnpackArg(const db::Column* column) {
   auto type = column->num_type().cpp_type();
   auto arg_idx = std::to_string(argidx_);
@@ -58,6 +61,9 @@ void ArgsUnpacker::Visit(const query::CompositeFilter* filter) {
 
 void ArgsUnpacker::Visit(const query::NotFilter* filter) {
   filter->filter()->Accept(*this);
+}
+
+void ArgsUnpacker::Visit(const query::EmptyFilter* filter __attribute__((unused))) {
 }
 
 void ValueDecoder::Visit(const db::StrDimension* dimension) {
@@ -148,6 +154,10 @@ void ComparisonBuilder::Visit(const query::CompositeFilter* filter) {
 void ComparisonBuilder::Visit(const query::NotFilter* filter) {
   code_<<"!";
   filter->filter()->Accept(*this);
+}
+
+void ComparisonBuilder::Visit(const query::EmptyFilter* filter __attribute__((unused))) {
+  code_<<"true";
 }
 
 void SegmentSkipBuilder::Visit(const query::RelOpFilter* filter) {

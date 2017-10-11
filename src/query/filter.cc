@@ -22,7 +22,14 @@ void NotFilter::Accept(FilterVisitor& visitor) const {
   visitor.Visit(this);
 }
 
+void EmptyFilter::Accept(FilterVisitor& visitor) const {
+  visitor.Visit(this);
+}
+
 Filter* FilterFactory::Create(const util::Config& config, const db::Table& table) {
+  if (!config.exists("op")) {
+    return new EmptyFilter();
+  }
   std::string op = config.str("op");
   if (op == "and" || op == "or") {
     std::vector<Filter*> filters;

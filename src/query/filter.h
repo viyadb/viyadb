@@ -113,6 +113,14 @@ class NotFilter: public Filter {
     Filter* filter_;
 };
 
+class EmptyFilter: public Filter {
+  public:
+    EmptyFilter():Filter(0) {}
+    EmptyFilter(const EmptyFilter& other) = delete;
+
+    void Accept(FilterVisitor& visitor) const;
+};
+
 class FilterVisitor {
   public:
     virtual ~FilterVisitor() {}
@@ -121,6 +129,7 @@ class FilterVisitor {
     virtual void Visit(const InFilter* filter) = 0;
     virtual void Visit(const CompositeFilter* filter) = 0;
     virtual void Visit(const NotFilter* filter) = 0;
+    virtual void Visit(const EmptyFilter* filter) = 0;
 };
 
 class FilterFactory {

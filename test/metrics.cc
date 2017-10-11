@@ -200,11 +200,6 @@ TEST_F(MetricEvents, AverageQueryRollup)
   std::vector<query::MemoryRowOutput::Row> expected = {
     {"11.26"}
   };
-  auto actual = output.rows();
-
-  std::sort(expected.begin(), expected.end());
-  std::sort(actual.begin(), actual.end());
-
-  EXPECT_EQ(expected, actual);
+  EXPECT_EQ(expected, output.rows());
 }
 

@@ -119,6 +119,31 @@ TEST_F(InappEvents, MetricFilter)
   EXPECT_EQ(expected, output.rows());
 }
 
+TEST_F(InappEvents, NoFilter)
+{
+  auto table = db.GetTable("events");
+  aggregation_load_events(table);
+
+  query::MemoryRowOutput output;
+  db.Query(
+    std::move(util::Config(
+        "{\"type\": \"aggregate\","
+        " \"table\": \"events\","
+        " \"dimensions\": [\"event_name\"],"
+        " \"metrics\": [\"revenue\"]}")), output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {
+    {"donate", "5"},
+    {"purchase", "1.2"},
+  };
+  std::sort(expected.begin(), expected.end());
+
+  auto actual = output.rows();
+  std::sort(actual.begin(), actual.end());
+
+  EXPECT_EQ(expected, actual);
+}
+
 TEST_F(InappEvents, MissingValueEq)
 {
   auto table = db.GetTable("events");

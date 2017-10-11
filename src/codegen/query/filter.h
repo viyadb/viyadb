@@ -17,6 +17,7 @@ class FilterArgsPacker: public query::FilterVisitor {
     void Visit(const query::InFilter* filter);
     void Visit(const query::CompositeFilter* filter);
     void Visit(const query::NotFilter* filter);
+    void Visit(const query::EmptyFilter* filter);
 
     const std::vector<db::AnyNum>& args() const { return args_; }
 
@@ -35,6 +36,7 @@ class ArgsUnpacker: public query::FilterVisitor {
     void Visit(const query::InFilter* filter);
     void Visit(const query::CompositeFilter* filter);
     void Visit(const query::NotFilter* filter);
+    void Visit(const query::EmptyFilter* filter);
 
   private:
     void UnpackArg(const db::Column* column);
@@ -71,6 +73,7 @@ class ComparisonBuilder: public query::FilterVisitor {
     void Visit(const query::InFilter* filter);
     void Visit(const query::CompositeFilter* filter);
     void Visit(const query::NotFilter* filter);
+    void Visit(const query::EmptyFilter* filter);
 
   protected:
     size_t argidx_;

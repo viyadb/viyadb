@@ -101,12 +101,14 @@ class Column {
     virtual void Accept(class ColumnVisitor& visitor) const = 0;
 
     const std::string& name() const { return name_; }
+    const std::string& input_field() const { return input_field_; }
     size_t index() const { return index_; }
     Type type() const { return type_; }
     virtual SortType sort_type() const = 0;
 
   private:
     std::string name_;
+    std::string input_field_;
     Type type_;
     size_t index_;
 };

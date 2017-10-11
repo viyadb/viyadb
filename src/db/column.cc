@@ -165,6 +165,9 @@ NumericType parse_value_metric_type(const util::Config& config, Metric::Aggregat
 Column::Column(const util::Config& config, Type type, size_t index):type_(type),index_(index) {
   name_ = config.str("name");
   util::check_legal_string("Column name", name_);
+  if (config.exists("field")) {
+    input_field_ = config.str("field");
+  }
 }
 
 StrDimension::StrDimension(const util::Config& config, size_t index, Dictionaries& dicts)
