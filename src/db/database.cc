@@ -3,7 +3,7 @@
 #include "db/database.h"
 #include "db/table.h"
 #include "query/runner.h"
-#include "input/loader.h"
+#include "input/loader_factory.h"
 
 namespace viya {
 namespace db {

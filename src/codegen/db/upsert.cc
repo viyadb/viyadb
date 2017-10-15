@@ -11,7 +11,7 @@ namespace db = viya::db;
 
 void ValueParser::Visit(const db::StrDimension* dimension) {
   auto dim_idx = std::to_string(dimension->index());
-  code_<<" auto& value = values["<<value_idx_++<<"];\n";
+  code_<<" auto& value = values["<<tuple_idx_map_[value_idx_++]<<"];\n";
 
   auto max_length = dimension->length();
   if (max_length != -1) {
@@ -47,7 +47,7 @@ void ValueParser::Visit(const db::StrDimension* dimension) {
 
 void ValueParser::Visit(const db::NumDimension* dimension) {
   code_<<" upsert_dims._"<<std::to_string(dimension->index())
-    <<" = "<<dimension->num_type().cpp_parse_fn()<<"(values["<<value_idx_++<<"]);\n";
+    <<" = "<<dimension->num_type().cpp_parse_fn()<<"(values["<<tuple_idx_map_[value_idx_++]<<"]);\n";
 }
 
 void ValueParser::Visit(const db::TimeDimension* dimension) {
@@ -61,7 +61,7 @@ void ValueParser::Visit(const db::TimeDimension* dimension) {
   bool is_num_input = format.empty() || is_posix_ts || is_milli_ts || is_micro_ts;
   if (is_num_input) {
     code_<<" {\n";
-    code_<<"  uint64_t ts_val = std::stoull(values["<<value_idx_<<"]);\n";
+    code_<<"  uint64_t ts_val = std::stoull(values["<<tuple_idx_map_[value_idx_]<<"]);\n";
     if (dimension->micro_precision()) {
       if (is_posix_ts) {
         code_<<"  ts_val *= 1000000L;\n";
@@ -81,7 +81,7 @@ void ValueParser::Visit(const db::TimeDimension* dimension) {
       code_<<" time"<<dim_idx<<".set_ts(upsert_dims._"<<dim_idx<<");\n";
     }
   } else {
-    code_<<" time"<<dim_idx<<".parse(\""<<format<<"\", values["<<value_idx_<<"]);\n";
+    code_<<" time"<<dim_idx<<".parse(\""<<format<<"\", values["<<tuple_idx_map_[value_idx_]<<"]);\n";
     if (!dimension->rollup_rules().empty()) {
       code_<<" upsert_dims._"<<dim_idx<<" = time"<<dim_idx<<".get_ts();\n";
     }
@@ -105,7 +105,7 @@ void ValueParser::Visit(const db::TimeDimension* dimension) {
 
 void ValueParser::Visit(const db::BoolDimension* dimension) {
   code_<<" upsert_dims._"<<std::to_string(dimension->index())
-    <<" = values["<<value_idx_++<<"] == \"true\";\n";
+    <<" = values["<<tuple_idx_map_[value_idx_++]<<"] == \"true\";\n";
 }
 
 void ValueParser::Visit(const db::ValueMetric* metric) {
@@ -114,7 +114,7 @@ void ValueParser::Visit(const db::ValueMetric* metric) {
   if (metric->agg_type() == db::Metric::AggregationType::COUNT) {
     code_<<"1";
   } else {
-    code_<<metric->num_type().cpp_parse_fn()<<"(values["<<value_idx_++<<"])";
+    code_<<metric->num_type().cpp_parse_fn()<<"(values["<<tuple_idx_map_[value_idx_++]<<"])";
   }
   code_<<";\n";
 }
@@ -122,7 +122,7 @@ void ValueParser::Visit(const db::ValueMetric* metric) {
 void ValueParser::Visit(const db::BitsetMetric* metric) {
   auto metric_idx = std::to_string(metric->index());
   code_<<" "<<metric->num_type().cpp_type()<<" metric_val"<<metric_idx<<" = "
-    <<metric->num_type().cpp_parse_fn()<<"(values["<<value_idx_++<<"]);\n";
+    <<metric->num_type().cpp_parse_fn()<<"(values["<<tuple_idx_map_[value_idx_++]<<"]);\n";
   code_<<" upsert_metrics._"<<metric_idx<<".add(metric_val"<<metric_idx<<");\n";
 }
 
@@ -297,7 +297,7 @@ Code UpsertGenerator::GenerateCode() const {
 
   size_t value_idx = 0;
   bool add_optimize = AddOptimize();
-  ValueParser value_parser(code, value_idx);
+  ValueParser value_parser(code, tuple_idx_map_, value_idx);
 
   for (auto* dimension : table_.dimensions()) {
     code<<"{\n";
@@ -357,20 +357,20 @@ Code UpsertGenerator::GenerateCode() const {
   return code;
 }
 
-db::UpsertSetupFn UpsertGenerator::SetupFunction() {
-  return GenerateFunction<db::UpsertSetupFn>(std::string("viya_upsert_setup"));
+UpsertSetupFn UpsertGenerator::SetupFunction() {
+  return GenerateFunction<UpsertSetupFn>(std::string("viya_upsert_setup"));
 }
 
-db::BeforeUpsertFn UpsertGenerator::BeforeFunction() {
-  return GenerateFunction<db::BeforeUpsertFn>(std::string("viya_upsert_before"));
+BeforeUpsertFn UpsertGenerator::BeforeFunction() {
+  return GenerateFunction<BeforeUpsertFn>(std::string("viya_upsert_before"));
 }
 
-db::AfterUpsertFn UpsertGenerator::AfterFunction() {
-  return GenerateFunction<db::AfterUpsertFn>(std::string("viya_upsert_after"));
+AfterUpsertFn UpsertGenerator::AfterFunction() {
+  return GenerateFunction<AfterUpsertFn>(std::string("viya_upsert_after"));
 }
 
-db::UpsertFn UpsertGenerator::Function() {
-  return GenerateFunction<db::UpsertFn>(std::string("viya_upsert_do"));
+UpsertFn UpsertGenerator::Function() {
+  return GenerateFunction<UpsertFn>(std::string("viya_upsert_do"));
 }
 
 }}

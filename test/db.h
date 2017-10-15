@@ -1,5 +1,5 @@
-#ifndef VIYA_TESTING_DB_H_
-#define VIYA_TESTING_DB_H_
+#ifndef VIYA_TEST_DB_H_
+#define VIYA_TEST_DB_H_
 
 #include "gtest/gtest.h"
 #include "util/config.h"
@@ -40,4 +40,4 @@ class NumericDimensions : public testing::Test {
     db::Database db;
 };
 
-#endif // VIYA_TESTING_DB_H_
+#endif // VIYA_TEST_DB_H_

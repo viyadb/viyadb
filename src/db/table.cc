@@ -1,7 +1,6 @@
 #include <stdexcept>
 #include <chrono>
 #include "codegen/db/metadata.h"
-#include "codegen/db/upsert.h"
 #include "db/table.h"
 #include "db/column.h"
 #include "db/store.h"
@@ -64,8 +63,6 @@ Table::Table(const util::Config& config, Database& database)
     }
   }
 
-  GenerateFunctions();
-
   store_ = new SegmentStore(database, *this);
 
   if (config.exists("watch")) {
@@ -81,15 +78,6 @@ Table::~Table() {
   delete store_;
 }
 
-void Table::GenerateFunctions() {
-  cg::UpsertGenerator upsert_gen(database_.compiler(), *this);
-
-  before_upsert_ = upsert_gen.BeforeFunction();
-  after_upsert_ = upsert_gen.AfterFunction();
-  upsert_ = upsert_gen.Function();
-  upsert_gen.SetupFunction()(*this);
-}
-
 const Column* Table::column(const std::string& name) const {
   for (auto d : dimensions_) {
     if (d->name() == name) {
@@ -102,6 +90,14 @@ const Column* Table::column(const std::string& name) const {
     }
   }
   throw std::invalid_argument("No such column: " + name);
+}
+
+const std::vector<const Column*> Table::columns() const {
+  std::vector<const Column*> columns;
+  columns.reserve(dimensions_.size() + metrics_.size());
+  columns.insert(columns.end(), dimensions_.begin(), dimensions_.end());
+  columns.insert(columns.end(), metrics_.begin(), metrics_.end());
+  return std::move(columns);
 }
 
 const Dimension* Table::dimension(const std::string& name) const {
@@ -120,22 +116,6 @@ const Metric* Table::metric(const std::string& name) const {
     }
   }
   throw std::invalid_argument("No such metric: " + name);
-}
-
-void Table::BeforeLoad() {
-  before_upsert_();
-}
-
-UpsertStats Table::AfterLoad() {
-  return after_upsert_();
-}
-
-void Table::Load(std::initializer_list<std::vector<std::string>> rows) {
-  BeforeLoad();
-  for (auto row : rows) {
-    upsert_(row);
-  }
-  AfterLoad();
 }
 
 void Table::PrintMetadata(std::string& output) {

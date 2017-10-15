@@ -32,12 +32,6 @@ class CardinalityGuard {
     size_t limit_;
 };
 
-using TableMetadataFn = void (*)(Table&, std::string&);
-using UpsertSetupFn = void (*)(Table&);
-using BeforeUpsertFn = void (*)();
-using AfterUpsertFn = UpsertStats (*)();
-using UpsertFn = void (*)(std::vector<std::string>&);
-
 class Table {
   public:
     Table(const util::Config& config, class Database& database);
@@ -45,9 +39,10 @@ class Table {
     ~Table();
 
     const std::string& name() const { return name_; }
-    const Database& database() const { return database_; }
+    Database& database() { return database_; }
 
     const Column* column(const std::string& name) const;
+    const std::vector<const Column*> columns() const;
     const std::vector<const Dimension*>& dimensions() const { return dimensions_; }
     const std::vector<const Metric*>& metrics() const { return metrics_; }
     const Dimension* dimension(const std::string& name) const;
@@ -59,14 +54,7 @@ class Table {
     size_t segment_size() const { return segment_size_; }
     const std::vector<CardinalityGuard>& cardinality_guards() const { return cardinality_guards_; }
 
-    void BeforeLoad();
-    UpsertStats AfterLoad();
-    void Load(std::vector<std::string>& values) { upsert_(values); }
-    void Load(std::initializer_list<std::vector<std::string>> rows);
     void PrintMetadata(std::string&);
-
-  private:
-    void GenerateFunctions();
 
   private:
     class Database& database_;
@@ -76,10 +64,6 @@ class Table {
     SegmentStore* store_;
     size_t segment_size_;
     std::vector<CardinalityGuard> cardinality_guards_;
-
-    BeforeUpsertFn before_upsert_;
-    AfterUpsertFn after_upsert_;
-    UpsertFn upsert_;
 };
 
 }}

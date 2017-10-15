@@ -1,15 +1,18 @@
 #include <algorithm>
+#include <gtest/gtest.h>
 #include "db/table.h"
 #include "util/config.h"
 #include "query/output.h"
 #include "db.h"
-#include "gtest/gtest.h"
+#include "input/simple.h"
 
 namespace util = viya::util;
 namespace query = viya::query;
+namespace input = viya::input;
 
 void search_load_events(db::Table* table) {
-  table->Load({
+  input::SimpleLoader loader(*table);
+  loader.Load({
     {"US", "purchase", "20141110", "0.1"},
     {"IL", "refund", "20141111", "1.1"},
     {"CH", "refund", "20141111", "1.1"},

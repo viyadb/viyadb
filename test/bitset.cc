@@ -1,13 +1,15 @@
 #include <algorithm>
+#include <gtest/gtest.h>
 #include "db/table.h"
 #include "db/database.h"
 #include "util/config.h"
 #include "query/output.h"
-#include "gtest/gtest.h"
+#include "input/simple.h"
 
 namespace util = viya::util;
 namespace db = viya::db;
 namespace query = viya::query;
+namespace input = viya::input;
 
 class UserEvents : public testing::Test {
   protected:
@@ -22,7 +24,8 @@ class UserEvents : public testing::Test {
 };
 
 void bitset_load_events(db::Table* table) {
-  table->Load({
+  input::SimpleLoader loader(*table);
+  loader.Load({
     {"US", "purchase", "1495475514", "12345"},
     {"RU", "support", "1495475517", "12346"},
     {"US", "openapp", "1495475632", "12347"},

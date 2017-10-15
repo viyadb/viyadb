@@ -1,12 +1,14 @@
+#include <gtest/gtest.h>
 #include "util/config.h"
 #include "db/table.h"
 #include "db/database.h"
 #include "query/output.h"
-#include "gtest/gtest.h"
+#include "input/simple.h"
 
 namespace db = viya::db;
 namespace util = viya::util;
 namespace query = viya::query;
+namespace input = viya::input;
 
 class BoolDimEvents : public testing::Test {
   protected:
@@ -22,7 +24,8 @@ class BoolDimEvents : public testing::Test {
 TEST_F(BoolDimEvents, QueryTest)
 {
   auto table = db.GetTable("events");
-  table->Load({
+  input::SimpleLoader loader(*table);
+  loader.Load({
     {"purchase", "true"},
     {"purchase", "false"},
     {"open", "true"},

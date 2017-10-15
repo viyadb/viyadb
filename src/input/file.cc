@@ -2,17 +2,23 @@
 #include <cstdio>
 #include <cassert>
 #include <cstring>
+#include <algorithm>
 #include <glog/logging.h>
 #include "input/file.h"
+#include "util/config.h"
 
 namespace viya {
 namespace input {
 
-namespace util = viya::util;
+FileLoader::Format parse_format(const std::string& format) {
+  if (format == "tsv") {
+    return FileLoader::Format::TSV;
+  }
+  throw std::invalid_argument("Unsupported input format: " + format);
+}
 
-FileLoader::FileLoader(db::Table& table, Format format, const std::string& fname,
-                       std::vector<int>& tuple_idx_map)
-  :Loader(table, format),fname_(fname),tuple_idx_map_(tuple_idx_map) {
+FileLoader::FileLoader(db::Table& table, const util::Config& config, std::vector<int>& tuple_idx_map)
+  :Loader(table, tuple_idx_map),format_(parse_format(config.str("format"))), fname_(config.str("file")) {
 
   fd_ = open(fname_.c_str(), O_RDONLY);
   if (fd_ == -1) {
@@ -32,20 +38,13 @@ FileLoader::~FileLoader() {
 void FileLoader::LoadTsv() {
   LOG(INFO)<<"Loading "<<fname_<<" into table: "<<table_.name();
 
-  size_t cols_num = table_.dimensions().size();
-  for (auto metric : table_.metrics()) {
-    if (metric->agg_type() != db::Metric::AggregationType::COUNT) {
-      ++cols_num;
-    }
-  }
-
   static const size_t BUFFER_SIZE = 16384;
   static const size_t MAX_TUPLE_SIZE = 1024000;
 
   static char buf[BUFFER_SIZE + 1];
   static char line[MAX_TUPLE_SIZE];
 
-  size_t file_cols_num = tuple_idx_map_.size();
+  size_t cols_num = *std::max_element(tuple_idx_map_.begin(), tuple_idx_map_.end()) + 1;
 
   std::vector<std::string> tuple(cols_num);
   for (auto& s: tuple) {
@@ -77,30 +76,23 @@ void FileLoader::LoadTsv() {
       while (*tp) {
         if (*tp == '\t') {
           *tp = '\0';
-          if (tuple_idx >= file_cols_num) {
+          if (tuple_idx >= cols_num) {
             throw std::runtime_error("number of input columns is too big");
           }
-          auto target_idx = tuple_idx_map_[tuple_idx];
-          if (target_idx != -1) {
-            tuple[target_idx].assign(tp_start, tp - tp_start);
-          }
+          tuple[tuple_idx++].assign(tp_start, tp - tp_start);
           tp_start = tp + 1;
-          tuple_idx++;
         }
         tp++;
       }
       if (tp > tp_start) {
-        if (tuple_idx >= file_cols_num) {
+        if (tuple_idx >= cols_num) {
           throw std::runtime_error("number of input columns is too big");
         }
-        auto target_idx = tuple_idx_map_[tuple_idx];
-        if (target_idx != -1) {
-          tuple[target_idx].assign(tp_start, tp - tp_start);
-        }
+        tuple[tuple_idx++].assign(tp_start, tp - tp_start);
       }
 
       try {
-        table_.Load(tuple);
+        Load(tuple);
         ++line_num;
       } catch (std::exception& e) {
         throw std::runtime_error(
@@ -122,13 +114,13 @@ void FileLoader::LoadTsv() {
 
 void FileLoader::LoadData() {
   stats_.OnBegin();
-  table_.BeforeLoad();
+  BeforeLoad();
 
   if (format_ == Format::TSV) {
     LoadTsv();
   }
 
-  stats_.upsert_stats = table_.AfterLoad();
+  stats_.upsert_stats = AfterLoad();
   stats_.OnEnd();
 }
 

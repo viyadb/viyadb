@@ -1,15 +1,17 @@
 #include <algorithm>
+#include <gtest/gtest.h>
 #include "util/config.h"
 #include "db/database.h"
 #include "db/table.h"
 #include "db/store.h"
 #include "db/rollup.h"
 #include "query/output.h"
-#include "gtest/gtest.h"
+#include "input/simple.h"
 
 namespace db = viya::db;
 namespace util = viya::util;
 namespace query = viya::query;
+namespace input = viya::input;
 
 class IngestFormat : public testing::Test {
   protected:
@@ -35,7 +37,8 @@ TEST_F(IngestFormat, ParseInputFormat)
               "               \"metrics\": [{\"name\": \"count\", \"type\": \"count\"}]}]}")));
 
   auto table = db.GetTable("events");
-  table->Load({
+  input::SimpleLoader loader(*table);
+  loader.Load({
     {"US", "2014-11-12 11:25:01"},
     {"IL", "2015-11-12 11:00:02"}
   });
@@ -65,7 +68,8 @@ TEST_F(IngestFormat, ParseTime)
               "               \"metrics\": [{\"name\": \"count\", \"type\": \"count\"}]}]}")));
 
   auto table = db.GetTable("events");
-  table->Load({
+  input::SimpleLoader loader(*table);
+  loader.Load({
     {"US", "1415791501"},
     {"IL", "1447326002"}
   });
@@ -96,7 +100,8 @@ TEST_F(IngestFormat, ParsePosixTime)
               "               \"metrics\": [{\"name\": \"count\", \"type\": \"count\"}]}]}")));
 
   auto table = db.GetTable("events");
-  table->Load({
+  input::SimpleLoader loader(*table);
+  loader.Load({
     {"US", "1415791501"},
     {"IL", "1447326002"}
   });
@@ -127,7 +132,8 @@ TEST_F(IngestFormat, ParseMillisTime)
               "               \"metrics\": [{\"name\": \"count\", \"type\": \"count\"}]}]}")));
 
   auto table = db.GetTable("events");
-  table->Load({
+  input::SimpleLoader loader(*table);
+  loader.Load({
     {"US", "1415791501123"},
     {"IL", "1447326002819"}
   });
@@ -158,7 +164,8 @@ TEST_F(IngestFormat, ParseMicrosTime)
               "               \"metrics\": [{\"name\": \"count\", \"type\": \"count\"}]}]}")));
 
   auto table = db.GetTable("events");
-  table->Load({
+  input::SimpleLoader loader(*table);
+  loader.Load({
     {"US", "1415791501123012"},
     {"IL", "1447326002819123"}
   });
@@ -189,7 +196,8 @@ TEST_F(IngestFormat, ParsePosixMicrotime)
               "               \"metrics\": [{\"name\": \"count\", \"type\": \"count\"}]}]}")));
 
   auto table = db.GetTable("events");
-  table->Load({
+  input::SimpleLoader loader(*table);
+  loader.Load({
     {"US", "1415791501"},
     {"IL", "1447326002"}
   });
@@ -220,7 +228,8 @@ TEST_F(IngestFormat, ParseMillisMicrotime)
               "               \"metrics\": [{\"name\": \"count\", \"type\": \"count\"}]}]}")));
 
   auto table = db.GetTable("events");
-  table->Load({
+  input::SimpleLoader loader(*table);
+  loader.Load({
     {"US", "1415791501000"},
     {"IL", "1447326002000"}
   });
@@ -251,7 +260,8 @@ TEST_F(IngestFormat, ParseMicrosMicrotime)
               "               \"metrics\": [{\"name\": \"count\", \"type\": \"count\"}]}]}")));
 
   auto table = db.GetTable("events");
-  table->Load({
+  input::SimpleLoader loader(*table);
+  loader.Load({
     {"US", "1415791501000000"},
     {"IL", "1447326002000000"}
   });
@@ -281,7 +291,8 @@ TEST_F(IngestFormat, ParseMicrotime)
               "               \"metrics\": [{\"name\": \"count\", \"type\": \"count\"}]}]}")));
 
   auto table = db.GetTable("events");
-  table->Load({
+  input::SimpleLoader loader(*table);
+  loader.Load({
     {"US", "1415791501000000"},
     {"IL", "1447326002000000"}
   });
@@ -314,7 +325,8 @@ TEST(IngestGranularity, TruncateToDay)
         "               \"metrics\": [{\"name\": \"count\", \"type\": \"count\"}]}]}")));
 
   auto table = db.GetTable("events");
-  table->Load({
+  input::SimpleLoader loader(*table);
+  loader.Load({
     {"US", "2014-11-12 11:25:01"},
     {"IL", "2015-11-12 11:00:02"}
   });
@@ -360,7 +372,8 @@ TEST(DynamicRollup, TimestampIngestion)
   std::vector<query::MemoryRowOutput::Row> expected;
 
   // First day not rolled up:
-  table->Load({
+  input::SimpleLoader loader1(*table);
+  loader1.Load({
     {"1496566539"},
     {"1496555739"},
     {"1496555700"}
@@ -370,7 +383,8 @@ TEST(DynamicRollup, TimestampIngestion)
   expected.push_back({"1496555700", "1"});
 
   // Rollup by hour after 1 day:
-  table->Load({
+  input::SimpleLoader loader2(*table);
+  loader2.Load({
     {"1496408066"},
     {"1496405460"},
     {"1496315533"}
@@ -379,7 +393,8 @@ TEST(DynamicRollup, TimestampIngestion)
   expected.push_back({"1496314800", "1"});
 
   // Rollup by day after 1 week:
-  table->Load({
+  input::SimpleLoader loader3(*table);
+  loader3.Load({
     {"1495948331"},
     {"1495941131"},
     {"1495854731"}
@@ -388,7 +403,8 @@ TEST(DynamicRollup, TimestampIngestion)
   expected.push_back({"1495843200", "1"});
 
   // Rollup by month after 1 year:
-  table->Load({
+  input::SimpleLoader loader4(*table);
+  loader4.Load({
     {"1461801600"},
     {"1422403212"},
     {"1421153666"}
@@ -434,7 +450,8 @@ TEST(DynamicRollup, TimestampMicroIngestion)
   std::vector<query::MemoryRowOutput::Row> expected;
 
   // First day not rolled up:
-  table->Load({
+  input::SimpleLoader loader1(*table);
+  loader1.Load({
     {"1496566539124818"},
     {"1496555739100001"},
     {"1496555700172000"}
@@ -444,7 +461,8 @@ TEST(DynamicRollup, TimestampMicroIngestion)
   expected.push_back({"1496555700172000", "1"});
 
   // Rollup by hour after 1 day:
-  table->Load({
+  input::SimpleLoader loader2(*table);
+  loader2.Load({
     {"1496408066102001"},
     {"1496405460111113"},
     {"1496315533371291"}
@@ -453,7 +471,8 @@ TEST(DynamicRollup, TimestampMicroIngestion)
   expected.push_back({"1496314800000000", "1"});
 
   // Rollup by day after 1 week:
-  table->Load({
+  input::SimpleLoader loader3(*table);
+  loader3.Load({
     {"1495948331000000"},
     {"1495941131010826"},
     {"1495854731192710"}
@@ -462,7 +481,8 @@ TEST(DynamicRollup, TimestampMicroIngestion)
   expected.push_back({"1495843200000000", "1"});
 
   // Rollup by month after 1 year:
-  table->Load({
+  input::SimpleLoader loader4(*table);
+  loader4.Load({
     {"1461801600000100"},
     {"1422403212128711"},
     {"1421153666182700"}
@@ -509,7 +529,8 @@ TEST(DynamicRollup, FormatIngestion)
   std::vector<query::MemoryRowOutput::Row> expected;
 
   // First day not rolled up:
-  table->Load({
+  input::SimpleLoader loader1(*table);
+  loader1.Load({
     {"2017-06-04 08:14:13"},
     {"2017-06-04 05:55:17"},
     {"2017-06-03 15:27:21"}
@@ -519,7 +540,8 @@ TEST(DynamicRollup, FormatIngestion)
   expected.push_back({"2017-06-03 15:27:21", "1"});
 
   // Rollup by hour after 1 day:
-  table->Load({
+  input::SimpleLoader loader2(*table);
+  loader2.Load({
     {"2017-06-03 08:14:13"},
     {"2017-06-02 18:13:22"},
     {"2017-06-02 18:24:10"}
@@ -528,7 +550,8 @@ TEST(DynamicRollup, FormatIngestion)
   expected.push_back({"2017-06-03 08:00:00", "1"});
 
   // Rollup by day after 1 week:
-  table->Load({
+  input::SimpleLoader loader3(*table);
+  loader3.Load({
     {"2017-05-27 12:14:05"},
     {"2017-05-28 08:41:45"},
     {"2017-05-27 15:25:32"}
@@ -537,7 +560,8 @@ TEST(DynamicRollup, FormatIngestion)
   expected.push_back({"2017-05-28 00:00:00", "1"});
 
   // Rollup by month after 1 year:
-  table->Load({
+  input::SimpleLoader loader4(*table);
+  loader4.Load({
     {"2016-02-03 18:21:09"},
     {"2012-06-03 12:31:57"},
     {"2016-02-04 04:44:45"}
@@ -578,7 +602,8 @@ class TimeEvents : public testing::Test {
 TEST_F(TimeEvents, OutputFormat)
 {
   auto table = db.GetTable("events");
-  table->Load({
+  input::SimpleLoader loader(*table);
+  loader.Load({
     {"US", "1415791501"},
     {"IL", "1447326002"}
   });
@@ -608,7 +633,8 @@ TEST_F(TimeEvents, OutputFormat)
 TEST_F(TimeEvents, QueryGranularity)
 {
   auto table = db.GetTable("events");
-  table->Load({
+  input::SimpleLoader loader(*table);
+  loader.Load({
     {"US", "1415791501"},
     {"IL", "1447326002"}
   });

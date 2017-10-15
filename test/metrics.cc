@@ -1,13 +1,15 @@
 #include <algorithm>
+#include <gtest/gtest.h>
 #include "db/table.h"
 #include "db/database.h"
 #include "util/config.h"
 #include "query/output.h"
-#include "gtest/gtest.h"
+#include "input/simple.h"
 
 namespace db = viya::db;
 namespace util = viya::util;
 namespace query = viya::query;
+namespace input = viya::input;
 
 class MetricEvents : public testing::Test {
   protected:
@@ -60,7 +62,8 @@ class MetricEvents : public testing::Test {
 };
 
 void metrics_load_events(db::Table* table) {
-  table->Load({
+  input::SimpleLoader loader(*table);
+  loader.Load({
     {"US","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1"},
     {"US","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2"},
     {"US","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3"},
@@ -143,7 +146,8 @@ TEST_F(MetricEvents, AverageWithoutCount)
               "               \"metrics\": [{\"name\": \"avg_revenue\", \"type\": \"double_avg\"}]}]}")));
 
   auto table = db.GetTable("events");
-  table->Load({
+  input::SimpleLoader loader(*table);
+  loader.Load({
     {"US", "16"},
     {"US", "6"},
     {"US", "2.6"},
@@ -180,7 +184,8 @@ TEST_F(MetricEvents, AverageQueryRollup)
               "               \"metrics\": [{\"name\": \"avg_revenue\", \"type\": \"double_avg\"}]}]}")));
 
   auto table = db.GetTable("events");
-  table->Load({
+  input::SimpleLoader loader(*table);
+  loader.Load({
     {"US", "16"},
     {"US", "6"},
     {"US", "2.6"},

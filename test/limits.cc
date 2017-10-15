@@ -1,12 +1,14 @@
 #include <algorithm>
+#include <gtest/gtest.h>
 #include "db/table.h"
 #include "db.h"
 #include "util/config.h"
 #include "query/output.h"
-#include "gtest/gtest.h"
+#include "input/simple.h"
 
 namespace util = viya::util;
 namespace query = viya::query;
+namespace input = viya::input;
 
 class LowCardColumn : public testing::Test {
   protected:
@@ -33,7 +35,8 @@ class CardinalityGuard : public testing::Test {
 TEST_F(LowCardColumn, Exceeded)
 {
   auto table = db.GetTable("events");
-  table->Load({
+  input::SimpleLoader loader(*table);
+  loader.Load({
     {"GET"},
     {"POST"},
     {"HEAD"},
@@ -61,7 +64,8 @@ TEST_F(LowCardColumn, Exceeded)
 TEST_F(CardinalityGuard, Exceeded)
 {
   auto table = db.GetTable("events");
-  table->Load({
+  input::SimpleLoader loader(*table);
+  loader.Load({
     {"13873844", "purchase"},
     {"13873844", "open-app"},
     {"13873844", "close-app"},
@@ -98,7 +102,8 @@ TEST_F(CardinalityGuard, Exceeded)
 TEST_F(InappEvents, DimensionLength)
 {
   auto table = db.GetTable("events");
-  table->Load({
+  input::SimpleLoader loader(*table);
+  loader.Load({
     {"US", "veryveryveryveryveryveryveryverylongeventname", "20141112", "0.1"},
     {"US", "veryveryveryveryvery", "20141112", "0.1"}
   });

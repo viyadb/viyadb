@@ -1,15 +1,18 @@
 #include <algorithm>
+#include <gtest/gtest.h>
 #include "db/table.h"
 #include "util/config.h"
 #include "query/output.h"
+#include "input/simple.h"
 #include "db.h"
-#include "gtest/gtest.h"
 
 namespace util = viya::util;
 namespace query = viya::query;
+namespace input = viya::input;
 
 void aggregation_load_events(db::Table* table) {
-  table->Load({
+  input::SimpleLoader loader(*table);
+  loader.Load({
     {"US", "purchase", "20141112", "0.1"},
     {"US", "purchase", "20141113", "1.1"},
     {"US", "donate", "20141112", "5.0"}
@@ -17,7 +20,8 @@ void aggregation_load_events(db::Table* table) {
 }
 
 void aggregation_load_num_events(db::Table* table) {
-  table->Load({
+  input::SimpleLoader loader(*table);
+  loader.Load({
     {"-1", "2", "-257", "145", "-10245", "23456", "-281734", "182745", "21.124", "1.092743"},
     {"-1", "7", "257", "14", "-10245", "1982", "0", "1111111111", "21.124", "1.092743"},
     {"-6", "2", "-257", "98", "-98", "777", "198", "0", "0.78", "7.912435"},

@@ -9,6 +9,8 @@ namespace codegen {
 
 namespace db = viya::db;
 
+using TableMetadataFn = void (*)(db::Table&, std::string&);
+
 class TableMetadata: public FunctionGenerator {
   public:
     TableMetadata(Compiler& compiler, const db::Table& table)
@@ -17,7 +19,7 @@ class TableMetadata: public FunctionGenerator {
     TableMetadata(const TableMetadata& other) = delete;
 
     Code GenerateCode() const;
-    db::TableMetadataFn Function();
+    TableMetadataFn Function();
 
   private:
     const db::Table& table_;

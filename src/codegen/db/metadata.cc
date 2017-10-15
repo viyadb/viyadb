@@ -85,8 +85,8 @@ Code TableMetadata::GenerateCode() const {
   return code;
 }
 
-db::TableMetadataFn TableMetadata::Function() {
-  return GenerateFunction<db::TableMetadataFn>(std::string("viya_table_metadata"));
+TableMetadataFn TableMetadata::Function() {
+  return GenerateFunction<TableMetadataFn>(std::string("viya_table_metadata"));
 }
 
 }}

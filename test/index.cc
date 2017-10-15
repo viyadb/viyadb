@@ -1,13 +1,15 @@
 #include <algorithm>
+#include <gtest/gtest.h>
 #include "db/table.h"
 #include "db/database.h"
 #include "util/config.h"
 #include "query/output.h"
-#include "gtest/gtest.h"
+#include "input/simple.h"
 
 namespace db = viya::db;
 namespace util = viya::util;
 namespace query = viya::query;
+namespace input = viya::input;
 
 class LiteEvents : public testing::Test {
   protected:
@@ -23,13 +25,14 @@ class LiteEvents : public testing::Test {
 TEST_F(LiteEvents, SegmentsSkipped)
 {
   auto table = db.GetTable("events");
+  input::SimpleLoader loader(*table);
   std::vector<std::string> row(2);
   row[1] = "";
   unsigned int start_time = 1996111U;
   unsigned int end_time = start_time + table->segment_size() + std::min(table->segment_size(), 100UL);
   for (unsigned int time = start_time; time < end_time; ++time) {
     row[0] = std::to_string(time);
-    table->Load(row);
+    loader.Load(row);
   }
 
   unsigned int segment2_start = start_time + table->segment_size();
