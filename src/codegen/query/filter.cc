@@ -117,22 +117,35 @@ void ValueDecoder::Visit(const db::BitsetMetric* metric) {
 }
 
 void ComparisonBuilder::Visit(const query::RelOpFilter* filter) {
-  code_<<"("
-    <<(filter->column()->type() == db::Column::Type::DIMENSION ? "tuple_dims" : "tuple_metrics")
-    <<"._"<<std::to_string(filter->column()->index())
-    <<filter->opstr()<<"farg"<<std::to_string(argidx_++)
-    <<")";
+  if (filter->column()->type() == db::Column::Type::DIMENSION) {
+    code_<<"(tuple_dims._"<<std::to_string(filter->column()->index())
+      <<filter->opstr()<<"farg"<<std::to_string(argidx_++)<<")";
+  }
+  else {
+    code_<<"(tuple_metrics._"<<std::to_string(filter->column()->index());
+    auto metric = static_cast<const db::Metric*>(filter->column());
+    if (metric->agg_type() == db::Metric::AggregationType::BITSET) {
+      code_<<".cardinality()";
+    }
+    code_<<filter->opstr()<<"farg"<<std::to_string(argidx_++)<<")";
+  }
 }
 
 void ComparisonBuilder::Visit(const query::InFilter* filter) {
   auto dim_idx = std::to_string(filter->column()->index());
   code_<<"(";
-  auto struct_name = filter->column()->type() == db::Column::Type::DIMENSION ? "tuple_dims" : "tuple_metrics";
+  bool is_dim = filter->column()->type() == db::Column::Type::DIMENSION;
+  auto struct_name = is_dim ? "tuple_dims" : "tuple_metrics";
   for(size_t i = 0; i < filter->values().size(); ++i) {
     if (i > 0) {
       code_<<" | ";
     }
-    code_<<struct_name<<"._"<<dim_idx<<"==farg"<<std::to_string(argidx_++);
+    code_<<struct_name<<"._"<<dim_idx;
+    if (!is_dim
+        && static_cast<const db::Metric*>(filter->column())->agg_type() == db::Metric::AggregationType::BITSET) {
+      code_<<".cardinality()";
+    }
+    code_<<"==farg"<<std::to_string(argidx_++);
   }
   code_<<")";
 }
