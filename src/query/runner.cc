@@ -13,12 +13,18 @@ void QueryRunner::Visit(AggregateQuery* query) {
 
   auto query_fn = cg::QueryGenerator(database_.compiler(), *query).AggQueryFunction();
 
-  cg::FilterArgsPacker args_packer;
-  query->filter()->Accept(args_packer);
+  cg::FilterArgsPacker filter_args;
+  query->filter()->Accept(filter_args);
+
+  cg::FilterArgsPacker having_args;
+  if (query->having() != nullptr) {
+    query->having()->Accept(having_args);
+  }
 
   stats_.OnCompile();
 
-  query_fn(query->table(), output_, stats_, args_packer.args(), query->skip(), query->limit());
+  query_fn(query->table(), output_, stats_, filter_args.args(), query->skip(), query->limit(),
+           having_args.args());
   stats_.OnEnd();
 }
 
@@ -27,12 +33,12 @@ void QueryRunner::Visit(SearchQuery* query) {
 
   auto query_fn = cg::QueryGenerator(database_.compiler(), *query).SearchQueryFunction();
 
-  cg::FilterArgsPacker args_packer;
-  query->filter()->Accept(args_packer);
+  cg::FilterArgsPacker filter_args;
+  query->filter()->Accept(filter_args);
 
   stats_.OnCompile();
 
-  query_fn(query->table(), output_, stats_, args_packer.args(), query->term(), query->limit());
+  query_fn(query->table(), output_, stats_, filter_args.args(), query->term(), query->limit());
   stats_.OnEnd();
 }
 

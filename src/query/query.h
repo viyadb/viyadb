@@ -114,6 +114,7 @@ class AggregateQuery: public FilterBasedQuery {
     size_t skip() const { return skip_; }
     size_t limit() const { return limit_; }
     bool header() const { return header_; }
+    const Filter* having() const { return having_; }
 
     void Accept(class QueryVisitor& visitor);
  
@@ -124,6 +125,7 @@ class AggregateQuery: public FilterBasedQuery {
     size_t skip_;
     size_t limit_;
     bool header_;
+    Filter* having_;
 };
 
 class SearchQuery: public FilterBasedQuery {

@@ -227,10 +227,19 @@ Code StoreDefs::GenerateCode() const {
   auto size = std::to_string(table_.segment_size());
   code<<"class Segment: public db::SegmentBase {\n";
   code<<"public:\n";
-  code<<" Dimensions d["<<size<<"];\n";
-  code<<" Metrics m["<<size<<"];\n";
+  code<<" Dimensions* d;\n";
+  code<<" Metrics* m;\n";
   code<<" SegmentStats stats;\n";
-  code<<" Segment():SegmentBase("<<size<<") {}\n";
+
+  code<<" Segment():SegmentBase("<<size<<") {\n";
+  code<<"  d = new Dimensions["<<size<<"];\n";
+  code<<"  m = new Metrics["<<size<<"];\n";
+  code<<" }\n";
+
+  code<<" ~Segment() {\n";
+  code<<"  delete[] d;\n";
+  code<<"  delete[] m;\n";
+  code<<" }\n";
 
   code<<" void insert(Dimensions& dims, Metrics& metrics) {\n";
   code<<"  lock_.lock();\n";

@@ -27,8 +27,8 @@ class FilterArgsPacker: public query::FilterVisitor {
 
 class ArgsUnpacker: public query::FilterVisitor {
   public:
-    ArgsUnpacker(Code& code)
-      :argidx_(0),code_(code) {}
+    ArgsUnpacker(Code& code, const std::string& var_prefix)
+      :argidx_(0),code_(code),var_prefix_(var_prefix) {}
 
     ArgsUnpacker(const ArgsUnpacker& other) = delete;
 
@@ -44,6 +44,7 @@ class ArgsUnpacker: public query::FilterVisitor {
   private:
     size_t argidx_;
     Code& code_;
+    const std::string var_prefix_;
 };
 
 class ValueDecoder: public db::ColumnVisitor {
@@ -66,8 +67,8 @@ class ValueDecoder: public db::ColumnVisitor {
 
 class ComparisonBuilder: public query::FilterVisitor {
   public:
-    ComparisonBuilder(Code& code)
-      :argidx_(0),code_(code) {}
+    ComparisonBuilder(Code& code, const std::string& var_prefix = "farg")
+      :argidx_(0),code_(code),var_prefix_(var_prefix) {}
 
     void Visit(const query::RelOpFilter* filter);
     void Visit(const query::InFilter* filter);
@@ -78,6 +79,7 @@ class ComparisonBuilder: public query::FilterVisitor {
   protected:
     size_t argidx_;
     Code& code_;
+    const std::string var_prefix_;
 };
 
 class SegmentSkipBuilder: public ComparisonBuilder {
@@ -90,13 +92,15 @@ class SegmentSkipBuilder: public ComparisonBuilder {
 
 class FilterArgsUnpack: public CodeGenerator {
   public:
-    FilterArgsUnpack(const query::Filter* filter):filter_(filter) {}
+    FilterArgsUnpack(const query::Filter* filter, const std::string& var_prefix)
+      :filter_(filter),var_prefix_(var_prefix) {}
     FilterArgsUnpack(const FilterArgsUnpack& other) = delete;
 
     Code GenerateCode() const;
 
   private:
     const query::Filter* filter_;
+    const std::string var_prefix_;
 };
 
 class SegmentSkip: CodeGenerator {
@@ -112,13 +116,15 @@ class SegmentSkip: CodeGenerator {
 
 class FilterComparison: CodeGenerator {
   public:
-    FilterComparison(const query::Filter* filter):filter_(filter) {}
+    FilterComparison(const query::Filter* filter, const std::string& var_prefix)
+      :filter_(filter),var_prefix_(var_prefix) {}
     FilterComparison(const FilterComparison& other) = delete;
 
     Code GenerateCode() const;
 
   private:
     const query::Filter* filter_;
+    const std::string var_prefix_;
 };
 
 }}

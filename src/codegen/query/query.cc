@@ -27,9 +27,9 @@ void ScanGenerator::IterationStart(query::FilterBasedQuery* query) {
 
   // Apply filter, and check it's return code:
   // TODO : is it possible to do it without IF branch?
-  FilterComparison comparison(query->filter());
-  code_<<"   auto res = "<<comparison.GenerateCode()<<";\n";
-  code_<<"   if (res) {\n";
+  FilterComparison comparison(query->filter(), "farg");
+  code_<<"   auto r = "<<comparison.GenerateCode()<<";\n";
+  code_<<"   if (r) {\n";
 }
 
 void ScanGenerator::IterationEnd() {
@@ -39,8 +39,18 @@ void ScanGenerator::IterationEnd() {
   code_<<" }\n";
 }
 
-void ScanGenerator::UnpackArguments(query::FilterBasedQuery* query) {
-  FilterArgsUnpack args_unpack(query->filter());
+void ScanGenerator::UnpackArguments(query::AggregateQuery* query) {
+  FilterArgsUnpack filter_args(query->filter(), "farg");
+  code_<<filter_args.GenerateCode();
+
+  if (query->having() != nullptr) {
+    FilterArgsUnpack having_args(query->having(), "harg");
+    code_<<having_args.GenerateCode();
+  }
+}
+
+void ScanGenerator::UnpackArguments(query::SearchQuery* query) {
+  FilterArgsUnpack args_unpack(query->filter(), "farg");
   code_<<args_unpack.GenerateCode();
 }
 
@@ -205,6 +215,15 @@ void ScanGenerator::Materialize(query::AggregateQuery* query) {
   // Iterate on agg_map, and materialize output records:
   code_<<" for (; agg_it != agg_end; ++agg_it) {\n";
 
+  // Apply HAVING filter:
+  if (query->having() != nullptr) {
+    FilterComparison comparison(query->having(), "harg");
+    code_<<"  auto& tuple_dims = agg_it->first;\n";
+    code_<<"  auto& tuple_metrics = agg_it->second;\n";
+    code_<<"  auto r = "<<comparison.GenerateCode()<<";\n";
+    code_<<"  if (!r) continue;\n";
+  }
+
   for (auto& dim_col : query->dimension_cols()) {
     auto dimension = dim_col.dim();
     auto dim_idx = std::to_string(dimension->index());
@@ -282,10 +301,12 @@ void ScanGenerator::Visit(query::AggregateQuery* query) {
   code_<<metrics_struct.GenerateCode();
 
   code_<<"extern \"C\" void viya_query_agg(db::Table& table, query::RowOutput& output, "
-    <<"query::QueryStats& stats, std::vector<db::AnyNum> fargs, size_t skip, size_t limit) __attribute__((__visibility__(\"default\")));\n";
+    <<"query::QueryStats& stats, std::vector<db::AnyNum> fargs, size_t skip, size_t limit, "
+    <<"std::vector<db::AnyNum> hargs) __attribute__((__visibility__(\"default\")));\n";
 
   code_<<"extern \"C\" void viya_query_agg(db::Table& table, query::RowOutput& output, "
-    <<"query::QueryStats& stats, std::vector<db::AnyNum> fargs, size_t skip, size_t limit) {\n";
+    <<"query::QueryStats& stats, std::vector<db::AnyNum> fargs, size_t skip, size_t limit, "
+    <<"std::vector<db::AnyNum> hargs) {\n";
 
   UnpackArguments(query);
   Scan(query);

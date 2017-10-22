@@ -11,7 +11,7 @@ namespace query {
 
 namespace db = viya::db;
 
-using AggQueryFn = void (*)(db::Table&, RowOutput&, QueryStats&, std::vector<db::AnyNum>, size_t, size_t);
+using AggQueryFn = void (*)(db::Table&, RowOutput&, QueryStats&, std::vector<db::AnyNum>, size_t, size_t, std::vector<db::AnyNum>);
 using SearchQueryFn = void (*)(db::Table&, RowOutput&, QueryStats&, std::vector<db::AnyNum>, const std::string&, size_t);
 
 class QueryRunner: public QueryVisitor {

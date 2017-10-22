@@ -30,7 +30,8 @@ AggregateQuery::AggregateQuery(const util::Config& config, db::Table& table)
   :FilterBasedQuery(config.sub("filter"), table),
   skip_(config.num("skip", 0)),
   limit_(config.num("limit", 0)),
-  header_(config.boolean("header", false)) {
+  header_(config.boolean("header", false)),
+  having_(nullptr) {
 
   size_t output_idx = 0;
   if (config.exists("select")) {
@@ -49,6 +50,11 @@ AggregateQuery::AggregateQuery(const util::Config& config, db::Table& table)
     for (auto metric_name : config.strlist("metrics")) {
       metric_cols_.emplace_back(table.metric(metric_name), output_idx++);
     }
+  }
+
+  if (config.exists("having")) {
+    FilterFactory filter_factory;
+    having_ = filter_factory.Create(config.sub("having"), table);
   }
 
   if (config.exists("sort")) {

@@ -21,7 +21,8 @@ class ScanGenerator: public query::QueryVisitor {
     void IterationStart(query::FilterBasedQuery* query);
     void IterationEnd();
 
-    void UnpackArguments(query::FilterBasedQuery* query);
+    void UnpackArguments(query::AggregateQuery* query);
+    void UnpackArguments(query::SearchQuery* query);
 
     void Scan(query::AggregateQuery* query);
     void Scan(query::SearchQuery* query);

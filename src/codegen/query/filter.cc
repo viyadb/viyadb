@@ -39,7 +39,7 @@ void FilterArgsPacker::Visit(const query::EmptyFilter* filter __attribute__((unu
 void ArgsUnpacker::UnpackArg(const db::Column* column) {
   auto type = column->num_type().cpp_type();
   auto arg_idx = std::to_string(argidx_);
-  code_<<type<<" farg"<<arg_idx<<" = fargs["<<arg_idx<<"].get_"<<type<<"();\n";
+  code_<<type<<" "<<var_prefix_<<arg_idx<<" = "<<var_prefix_<<"s["<<arg_idx<<"].get_"<<type<<"();\n";
   ++argidx_;
 }
 
@@ -119,7 +119,7 @@ void ValueDecoder::Visit(const db::BitsetMetric* metric) {
 void ComparisonBuilder::Visit(const query::RelOpFilter* filter) {
   if (filter->column()->type() == db::Column::Type::DIMENSION) {
     code_<<"(tuple_dims._"<<std::to_string(filter->column()->index())
-      <<filter->opstr()<<"farg"<<std::to_string(argidx_++)<<")";
+      <<filter->opstr()<<var_prefix_<<std::to_string(argidx_++)<<")";
   }
   else {
     code_<<"(tuple_metrics._"<<std::to_string(filter->column()->index());
@@ -127,7 +127,7 @@ void ComparisonBuilder::Visit(const query::RelOpFilter* filter) {
     if (metric->agg_type() == db::Metric::AggregationType::BITSET) {
       code_<<".cardinality()";
     }
-    code_<<filter->opstr()<<"farg"<<std::to_string(argidx_++)<<")";
+    code_<<filter->opstr()<<var_prefix_<<std::to_string(argidx_++)<<")";
   }
 }
 
@@ -145,7 +145,7 @@ void ComparisonBuilder::Visit(const query::InFilter* filter) {
         && static_cast<const db::Metric*>(filter->column())->agg_type() == db::Metric::AggregationType::BITSET) {
       code_<<".cardinality()";
     }
-    code_<<"==farg"<<std::to_string(argidx_++);
+    code_<<"=="<<var_prefix_<<std::to_string(argidx_++);
   }
   code_<<")";
 }
@@ -241,7 +241,7 @@ void SegmentSkipBuilder::Visit(const query::InFilter* filter) {
 
 Code FilterArgsUnpack::GenerateCode() const {
   Code code;
-  ArgsUnpacker b(code);
+  ArgsUnpacker b(code, var_prefix_);
   filter_->Accept(b);
   return code;
 }
@@ -255,7 +255,7 @@ Code SegmentSkip::GenerateCode() const {
 
 Code FilterComparison::GenerateCode() const {
   Code code;
-  ComparisonBuilder b(code);
+  ComparisonBuilder b(code, var_prefix_);
   filter_->Accept(b);
   return code;
 }

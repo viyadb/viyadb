@@ -11,9 +11,9 @@ namespace util = viya::util;
 namespace query = viya::query;
 namespace input = viya::input;
 
-class MetricEvents : public testing::Test {
+class MetricEventsByte : public testing::Test {
   protected:
-    MetricEvents()
+    MetricEventsByte()
       :db(std::move(util::Config(
               "{\"tables\": [{\"name\": \"events\","
               "               \"dimensions\": [{\"name\": \"country\"}],"
@@ -25,7 +25,17 @@ class MetricEvents : public testing::Test {
               "                             {\"name\": \"ubyte_sum\", \"type\": \"ubyte_sum\"},"
               "                             {\"name\": \"ubyte_min\", \"type\": \"ubyte_min\"},"
               "                             {\"name\": \"ubyte_max\", \"type\": \"ubyte_max\"},"
-              "                             {\"name\": \"ubyte_avg\", \"type\": \"ubyte_avg\"},"
+              "                             {\"name\": \"ubyte_avg\", \"type\": \"ubyte_avg\"}]}]}"))) {}
+    db::Database db;
+};
+
+class MetricEventsShort : public testing::Test {
+  protected:
+    MetricEventsShort()
+      :db(std::move(util::Config(
+              "{\"tables\": [{\"name\": \"events\","
+              "               \"dimensions\": [{\"name\": \"country\"}],"
+              "               \"metrics\": [{\"name\": \"count\", \"type\": \"count\"},"
               "                             {\"name\": \"short_sum\", \"type\": \"short_sum\"},"
               "                             {\"name\": \"short_min\", \"type\": \"short_min\"},"
               "                             {\"name\": \"short_max\", \"type\": \"short_max\"},"
@@ -33,7 +43,17 @@ class MetricEvents : public testing::Test {
               "                             {\"name\": \"ushort_sum\", \"type\": \"ushort_sum\"},"
               "                             {\"name\": \"ushort_min\", \"type\": \"ushort_min\"},"
               "                             {\"name\": \"ushort_max\", \"type\": \"ushort_max\"},"
-              "                             {\"name\": \"ushort_avg\", \"type\": \"ushort_avg\"},"
+              "                             {\"name\": \"ushort_avg\", \"type\": \"ushort_avg\"}]}]}"))) {}
+    db::Database db;
+};
+
+class MetricEventsInt : public testing::Test {
+  protected:
+    MetricEventsInt()
+      :db(std::move(util::Config(
+              "{\"tables\": [{\"name\": \"events\","
+              "               \"dimensions\": [{\"name\": \"country\"}],"
+              "               \"metrics\": [{\"name\": \"count\", \"type\": \"count\"},"
               "                             {\"name\": \"int_sum\", \"type\": \"int_sum\"},"
               "                             {\"name\": \"int_min\", \"type\": \"int_min\"},"
               "                             {\"name\": \"int_max\", \"type\": \"int_max\"},"
@@ -41,7 +61,17 @@ class MetricEvents : public testing::Test {
               "                             {\"name\": \"uint_sum\", \"type\": \"uint_sum\"},"
               "                             {\"name\": \"uint_min\", \"type\": \"uint_min\"},"
               "                             {\"name\": \"uint_max\", \"type\": \"uint_max\"},"
-              "                             {\"name\": \"uint_avg\", \"type\": \"uint_avg\"},"
+              "                             {\"name\": \"uint_avg\", \"type\": \"uint_avg\"}]}]}"))) {}
+    db::Database db;
+};
+
+class MetricEventsLong : public testing::Test {
+  protected:
+    MetricEventsLong()
+      :db(std::move(util::Config(
+              "{\"tables\": [{\"name\": \"events\","
+              "               \"dimensions\": [{\"name\": \"country\"}],"
+              "               \"metrics\": [{\"name\": \"count\", \"type\": \"count\"},"
               "                             {\"name\": \"long_sum\", \"type\": \"long_sum\"},"
               "                             {\"name\": \"long_min\", \"type\": \"long_min\"},"
               "                             {\"name\": \"long_max\", \"type\": \"long_max\"},"
@@ -49,7 +79,17 @@ class MetricEvents : public testing::Test {
               "                             {\"name\": \"ulong_sum\", \"type\": \"ulong_sum\"},"
               "                             {\"name\": \"ulong_min\", \"type\": \"ulong_min\"},"
               "                             {\"name\": \"ulong_max\", \"type\": \"ulong_max\"},"
-              "                             {\"name\": \"ulong_avg\", \"type\": \"ulong_avg\"},"
+              "                             {\"name\": \"ulong_avg\", \"type\": \"ulong_avg\"}]}]}"))) {}
+    db::Database db;
+};
+
+class MetricEventsFloat : public testing::Test {
+  protected:
+    MetricEventsFloat()
+      :db(std::move(util::Config(
+              "{\"tables\": [{\"name\": \"events\","
+              "               \"dimensions\": [{\"name\": \"country\"}],"
+              "               \"metrics\": [{\"name\": \"count\", \"type\": \"count\"},"
               "                             {\"name\": \"float_sum\", \"type\": \"float_sum\"},"
               "                             {\"name\": \"float_min\", \"type\": \"float_min\"},"
               "                             {\"name\": \"float_max\", \"type\": \"float_max\"},"
@@ -61,21 +101,17 @@ class MetricEvents : public testing::Test {
     db::Database db;
 };
 
-void metrics_load_events(db::Table* table) {
-  input::SimpleLoader loader(*table);
-  loader.Load({
-    {"US","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1"},
-    {"US","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2"},
-    {"US","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3","3"},
-    {"IL","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1","1"},
-    {"IL","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2","2"}
-  });
-}
-
-TEST_F(MetricEvents, AggregateMetrics)
+TEST_F(MetricEventsByte, AggregateMetrics)
 {
   auto table = db.GetTable("events");
-  metrics_load_events(table);
+  input::SimpleLoader loader(*table);
+  loader.Load({
+    {"US","1","1","1","1","1","1","1","1","1"},
+    {"US","2","2","2","2","2","2","2","2","2"},
+    {"US","3","3","3","3","3","3","3","3","3"},
+    {"IL","1","1","1","1","1","1","1","1","1"},
+    {"IL","2","2","2","2","2","2","2","2","2"}
+  });
 
   query::MemoryRowOutput output;
   db.Query(
@@ -91,7 +127,40 @@ TEST_F(MetricEvents, AggregateMetrics)
         "               \"ubyte_sum\","
         "               \"ubyte_min\","
         "               \"ubyte_max\","
-        "               \"ubyte_avg\","
+        "               \"ubyte_avg\"],"
+        " \"filter\": {\"op\": \"ge\", \"column\": \"count\", \"value\": \"1\"}}")), output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {
+    {"US","3","6","1","3","2","6","1","3","2"},
+    {"IL","2","3","1","2","1.5","3","1","2","1.5"}
+  };
+  std::sort(expected.begin(), expected.end());
+
+  auto actual = output.rows();
+  std::sort(actual.begin(), actual.end());
+
+  EXPECT_EQ(expected, actual);
+}
+
+TEST_F(MetricEventsShort, AggregateMetrics)
+{
+  auto table = db.GetTable("events");
+  input::SimpleLoader loader(*table);
+  loader.Load({
+    {"US","1","1","1","1","1","1","1","1","1"},
+    {"US","2","2","2","2","2","2","2","2","2"},
+    {"US","3","3","3","3","3","3","3","3","3"},
+    {"IL","1","1","1","1","1","1","1","1","1"},
+    {"IL","2","2","2","2","2","2","2","2","2"}
+  });
+
+  query::MemoryRowOutput output;
+  db.Query(
+    std::move(util::Config(
+        "{\"type\": \"aggregate\","
+        " \"table\": \"events\","
+        " \"dimensions\": [\"country\"],"
+        " \"metrics\": [\"count\","
         "               \"short_sum\","
         "               \"short_min\","
         "               \"short_max\","
@@ -99,7 +168,40 @@ TEST_F(MetricEvents, AggregateMetrics)
         "               \"ushort_sum\","
         "               \"ushort_min\","
         "               \"ushort_max\","
-        "               \"ushort_avg\","
+        "               \"ushort_avg\"],"
+        " \"filter\": {\"op\": \"ge\", \"column\": \"count\", \"value\": \"1\"}}")), output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {
+    {"US","3","6","1","3","2","6","1","3","2"},
+    {"IL","2","3","1","2","1.5","3","1","2","1.5"}
+  };
+  std::sort(expected.begin(), expected.end());
+
+  auto actual = output.rows();
+  std::sort(actual.begin(), actual.end());
+
+  EXPECT_EQ(expected, actual);
+}
+
+TEST_F(MetricEventsInt, AggregateMetrics)
+{
+  auto table = db.GetTable("events");
+  input::SimpleLoader loader(*table);
+  loader.Load({
+    {"US","1","1","1","1","1","1","1","1","1"},
+    {"US","2","2","2","2","2","2","2","2","2"},
+    {"US","3","3","3","3","3","3","3","3","3"},
+    {"IL","1","1","1","1","1","1","1","1","1"},
+    {"IL","2","2","2","2","2","2","2","2","2"}
+  });
+
+  query::MemoryRowOutput output;
+  db.Query(
+    std::move(util::Config(
+        "{\"type\": \"aggregate\","
+        " \"table\": \"events\","
+        " \"dimensions\": [\"country\"],"
+        " \"metrics\": [\"count\","
         "               \"int_sum\","
         "               \"int_min\","
         "               \"int_max\","
@@ -107,7 +209,40 @@ TEST_F(MetricEvents, AggregateMetrics)
         "               \"uint_sum\","
         "               \"uint_min\","
         "               \"uint_max\","
-        "               \"uint_avg\","
+        "               \"uint_avg\"],"
+        " \"filter\": {\"op\": \"ge\", \"column\": \"count\", \"value\": \"1\"}}")), output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {
+    {"US","3","6","1","3","2","6","1","3","2"},
+    {"IL","2","3","1","2","1.5","3","1","2","1.5"}
+  };
+  std::sort(expected.begin(), expected.end());
+
+  auto actual = output.rows();
+  std::sort(actual.begin(), actual.end());
+
+  EXPECT_EQ(expected, actual);
+}
+
+TEST_F(MetricEventsLong, AggregateMetrics)
+{
+  auto table = db.GetTable("events");
+  input::SimpleLoader loader(*table);
+  loader.Load({
+    {"US","1","1","1","1","1","1","1","1","1"},
+    {"US","2","2","2","2","2","2","2","2","2"},
+    {"US","3","3","3","3","3","3","3","3","3"},
+    {"IL","1","1","1","1","1","1","1","1","1"},
+    {"IL","2","2","2","2","2","2","2","2","2"}
+  });
+
+  query::MemoryRowOutput output;
+  db.Query(
+    std::move(util::Config(
+        "{\"type\": \"aggregate\","
+        " \"table\": \"events\","
+        " \"dimensions\": [\"country\"],"
+        " \"metrics\": [\"count\","
         "               \"long_sum\","
         "               \"long_min\","
         "               \"long_max\","
@@ -115,7 +250,40 @@ TEST_F(MetricEvents, AggregateMetrics)
         "               \"ulong_sum\","
         "               \"ulong_min\","
         "               \"ulong_max\","
-        "               \"ulong_avg\","
+        "               \"ulong_avg\"],"
+        " \"filter\": {\"op\": \"ge\", \"column\": \"count\", \"value\": \"1\"}}")), output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {
+    {"US","3","6","1","3","2","6","1","3","2"},
+    {"IL","2","3","1","2","1.5","3","1","2","1.5"}
+  };
+  std::sort(expected.begin(), expected.end());
+
+  auto actual = output.rows();
+  std::sort(actual.begin(), actual.end());
+
+  EXPECT_EQ(expected, actual);
+}
+
+TEST_F(MetricEventsFloat, AggregateMetrics)
+{
+  auto table = db.GetTable("events");
+  input::SimpleLoader loader(*table);
+  loader.Load({
+    {"US","1","1","1","1","1","1","1","1","1"},
+    {"US","2","2","2","2","2","2","2","2","2"},
+    {"US","3","3","3","3","3","3","3","3","3"},
+    {"IL","1","1","1","1","1","1","1","1","1"},
+    {"IL","2","2","2","2","2","2","2","2","2"}
+  });
+
+  query::MemoryRowOutput output;
+  db.Query(
+    std::move(util::Config(
+        "{\"type\": \"aggregate\","
+        " \"table\": \"events\","
+        " \"dimensions\": [\"country\"],"
+        " \"metrics\": [\"count\","
         "               \"float_sum\","
         "               \"float_min\","
         "               \"float_max\","
@@ -127,8 +295,8 @@ TEST_F(MetricEvents, AggregateMetrics)
         " \"filter\": {\"op\": \"ge\", \"column\": \"count\", \"value\": \"1\"}}")), output);
 
   std::vector<query::MemoryRowOutput::Row> expected = {
-    {"US","3","6","1","3","2","6","1","3","2","6","1","3","2","6","1","3","2","6","1","3","2","6","1","3","2","6","1","3","2","6","1","3","2","6","1","3","2","6","1","3","2"},
-    {"IL","2","3","1","2","1.5","3","1","2","1.5","3","1","2","1.5","3","1","2","1.5","3","1","2","1.5","3","1","2","1.5","3","1","2","1.5","3","1","2","1.5","3","1","2","1.5","3","1","2","1.5"}
+    {"US","3","6","1","3","2","6","1","3","2"},
+    {"IL","2","3","1","2","1.5","3","1","2","1.5"}
   };
   std::sort(expected.begin(), expected.end());
 
@@ -138,7 +306,7 @@ TEST_F(MetricEvents, AggregateMetrics)
   EXPECT_EQ(expected, actual);
 }
 
-TEST_F(MetricEvents, AverageWithoutCount)
+TEST(MetricEvents, AverageWithoutCount)
 {
   db::Database db(std::move(util::Config(
               "{\"tables\": [{\"name\": \"events\","
@@ -176,7 +344,7 @@ TEST_F(MetricEvents, AverageWithoutCount)
   EXPECT_EQ(expected, actual);
 }
 
-TEST_F(MetricEvents, AverageQueryRollup)
+TEST(MetricEvents, AverageQueryRollup)
 {
   db::Database db(std::move(util::Config(
               "{\"tables\": [{\"name\": \"events\","

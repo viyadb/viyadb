@@ -55,6 +55,28 @@ TEST_F(InappEvents, AggregationQuery)
   EXPECT_EQ(expected, actual);
 }
 
+TEST_F(InappEvents, HavingQuery)
+{
+  auto table = db.GetTable("events");
+  aggregation_load_events(table);
+
+  query::MemoryRowOutput output;
+  db.Query(
+    std::move(util::Config(
+        "{\"type\": \"aggregate\","
+        " \"table\": \"events\","
+        " \"dimensions\": [\"event_name\", \"country\"],"
+        " \"metrics\": [\"revenue\"],"
+        " \"filter\": {\"op\": \"eq\", \"column\": \"country\", \"value\": \"US\"},"
+        " \"having\": {\"op\": \"gt\", \"column\": \"revenue\", \"value\": \"2\"}}")), output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {
+    {"donate", "US", "5"}
+  };
+  auto actual = output.rows();
+  EXPECT_EQ(expected, actual);
+}
+
 TEST_F(InappEvents, NoDimensions)
 {
   auto table = db.GetTable("events");
@@ -105,6 +127,27 @@ TEST_F(InappEvents, OutputColumnsOrder)
   EXPECT_EQ(expected, actual);
 }
 
+TEST_F(InappEvents, ColumnsOrderHaving)
+{
+  auto table = db.GetTable("events");
+  aggregation_load_events(table);
+
+  query::MemoryRowOutput output;
+  db.Query(
+    std::move(util::Config(
+        "{\"type\": \"aggregate\","
+        " \"table\": \"events\","
+        " \"select\": [{\"column\": \"install_time\"}, {\"column\": \"country\"}, {\"column\": \"count\"}],"
+        " \"filter\": {\"op\": \"gt\", \"column\": \"count\", \"value\": \"0\"},"
+        " \"having\": {\"op\": \"gt\", \"column\": \"count\", \"value\": \"1\"}}")), output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {
+    {"20141112", "US", "2"}
+  };
+  auto actual = output.rows();
+  EXPECT_EQ(expected, actual);
+}
+
 TEST_F(InappEvents, MetricFilter)
 {
   auto table = db.GetTable("events");
@@ -145,6 +188,27 @@ TEST_F(InappEvents, NoFilter)
   auto actual = output.rows();
   std::sort(actual.begin(), actual.end());
 
+  EXPECT_EQ(expected, actual);
+}
+
+TEST_F(InappEvents, NoFilterHaving)
+{
+  auto table = db.GetTable("events");
+  aggregation_load_events(table);
+
+  query::MemoryRowOutput output;
+  db.Query(
+    std::move(util::Config(
+        "{\"type\": \"aggregate\","
+        " \"table\": \"events\","
+        " \"dimensions\": [\"event_name\"],"
+        " \"metrics\": [\"revenue\"],"
+        " \"having\": {\"op\": \"gt\", \"column\": \"revenue\", \"value\": \"2\"}}")), output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {
+    {"donate", "5"}
+  };
+  auto actual = output.rows();
   EXPECT_EQ(expected, actual);
 }
 
