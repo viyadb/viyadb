@@ -29,6 +29,7 @@ add_subdirectory(Simple-Web-Server EXCLUDE_FROM_ALL)
 add_subdirectory(googletest EXCLUDE_FROM_ALL)
 
 set(BUILD_CPR_TESTS OFF CACHE BOOL "disable cpr tests" FORCE)
+set(BUILD_TESTING OFF CACHE BOOL "disable url tests" FORCE)
 set(INSECURE_CURL ON CACHE BOOL "use insecure curl" FORCE)
 add_subdirectory(cpr)
 
