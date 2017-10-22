@@ -77,6 +77,30 @@ TEST_F(InappEvents, HavingQuery)
   EXPECT_EQ(expected, actual);
 }
 
+TEST_F(InappEvents, ComplexHavingQuery)
+{
+  auto table = db.GetTable("events");
+  aggregation_load_events(table);
+
+  query::MemoryRowOutput output;
+  db.Query(
+    std::move(util::Config(
+        "{\"type\": \"aggregate\","
+        " \"table\": \"events\","
+        " \"dimensions\": [\"event_name\", \"country\"],"
+        " \"metrics\": [\"revenue\", \"count\"],"
+        " \"filter\": {\"op\": \"eq\", \"column\": \"country\", \"value\": \"US\"},"
+        " \"having\": {\"op\": \"and\", \"filters\": ["
+        "              {\"op\": \"gt\", \"column\": \"revenue\", \"value\": \"1\"},"
+        "              {\"op\": \"ge\", \"column\": \"count\", \"value\": \"2\"}]}}")), output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {
+    {"purchase", "US", "1.2", "2"}
+  };
+  auto actual = output.rows();
+  EXPECT_EQ(expected, actual);
+}
+
 TEST_F(InappEvents, NoDimensions)
 {
   auto table = db.GetTable("events");

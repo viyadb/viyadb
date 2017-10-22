@@ -25,12 +25,28 @@ class Format {
       return buf_;
     }
 
+    const char* num(int8_t n) {
+      w_.clear();
+      w_<<(int32_t)n;
+      return w_.c_str();
+    }
+
     const char* num(uint8_t n) {
-      return num((uint32_t)n);
+      w_.clear();
+      w_<<(uint32_t)n;
+      return w_.c_str();
+    }
+
+    const char* num(int16_t n) {
+      w_.clear();
+      w_<<(int32_t)n;
+      return w_.c_str();
     }
 
     const char* num(uint16_t n) {
-      return num((uint32_t)n);
+      w_.clear();
+      w_<<(uint32_t)n;
+      return w_.c_str();
     }
 
     const char* date(const char* fmt, const std::tm& tm) {
