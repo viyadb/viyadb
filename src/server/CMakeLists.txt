@@ -10,6 +10,7 @@ target_link_libraries(viyad
   viya_codegen
   viya_cluster
   viya_util
+  viya_sql
   glog
   pthread)
 

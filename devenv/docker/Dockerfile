@@ -7,9 +7,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     autoconf \
     automake \
     binutils-dev \
+    bison \
     build-essential \
     cmake \
     git \
+    flex \
     libbz2-dev \
     libevent-dev \
     liblz4-dev \

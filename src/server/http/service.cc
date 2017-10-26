@@ -2,6 +2,7 @@
 #include <glog/logging.h>
 #include "db/database.h"
 #include "db/table.h"
+#include "sql/driver.h"
 #include "server/http/service.h"
 #include "server/http/output.h"
 #include "util/config.h"
@@ -85,6 +86,19 @@ void Http::Start() {
         database_.Query(query_conf, output);
       } catch (std::exception& e) {
         SendError(response, "Error querying table: " + std::string(e.what()));
+      }
+    });
+  };
+
+  server_.resource["^/sql(\\?.*)?$"]["POST"] = [&](ResponsePtr response, RequestPtr request) {
+    database_.read_pool().enqueue([=] {
+      try {
+        sql::Driver sql_driver(database_);
+        std::istringstream query(request->content.string());
+        ChunkedTsvOutput output(*response);
+        sql_driver.Run(query, output);
+      } catch (std::exception& e) {
+        SendError(response, std::string(e.what()));
       }
     });
   };

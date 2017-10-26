@@ -19,10 +19,12 @@ Vagrant.configure("2") do |config|
         autoconf \
         automake \
         binutils-dev \
+        bison \
         build-essential \
         cmake \
         g++-7 \
         git \
+        flex \
         libbz2-dev \
         libevent-dev \
         liblz4-dev \

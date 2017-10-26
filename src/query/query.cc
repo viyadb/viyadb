@@ -34,13 +34,23 @@ AggregateQuery::AggregateQuery(const util::Config& config, db::Table& table)
   having_(nullptr) {
 
   size_t output_idx = 0;
+
   if (config.exists("select")) {
-    for (util::Config& select_conf : config.sublist("select")) {
-      const auto column = table.column(select_conf.str("column"));
+    auto add_column = [&output_idx, this](util::Config& conf, const db::Column* column) {
       if (column->type() == db::Column::Type::DIMENSION) {
-        dimension_cols_.emplace_back(select_conf, static_cast<const db::Dimension*>(column), output_idx++);
+        dimension_cols_.emplace_back(conf, static_cast<const db::Dimension*>(column), output_idx++);
       } else {
-        metric_cols_.emplace_back(select_conf, static_cast<const db::Metric*>(column), output_idx++);
+        metric_cols_.emplace_back(conf, static_cast<const db::Metric*>(column), output_idx++);
+      }
+    };
+    for (util::Config& select_conf : config.sublist("select")) {
+      auto column_name = select_conf.str("column");
+      if (column_name == "*") {
+        for (auto column : table.columns()) {
+          add_column(select_conf, column);
+        }
+      } else {
+        add_column(select_conf, table.column(column_name));
       }
     }
   } else {

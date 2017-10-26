@@ -3,11 +3,11 @@
 namespace viya {
 namespace db {
 
-DimensionDict::DimensionDict(const BaseNumType& code_type):code_type_(code_type) {
+DimensionDict::DimensionDict(const BaseNumType& code_type):size_(code_type.size()) {
   std::string exceeded_value("__exceeded");
   c2v_.push_back(exceeded_value);
 
-  switch (code_type.size()) {
+  switch (size_) {
     case BaseNumType::Size::_1:
       v2c_ = new DictImpl<uint8_t>(exceeded_value);
       break;
@@ -29,7 +29,7 @@ DimensionDict::DimensionDict(const BaseNumType& code_type):code_type_(code_type)
 AnyNum DimensionDict::Decode(const std::string& value) {
   folly::RWSpinLock::ReadHolder guard(lock_);
   AnyNum code;
-  switch (code_type_.size()) {
+  switch (size_) {
     case BaseNumType::Size::_1:
       {
         auto typed_dict = reinterpret_cast<DictImpl<uint8_t>*>(v2c_);
@@ -63,7 +63,7 @@ AnyNum DimensionDict::Decode(const std::string& value) {
 }
 
 DimensionDict::~DimensionDict() {
-  switch (code_type_.size()) {
+  switch (size_) {
     case BaseNumType::Size::_1:
       delete reinterpret_cast<DictImpl<uint8_t>*>(v2c_);
       break;

@@ -29,7 +29,7 @@ class DimensionDict {
     AnyNum Decode(const std::string& value);
 
   private:
-    const BaseNumType& code_type_;
+    BaseNumType::Size size_;
     folly::RWSpinLock lock_;
     std::vector<std::string> c2v_; // code to value
     void* v2c_;                    // value to code

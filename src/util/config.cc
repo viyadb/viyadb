@@ -9,6 +9,8 @@ using json = nlohmann::json;
 
 Config::Config():conf_(new json()) {}
 
+Config::Config(void* conf):conf_(conf) {}
+
 Config::Config(const std::string& content) {
   json j = json::parse(content);
   conf_ = new json(j);

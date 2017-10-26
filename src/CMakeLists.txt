@@ -11,4 +11,5 @@ add_subdirectory(query)
 add_subdirectory(codegen)
 add_subdirectory(cluster)
 add_subdirectory(server)
+add_subdirectory(sql)
 

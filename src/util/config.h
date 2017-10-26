@@ -10,6 +10,7 @@ namespace util {
 class Config {
   public:
     Config();
+    Config(void* conf);
     Config(const std::string& content);
     Config(const Config& other);
     Config(Config&& other);
@@ -44,7 +45,6 @@ class Config {
     void MergeFrom(const Config& other);
 
   private:
-    Config(void* conf):conf_(conf) {}
     void ValidateKey(const char* key) const;
 
 	private:
