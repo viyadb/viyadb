@@ -32,7 +32,7 @@
 
 /* Tokens */
 %token TOK_EOF 0 "end of file"
-%token SELECT FROM WHERE GROUP BY ORDER HAVING ASC DESC LIMIT
+%token SELECT FROM WHERE BY ORDER HAVING ASC DESC LIMIT
 %token AND OR NOT NE LE GE
 %token <sval> IDENTIFIER STRING FLOATVAL INTVAL
 
@@ -41,29 +41,21 @@
 {
   /* YYLTYPE */
   char* sval;
-  std::vector<char*>* str_list;
+  bool bval;
   Statement* stmt;
-  json* filter;
+  json* jsonval;
 }
 
 /* Non-terminal types */
-%type <stmt> statement select_statement select_clause
-%type <str_list> column_list
+%type <stmt> statement select_statement 
 %type <sval> table_name column_name string_literal filter_literal num_literal
-%type <filter> opt_filter filter comp_filter relop_filter
+%type <jsonval> select_cols select_col filter_opt filter comp_filter relop_filter
+%type <jsonval> having_opt orderby_opt orderby_cols orderby_col
+%type <bval> order_opt
 
 /* Destructors */
 %destructor { delete[] $$; } IDENTIFIER STRING <sval>
-%destructor { delete $$; } <filter>
-%destructor { delete $$; } <stmt>
-%destructor {
-  if (($$) != nullptr) {
-    for (auto ptr : *($$)) {
-      delete[] ptr;
-    }
-    delete ($$);
-  }
-} <str_list>
+%destructor { delete $$; } <jsonval> <stmt>
 
 /* Precedence and associativity */
 %left     OR
@@ -90,30 +82,21 @@ statement_list: statement { driver.AddStatement($1); }
 statement: select_statement
 ;
 
-select_statement: select_clause
-;
-
-select_clause: SELECT column_list FROM table_name
-               opt_filter {
+select_statement: SELECT select_cols FROM table_name
+               filter_opt having_opt orderby_opt {
                  $$ = new Statement(Statement::Type::QUERY);
                  auto& d = $$->descriptor();
                  d["type"] = "aggregate";
-                 d["table"] = $4;
-                 json cols = json::array();
-                 for (auto col : *$2) {
-                   cols.push_back({{"column", col}});
-                 }
-                 d["select"] = cols;
-                 d["filter"] = *$5;
-                 for (auto c : *$2) { delete[] c; }
-                 delete $2;
-                 delete[] $4;
-                 delete $5;
+                 d["table"] = $4; delete[] $4;
+                 d["select"] = *$2; delete $2;
+                 if ($5 != nullptr) { d["filter"] = *$5; delete $5; }
+                 if ($6 != nullptr) { d["having"] = *$6; delete $6; }
+                 if ($7 != nullptr) { d["sort"] = *$7; delete $7; }
                }
 ;
 
-opt_filter: WHERE filter { $$ = $2; }
-          | /* empty */ { $$ = new json {{}}; }
+filter_opt: WHERE filter { $$ = $2; }
+          | /* empty */ { $$ = nullptr; }
 
 filter: comp_filter
       | relop_filter
@@ -131,8 +114,31 @@ relop_filter: column_name '=' filter_literal { $$ = new json {{"op", "eq"}, {"co
             | column_name NE filter_literal { $$ = new json {{"op", "ne"}, {"column", $1}, {"value", $3}}; delete[] $1; delete[] $3; }
 ;
 
-column_list: column_name { $$ = new std::vector<char*>(); $$->push_back($1); }
-           | column_list ',' column_name { $1->push_back($3); $$ = $1; }
+having_opt: HAVING filter { $$ = $2; }
+          | /* empty */ { $$ = nullptr; }
+;
+
+orderby_opt: ORDER BY orderby_cols { $$ = $3; }
+           | /* empty */ { $$ = nullptr; }
+;
+
+orderby_cols: orderby_col { $$ = new json(); $$->push_back(*$1); delete $1; }
+            | orderby_cols ',' orderby_col { $1->push_back(*$3); delete $3; $$ = $1; }
+;
+
+orderby_col: column_name order_opt { $$ = new json {{"column", $1}, {"ascending", $2}}; delete[] $1; } 
+;
+
+order_opt: ASC { $$ = true; }
+         | DESC { $$ = false; }
+         | /* empty */ { $$ = true; }
+
+select_cols: select_col { $$ = new json(); $$->push_back(*$1); delete $1; }
+           | select_cols ',' select_col { $1->push_back(*$3); delete $3; $$ = $1; }
+;
+
+select_col: column_name { $$ = new json {{"column", $1}}; delete[] $1; }
+          | '*' { $$ = new json {{"column", "*"}}; }
 ;
 
 filter_literal: string_literal | num_literal
@@ -147,7 +153,7 @@ num_literal: FLOATVAL | INTVAL
 table_name: IDENTIFIER
 ;
 
-column_name: IDENTIFIER | '*' { $$ = new char[2] {'*', '\0'}; }
+column_name: IDENTIFIER
 ;
 %%
 

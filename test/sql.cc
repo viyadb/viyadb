@@ -9,22 +9,13 @@
 
 namespace util = viya::util;
 namespace query = viya::query;
-namespace input = viya::input;
 namespace sql = viya::sql;
 
-void sql_load_events(db::Table* table) {
-  input::SimpleLoader loader(*table);
-  loader.Load({
-    {"US", "purchase", "20141112", "0.1"},
-    {"US", "purchase", "20141113", "1.1"},
-    {"US", "donate", "20141112", "5.0"}
-  });
-}
+using SqlEvents = InappEvents;
 
-TEST_F(InappEvents, SqlSelect)
+TEST_F(SqlEvents, Select)
 {
-  auto table = db.GetTable("events");
-  sql_load_events(table);
+  LoadEvents();
 
   query::MemoryRowOutput output;
   sql::Driver sql_driver(db);
@@ -44,10 +35,9 @@ TEST_F(InappEvents, SqlSelect)
   EXPECT_EQ(expected, actual);
 }
 
-TEST_F(InappEvents, SqlSelectWildcard)
+TEST_F(SqlEvents, SelectWildcard)
 {
-  auto table = db.GetTable("events");
-  sql_load_events(table);
+  LoadEvents();
 
   query::MemoryRowOutput output;
   sql::Driver sql_driver(db);
@@ -63,10 +53,9 @@ TEST_F(InappEvents, SqlSelectWildcard)
   EXPECT_EQ(expected, actual);
 }
 
-TEST_F(InappEvents, SqlSelectNoFilter)
+TEST_F(SqlEvents, SelectNoFilter)
 {
-  auto table = db.GetTable("events");
-  sql_load_events(table);
+  LoadEvents();
 
   query::MemoryRowOutput output;
   sql::Driver sql_driver(db);
@@ -83,6 +72,46 @@ TEST_F(InappEvents, SqlSelectNoFilter)
   auto actual = output.rows();
   std::sort(actual.begin(), actual.end());
 
+  EXPECT_EQ(expected, actual);
+}
+
+TEST_F(SqlEvents, SelectHaving)
+{
+  LoadEvents();
+
+  query::MemoryRowOutput output;
+  sql::Driver sql_driver(db);
+
+  std::istringstream query("SELECT event_name,count FROM events HAVING count <> 2");
+  sql_driver.Run(query, output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {
+    {"donate", "1"}
+  };
+  auto actual = output.rows();
+  EXPECT_EQ(expected, actual);
+}
+
+TEST_F(SqlEvents, SelectSort)
+{
+  LoadSortEvents();
+
+  query::MemoryRowOutput output;
+  sql::Driver sql_driver(db);
+
+  std::istringstream query("SELECT country,event_name,revenue FROM events ORDER BY revenue DESC, country");
+  sql_driver.Run(query, output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {
+    {"KZ", "review", "5"},
+    {"AZ", "refund", "1.1"},
+    {"CH", "refund", "1.1"},
+    {"IL", "refund", "1.01"},
+    {"RU", "donate", "1"},
+    {"US", "purchase", "0.1"}
+  };
+
+  auto actual = output.rows();
   EXPECT_EQ(expected, actual);
 }
 

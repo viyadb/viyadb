@@ -3,36 +3,14 @@
 #include "db/table.h"
 #include "util/config.h"
 #include "query/output.h"
-#include "input/simple.h"
 #include "db.h"
 
 namespace util = viya::util;
 namespace query = viya::query;
-namespace input = viya::input;
-
-void aggregation_load_events(db::Table* table) {
-  input::SimpleLoader loader(*table);
-  loader.Load({
-    {"US", "purchase", "20141112", "0.1"},
-    {"US", "purchase", "20141113", "1.1"},
-    {"US", "donate", "20141112", "5.0"}
-  });
-}
-
-void aggregation_load_num_events(db::Table* table) {
-  input::SimpleLoader loader(*table);
-  loader.Load({
-    {"-1", "2", "-257", "145", "-10245", "23456", "-281734", "182745", "21.124", "1.092743"},
-    {"-1", "7", "257", "14", "-10245", "1982", "0", "1111111111", "21.124", "1.092743"},
-    {"-6", "2", "-257", "98", "-98", "777", "198", "0", "0.78", "7.912435"},
-    {"9", "29", "-128", "145", "0", "23456", "-281734", "182745", "1.11", "139834.12313"}
-  });
-}
 
 TEST_F(InappEvents, AggregationQuery)
 {
-  auto table = db.GetTable("events");
-  aggregation_load_events(table);
+  LoadEvents();
 
   query::MemoryRowOutput output;
   db.Query(
@@ -57,8 +35,7 @@ TEST_F(InappEvents, AggregationQuery)
 
 TEST_F(InappEvents, HavingQuery)
 {
-  auto table = db.GetTable("events");
-  aggregation_load_events(table);
+  LoadEvents();
 
   query::MemoryRowOutput output;
   db.Query(
@@ -79,8 +56,7 @@ TEST_F(InappEvents, HavingQuery)
 
 TEST_F(InappEvents, ComplexHavingQuery)
 {
-  auto table = db.GetTable("events");
-  aggregation_load_events(table);
+  LoadEvents();
 
   query::MemoryRowOutput output;
   db.Query(
@@ -103,8 +79,7 @@ TEST_F(InappEvents, ComplexHavingQuery)
 
 TEST_F(InappEvents, NoDimensions)
 {
-  auto table = db.GetTable("events");
-  aggregation_load_events(table);
+  LoadEvents();
 
   query::MemoryRowOutput output;
   db.Query(
@@ -128,8 +103,7 @@ TEST_F(InappEvents, NoDimensions)
 
 TEST_F(InappEvents, OutputColumnsOrder)
 {
-  auto table = db.GetTable("events");
-  aggregation_load_events(table);
+  LoadEvents();
 
   query::MemoryRowOutput output;
   db.Query(
@@ -153,8 +127,7 @@ TEST_F(InappEvents, OutputColumnsOrder)
 
 TEST_F(InappEvents, ColumnsOrderHaving)
 {
-  auto table = db.GetTable("events");
-  aggregation_load_events(table);
+  LoadEvents();
 
   query::MemoryRowOutput output;
   db.Query(
@@ -174,8 +147,7 @@ TEST_F(InappEvents, ColumnsOrderHaving)
 
 TEST_F(InappEvents, MetricFilter)
 {
-  auto table = db.GetTable("events");
-  aggregation_load_events(table);
+  LoadEvents();
 
   query::MemoryRowOutput output;
   db.Query(
@@ -192,8 +164,7 @@ TEST_F(InappEvents, MetricFilter)
 
 TEST_F(InappEvents, NoFilter)
 {
-  auto table = db.GetTable("events");
-  aggregation_load_events(table);
+  LoadEvents();
 
   query::MemoryRowOutput output;
   db.Query(
@@ -217,8 +188,7 @@ TEST_F(InappEvents, NoFilter)
 
 TEST_F(InappEvents, NoFilterHaving)
 {
-  auto table = db.GetTable("events");
-  aggregation_load_events(table);
+  LoadEvents();
 
   query::MemoryRowOutput output;
   db.Query(
@@ -238,8 +208,7 @@ TEST_F(InappEvents, NoFilterHaving)
 
 TEST_F(InappEvents, MissingValueEq)
 {
-  auto table = db.GetTable("events");
-  aggregation_load_events(table);
+  LoadEvents();
 
   query::MemoryRowOutput output;
   db.Query(
@@ -256,8 +225,7 @@ TEST_F(InappEvents, MissingValueEq)
 
 TEST_F(InappEvents, MissingValueNe)
 {
-  auto table = db.GetTable("events");
-  aggregation_load_events(table);
+  LoadEvents();
 
   query::MemoryRowOutput output;
   db.Query(
@@ -276,8 +244,7 @@ TEST_F(InappEvents, MissingValueNe)
 
 TEST_F(NumericDimensions, AggregateQuery)
 {
-  auto table = db.GetTable("events");
-  aggregation_load_num_events(table);
+  LoadEvents();
 
   query::MemoryRowOutput output;
   db.Query(

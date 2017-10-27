@@ -8,24 +8,12 @@
 
 namespace util = viya::util;
 namespace query = viya::query;
-namespace input = viya::input;
 
-void sort_load_events(db::Table* table) {
-  input::SimpleLoader loader(*table);
-  loader.Load({
-    {"US", "purchase", "20141110", "0.1"},
-    {"IL", "refund", "20141111", "1.01"},
-    {"CH", "refund", "20141111", "1.1"},
-    {"AZ", "refund", "20141111", "1.1"},
-    {"RU", "donate", "20141112", "1.0"},
-    {"KZ", "review", "20141113", "5.0"}
-  });
-}
+using SortEvents = InappEvents;
 
-TEST_F(InappEvents, PaginateNoSort)
+TEST_F(SortEvents, PaginateNoSort)
 {
-  auto table = db.GetTable("events");
-  sort_load_events(table);
+  LoadSortEvents();
 
   query::MemoryRowOutput output;
   db.Query(
@@ -41,10 +29,9 @@ TEST_F(InappEvents, PaginateNoSort)
   EXPECT_EQ(2, output.rows().size());
 }
 
-TEST_F(InappEvents, SortMultiColumn)
+TEST_F(SortEvents, SortMultiColumn)
 {
-  auto table = db.GetTable("events");
-  sort_load_events(table);
+  LoadSortEvents();
 
   query::MemoryRowOutput output;
   db.Query(
@@ -69,10 +56,9 @@ TEST_F(InappEvents, SortMultiColumn)
   EXPECT_EQ(expected, output.rows());
 }
 
-TEST_F(InappEvents, TopN)
+TEST_F(SortEvents, TopN)
 {
-  auto table = db.GetTable("events");
-  sort_load_events(table);
+  LoadSortEvents();
 
   query::MemoryRowOutput output;
   db.Query(
@@ -96,10 +82,9 @@ TEST_F(InappEvents, TopN)
   EXPECT_EQ(expected, output.rows());
 }
 
-TEST_F(InappEvents, LimitGreaterThanResult)
+TEST_F(SortEvents, LimitGreaterThanResult)
 {
-  auto table = db.GetTable("events");
-  sort_load_events(table);
+  LoadSortEvents();
 
   query::MemoryRowOutput output;
   db.Query(

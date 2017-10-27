@@ -3,29 +3,32 @@
 #include "db/table.h"
 #include "util/config.h"
 #include "query/output.h"
-#include "db.h"
 #include "input/simple.h"
+#include "db.h"
 
 namespace util = viya::util;
 namespace query = viya::query;
 namespace input = viya::input;
 
-void search_load_events(db::Table* table) {
-  input::SimpleLoader loader(*table);
-  loader.Load({
-    {"US", "purchase", "20141110", "0.1"},
-    {"IL", "refund", "20141111", "1.1"},
-    {"CH", "refund", "20141111", "1.1"},
-    {"AZ", "refund", "20141111", "1.1"},
-    {"RU", "donate", "20141112", "1.0"},
-    {"KZ", "review", "20141113", "5.0"}
-  });
-}
+class SearchEvents: public InappEvents {
+  protected:
+    void LoadEvents() {
+      auto table = db.GetTable("events");
+      input::SimpleLoader loader(*table);
+      loader.Load({
+        {"US", "purchase", "20141110", "0.1"},
+        {"IL", "refund", "20141111", "1.1"},
+        {"CH", "refund", "20141111", "1.1"},
+        {"AZ", "refund", "20141111", "1.1"},
+        {"RU", "donate", "20141112", "1.0"},
+        {"KZ", "review", "20141113", "5.0"}
+      });
+    }
+};
 
-TEST_F(InappEvents, SearchQuery)
+TEST_F(SearchEvents, SearchQuery)
 {
-  auto table = db.GetTable("events");
-  search_load_events(table);
+  LoadEvents();
 
   query::MemoryRowOutput output;
   db.Query(
@@ -47,10 +50,9 @@ TEST_F(InappEvents, SearchQuery)
   EXPECT_EQ(expected, actual);
 }
 
-TEST_F(InappEvents, SearchQueryLimit)
+TEST_F(SearchEvents, SearchQueryLimit)
 {
-  auto table = db.GetTable("events");
-  search_load_events(table);
+  LoadEvents();
 
   query::MemoryRowOutput output;
   db.Query(

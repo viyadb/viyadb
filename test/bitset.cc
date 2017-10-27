@@ -4,43 +4,14 @@
 #include "db/database.h"
 #include "util/config.h"
 #include "query/output.h"
-#include "input/simple.h"
+#include "db.h"
 
 namespace util = viya::util;
-namespace db = viya::db;
 namespace query = viya::query;
-namespace input = viya::input;
-
-class UserEvents : public testing::Test {
-  protected:
-    UserEvents()
-      :db(std::move(util::Config(
-              "{\"tables\": [{\"name\": \"events\","
-              "               \"dimensions\": [{\"name\": \"country\"},"
-              "                                {\"name\": \"event_name\"},"
-              "                                {\"name\": \"time\", \"type\": \"uint\"}],"
-              "               \"metrics\": [{\"name\": \"user_id\", \"type\": \"bitset\"}]}]}"))) {}
-    db::Database db;
-};
-
-void bitset_load_events(db::Table* table) {
-  input::SimpleLoader loader(*table);
-  loader.Load({
-    {"US", "purchase", "1495475514", "12345"},
-    {"RU", "support", "1495475517", "12346"},
-    {"US", "openapp", "1495475632", "12347"},
-    {"IL", "purchase", "1495475715", "12348"},
-    {"KZ", "closeapp", "1495475716", "12349"},
-    {"US", "uninstall", "1495475809", "12350"},
-    {"KZ", "purchase", "1495475808", "12351"},
-    {"US", "purchase", "1495476000", "12352"},
-  });
-}
 
 TEST_F(UserEvents, BitsetMetric)
 {
-  auto table = db.GetTable("events");
-  bitset_load_events(table);
+  LoadEvents();
 
   query::MemoryRowOutput output;
   db.Query(

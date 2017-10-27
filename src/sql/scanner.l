@@ -50,7 +50,6 @@ typedef viya::sql::Parser::token_type token_type;
 SELECT          { return token::SELECT; }
 FROM            { return token::FROM; }
 WHERE           { return token::WHERE; }
-GROUP           { return token::GROUP; }
 BY              { return token::BY; }
 HAVING          { return token::HAVING; }
 ORDER           { return token::ORDER; }
