@@ -42,13 +42,14 @@
   /* YYLTYPE */
   char* sval;
   bool bval;
+  int intval;
   Statement* stmt;
   json* jsonval;
 }
 
 /* Non-terminal types */
 %type <stmt> statement select_statement 
-%type <sval> table_name column_name string_literal filter_literal num_literal
+%type <sval> table_name column_name string_literal filter_literal num_literal limit_opt
 %type <jsonval> select_cols select_col filter_opt filter comp_filter relop_filter
 %type <jsonval> having_opt orderby_opt orderby_cols orderby_col
 %type <bval> order_opt
@@ -82,8 +83,7 @@ statement_list: statement { driver.AddStatement($1); }
 statement: select_statement
 ;
 
-select_statement: SELECT select_cols FROM table_name
-               filter_opt having_opt orderby_opt {
+select_statement: SELECT select_cols FROM table_name filter_opt having_opt orderby_opt limit_opt {
                  $$ = new Statement(Statement::Type::QUERY);
                  auto& d = $$->descriptor();
                  d["type"] = "aggregate";
@@ -92,6 +92,7 @@ select_statement: SELECT select_cols FROM table_name
                  if ($5 != nullptr) { d["filter"] = *$5; delete $5; }
                  if ($6 != nullptr) { d["having"] = *$6; delete $6; }
                  if ($7 != nullptr) { d["sort"] = *$7; delete $7; }
+                 if ($8 != nullptr) { d["limit"] = atoi($8); delete[] $8; }
                }
 ;
 
@@ -132,6 +133,9 @@ orderby_col: column_name order_opt { $$ = new json {{"column", $1}, {"ascending"
 order_opt: ASC { $$ = true; }
          | DESC { $$ = false; }
          | /* empty */ { $$ = true; }
+
+limit_opt: LIMIT INTVAL { $$ = $2; }
+         | /* empty */ { $$ = nullptr; }
 
 select_cols: select_col { $$ = new json(); $$->push_back(*$1); delete $1; }
            | select_cols ',' select_col { $1->push_back(*$3); delete $3; $$ = $1; }

@@ -115,3 +115,23 @@ TEST_F(SqlEvents, SelectSort)
   EXPECT_EQ(expected, actual);
 }
 
+TEST_F(SqlEvents, TopN)
+{
+  LoadSortEvents();
+
+  query::MemoryRowOutput output;
+  sql::Driver sql_driver(db);
+
+  std::istringstream query("SELECT country,revenue FROM events ORDER BY revenue DESC, country LIMIT 5");
+  sql_driver.Run(query, output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {
+    {"KZ", "5"},
+    {"AZ", "1.1"},
+    {"CH", "1.1"},
+    {"IL", "1.01"},
+    {"RU", "1"},
+  };
+
+  EXPECT_EQ(expected, output.rows());
+}
