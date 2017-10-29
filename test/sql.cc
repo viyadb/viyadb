@@ -135,3 +135,43 @@ TEST_F(SqlEvents, TopN)
 
   EXPECT_EQ(expected, output.rows());
 }
+
+TEST_F(SqlEvents, SearchQuery)
+{
+  LoadSearchEvents();
+
+  query::MemoryRowOutput output;
+  sql::Driver sql_driver(db);
+
+  std::istringstream query("SELECT SEARCH(event_name, 'r') FROM events WHERE revenue > 1.0 LIMIT 10");
+  sql_driver.Run(query, output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {
+    {"refund", "review"}
+  };
+
+  auto actual = output.rows();
+  std::sort(actual[0].begin(), actual[0].end());
+
+  EXPECT_EQ(expected, actual);
+}
+
+TEST_F(SqlEvents, SearchQueryLimit)
+{
+  LoadSearchEvents();
+
+  query::MemoryRowOutput output;
+  sql::Driver sql_driver(db);
+
+  std::istringstream query("SELECT SEARCH(event_name, '') FROM events LIMIT 2");
+  sql_driver.Run(query, output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {
+    {"purchase", "refund"}
+  };
+
+  auto actual = output.rows();
+  std::sort(actual[0].begin(), actual[0].end());
+
+  EXPECT_EQ(expected, actual);
+}

@@ -32,7 +32,7 @@
 
 /* Tokens */
 %token TOK_EOF 0 "end of file"
-%token SELECT FROM WHERE BY ORDER HAVING ASC DESC LIMIT
+%token SELECT SEARCH FROM WHERE BY ORDER HAVING ASC DESC LIMIT
 %token AND OR NOT NE LE GE
 %token <sval> IDENTIFIER STRING FLOATVAL INTVAL
 
@@ -42,7 +42,6 @@
   /* YYLTYPE */
   char* sval;
   bool bval;
-  int intval;
   Statement* stmt;
   json* jsonval;
 }
@@ -84,16 +83,26 @@ statement: select_statement
 ;
 
 select_statement: SELECT select_cols FROM table_name filter_opt having_opt orderby_opt limit_opt {
-                 $$ = new Statement(Statement::Type::QUERY);
-                 auto& d = $$->descriptor();
-                 d["type"] = "aggregate";
-                 d["table"] = $4; delete[] $4;
-                 d["select"] = *$2; delete $2;
-                 if ($5 != nullptr) { d["filter"] = *$5; delete $5; }
-                 if ($6 != nullptr) { d["having"] = *$6; delete $6; }
-                 if ($7 != nullptr) { d["sort"] = *$7; delete $7; }
-                 if ($8 != nullptr) { d["limit"] = atoi($8); delete[] $8; }
-               }
+                    $$ = new Statement(Statement::Type::QUERY);
+                    auto& d = $$->descriptor();
+                    d["type"] = "aggregate";
+                    d["table"] = $4; delete[] $4;
+                    d["select"] = *$2; delete $2;
+                    if ($5 != nullptr) { d["filter"] = *$5; delete $5; }
+                    if ($6 != nullptr) { d["having"] = *$6; delete $6; }
+                    if ($7 != nullptr) { d["sort"] = *$7; delete $7; }
+                    if ($8 != nullptr) { d["limit"] = atoi($8); delete[] $8; }
+                  }
+                | SELECT SEARCH '(' column_name ',' string_literal ')' FROM table_name filter_opt limit_opt {
+                    $$ = new Statement(Statement::Type::QUERY);
+                    auto& d = $$->descriptor();
+                    d["type"] = "search";
+                    d["dimension"] = $4; delete[] $4;
+                    d["term"] = $6; delete[] $6;
+                    d["table"] = $9; delete[] $9;
+                    if ($10 != nullptr) { d["filter"] = *$10; delete $10; }
+                    if ($11 != nullptr) { d["limit"] = atoi($11); delete[] $11; }
+                  }
 ;
 
 filter_opt: WHERE filter { $$ = $2; }

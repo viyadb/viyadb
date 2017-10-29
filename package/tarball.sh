@@ -26,6 +26,8 @@ rm -rf \
   ${package_name}/include/curl \
   ${package_name}/bin/curl-config
 
+cp ../vsql ${package_name}/bin/
+
 tar -zcf ${package_name}.tgz ${package_name}
 mv ${package_name}.tgz ..
 cd ..

@@ -48,6 +48,7 @@ typedef viya::sql::Parser::token_type token_type;
 <COMMENT>\n     BEGIN(INITIAL);
 
 SELECT          { return token::SELECT; }
+SEARCH          { return token::SEARCH; }
 FROM            { return token::FROM; }
 WHERE           { return token::WHERE; }
 BY              { return token::BY; }

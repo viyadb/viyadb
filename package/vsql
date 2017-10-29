@@ -1,0 +1,31 @@
+#!/bin/bash
+
+host=localhost
+port=5000
+if [ $# -ge 1 ]; then
+  host=$1
+  shift
+fi
+if [ $# -ge 1 ]; then
+  port=$1
+  shift
+fi
+
+tmpfile=$(mktemp)
+trap "rm ${tmpfile}" EXIT
+
+while IFS="" read -r -e -d $'\n' -p 'ViyaDB> ' query; do
+  if [[ $? == 1 ]]; then
+    echo
+    break
+  fi
+  query="$(echo $query | sed 's/^\s*|\s*$//')"
+  if [ ! -z "${query}" ]; then
+    http_code=$(curl -sS -o ${tmpfile} -w '%{http_code}' -d "${query}" http://${host}:${port}/sql)
+    if [ $http_code -eq 200 ]; then
+      history -s "${query}"
+    fi
+    cat $tmpfile | column -t
+  fi
+done
+

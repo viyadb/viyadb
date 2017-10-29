@@ -38,7 +38,7 @@ class FilterBasedQuery: public Query {
   public:
     FilterBasedQuery(const util::Config& config, db::Table& table);
 
-    ~FilterBasedQuery() {
+    virtual ~FilterBasedQuery() {
       delete filter_;
     }
 
@@ -107,6 +107,10 @@ class MetricOutputColumn: public OutputColumn {
 class AggregateQuery: public FilterBasedQuery {
   public:
     AggregateQuery(const util::Config& config, db::Table& table);
+
+    virtual ~AggregateQuery() {
+      delete having_;
+    }
 
     const std::vector<DimOutputColumn>& dimension_cols() const { return dimension_cols_; }
     const std::vector<MetricOutputColumn>& metric_cols() const { return metric_cols_; }

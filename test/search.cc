@@ -8,27 +8,12 @@
 
 namespace util = viya::util;
 namespace query = viya::query;
-namespace input = viya::input;
 
-class SearchEvents: public InappEvents {
-  protected:
-    void LoadEvents() {
-      auto table = db.GetTable("events");
-      input::SimpleLoader loader(*table);
-      loader.Load({
-        {"US", "purchase", "20141110", "0.1"},
-        {"IL", "refund", "20141111", "1.1"},
-        {"CH", "refund", "20141111", "1.1"},
-        {"AZ", "refund", "20141111", "1.1"},
-        {"RU", "donate", "20141112", "1.0"},
-        {"KZ", "review", "20141113", "5.0"}
-      });
-    }
-};
+using SearchEvents = InappEvents;
 
 TEST_F(SearchEvents, SearchQuery)
 {
-  LoadEvents();
+  LoadSearchEvents();
 
   query::MemoryRowOutput output;
   db.Query(
@@ -52,7 +37,7 @@ TEST_F(SearchEvents, SearchQuery)
 
 TEST_F(SearchEvents, SearchQueryLimit)
 {
-  LoadEvents();
+  LoadSearchEvents();
 
   query::MemoryRowOutput output;
   db.Query(
