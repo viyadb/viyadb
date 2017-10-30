@@ -39,6 +39,7 @@ class Database {
     ThreadPool& write_pool() { return write_pool_; }
     input::Watcher& watcher() { return watcher_; }
     const util::Statsd& statsd() const { return statsd_; }
+    const std::unordered_map<std::string,Table*>& tables() const { return tables_; }
 
     query::QueryStats Query(const util::Config& query_conf, query::RowOutput& output);
     void Load(const util::Config& load_conf);

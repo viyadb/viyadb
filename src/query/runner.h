@@ -21,6 +21,7 @@ class QueryRunner: public QueryVisitor {
 
     void Visit(AggregateQuery* query);
     void Visit(SearchQuery* query);
+    void Visit(ShowTablesQuery* query);
 
     const QueryStats& stats() const { return stats_; }
 

@@ -24,8 +24,26 @@ namespace util = viya::util;
 
 class Query {
   public:
-    Query(db::Table& table):table_(table) {}
     virtual ~Query() {}
+    virtual void Accept(class QueryVisitor& visitor) = 0;
+};
+
+class DatabaseQuery: public Query {
+  public:
+    DatabaseQuery(db::Database& db):db_(db) {}
+    virtual ~DatabaseQuery() {}
+    virtual void Accept(class QueryVisitor& visitor) = 0;
+
+    db::Database& db() { return db_; }
+
+  private:
+    db::Database& db_;
+};
+
+class TableQuery: public Query {
+  public:
+    TableQuery(db::Table& table):table_(table) {}
+    virtual ~TableQuery() {}
     virtual void Accept(class QueryVisitor& visitor) = 0;
 
     db::Table& table() { return table_; }
@@ -34,7 +52,7 @@ class Query {
     db::Table& table_;
 };
 
-class FilterBasedQuery: public Query {
+class FilterBasedQuery: public TableQuery {
   public:
     FilterBasedQuery(const util::Config& config, db::Table& table);
 
@@ -148,10 +166,17 @@ class SearchQuery: public FilterBasedQuery {
     size_t limit_;
 };
 
+class ShowTablesQuery: public DatabaseQuery {
+  public:
+    ShowTablesQuery(db::Database& db);
+    void Accept(class QueryVisitor& visitor);
+};
+
 class QueryVisitor {
   public:
-    virtual void Visit(AggregateQuery* query) = 0;
-    virtual void Visit(SearchQuery* query) = 0;
+    virtual void Visit(AggregateQuery* query __attribute__((unused))) {};
+    virtual void Visit(SearchQuery* query __attribute__((unused))) {};
+    virtual void Visit(ShowTablesQuery* query __attribute__((unused))) {};
 };
 
 class QueryFactory {

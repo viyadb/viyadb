@@ -33,7 +33,7 @@
 /* Tokens */
 %token TOK_EOF 0 "end of file"
 %token SELECT SEARCH FROM WHERE BY ORDER HAVING ASC DESC LIMIT
-%token AND OR NOT NE LE GE
+%token AND OR NOT NE LE GE SHOW TABLES
 %token <sval> IDENTIFIER STRING FLOATVAL INTVAL
 
 /* Data types */
@@ -47,7 +47,7 @@
 }
 
 /* Non-terminal types */
-%type <stmt> statement select_statement 
+%type <stmt> statement select_statement show_statement
 %type <sval> table_name column_name string_literal filter_literal num_literal limit_opt
 %type <jsonval> select_cols select_col filter_opt filter comp_filter relop_filter
 %type <jsonval> having_opt orderby_opt orderby_cols orderby_col
@@ -80,12 +80,14 @@ statement_list: statement { driver.AddStatement($1); }
 ;
 
 statement: select_statement
+         | show_statement
 ;
 
 select_statement: SELECT select_cols FROM table_name filter_opt having_opt orderby_opt limit_opt {
                     $$ = new Statement(Statement::Type::QUERY);
                     auto& d = $$->descriptor();
                     d["type"] = "aggregate";
+                    d["header"] = true;
                     d["table"] = $4; delete[] $4;
                     d["select"] = *$2; delete $2;
                     if ($5 != nullptr) { d["filter"] = *$5; delete $5; }
@@ -103,6 +105,14 @@ select_statement: SELECT select_cols FROM table_name filter_opt having_opt order
                     if ($10 != nullptr) { d["filter"] = *$10; delete $10; }
                     if ($11 != nullptr) { d["limit"] = atoi($11); delete[] $11; }
                   }
+;
+
+show_statement: SHOW TABLES {
+                  $$ = new Statement(Statement::Type::QUERY);
+                  auto& d = $$->descriptor();
+                  d["type"] = "show";
+                  d["what"] = "tables";
+                }
 ;
 
 filter_opt: WHERE filter { $$ = $2; }

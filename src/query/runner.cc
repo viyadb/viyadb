@@ -42,4 +42,14 @@ void QueryRunner::Visit(SearchQuery* query) {
   stats_.OnEnd();
 }
 
+void QueryRunner::Visit(ShowTablesQuery* query) {
+  RowOutput::Row tables;
+  for (auto& ent : query->db().tables()) {
+    tables.push_back(ent.first);
+  }
+  output_.Start();
+  output_.SendAsCol(tables);
+  output_.Flush();
+}
+
 }}

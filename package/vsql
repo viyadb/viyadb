@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/bin/bash -eu
+
+set -f
 
 host=localhost
 port=5000
@@ -11,8 +13,12 @@ if [ $# -ge 1 ]; then
   shift
 fi
 
+export HISTCONTROL=ignoreboth:erasedups
+history_file=~/.vsql_history
+[[ -f $history_file ]] && history -n $history_file
+
 tmpfile=$(mktemp)
-trap "rm ${tmpfile}" EXIT
+trap "rm ${tmpfile}; history -w ${history_file}" EXIT
 
 while IFS="" read -r -e -d $'\n' -p 'ViyaDB> ' query; do
   if [[ $? == 1 ]]; then
@@ -23,9 +29,11 @@ while IFS="" read -r -e -d $'\n' -p 'ViyaDB> ' query; do
   if [ ! -z "${query}" ]; then
     http_code=$(curl -sS -o ${tmpfile} -w '%{http_code}' -d "${query}" http://${host}:${port}/sql)
     if [ $http_code -eq 200 ]; then
-      history -s "${query}"
+      cat $tmpfile | column -s $'\t' -t
+    else
+      echo -n $(cat $tmpfile); echo
     fi
-    cat $tmpfile | column -t
+    history -s "${query}"
   fi
 done
 

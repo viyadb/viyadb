@@ -8,7 +8,7 @@ namespace viya {
 namespace query {
 
 FilterBasedQuery::FilterBasedQuery(const util::Config& config, db::Table& table)
-  :Query(table)
+  :TableQuery(table)
 {
   FilterFactory filter_factory;
   filter_ = filter_factory.Create(config, table);
@@ -112,14 +112,30 @@ void SearchQuery::Accept(QueryVisitor& visitor) {
   visitor.Visit(this);
 }
 
+ShowTablesQuery::ShowTablesQuery(db::Database& db)
+  :DatabaseQuery(db) {
+}
+
+void ShowTablesQuery::Accept(QueryVisitor& visitor) {
+  visitor.Visit(this);
+}
+
 Query* QueryFactory::Create(const util::Config& config, db::Database& database) {
-  std::string type = config.str("type");
-  auto table = database.GetTable(config.str("table"));
+  auto type = config.str("type");
   if (type == "aggregate") {
+    auto table = database.GetTable(config.str("table"));
     return new AggregateQuery(config, *table);
   }
   if (type == "search") {
+    auto table = database.GetTable(config.str("table"));
     return new SearchQuery(config, *table);
+  }
+  if (type == "show") {
+    auto what = config.str("what");
+    if (what == "tables") {
+      return new ShowTablesQuery(database);
+    }
+    throw std::invalid_argument("Can't show information on: " + what);
   }
   throw std::invalid_argument("Unsupported query type: " + type);
 }

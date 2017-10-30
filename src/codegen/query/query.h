@@ -39,7 +39,7 @@ class ScanGenerator: public query::QueryVisitor {
 
 class QueryGenerator: public FunctionGenerator {
   public:
-    QueryGenerator(Compiler& compiler, query::Query& query)
+    QueryGenerator(Compiler& compiler, query::TableQuery& query)
       :FunctionGenerator(compiler),query_(query) {}
 
     QueryGenerator(const QueryGenerator& other) = delete;
@@ -49,7 +49,7 @@ class QueryGenerator: public FunctionGenerator {
     query::SearchQueryFn SearchQueryFunction();
 
   private:
-    query::Query& query_;
+    query::TableQuery& query_;
 };
 
 }}
