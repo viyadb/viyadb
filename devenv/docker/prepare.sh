@@ -1,2 +1,2 @@
 #!/bin/bash
-docker build -t viya-devenv .
+docker build -t viyadb/devenv:latest .

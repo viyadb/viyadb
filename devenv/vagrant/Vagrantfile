@@ -25,6 +25,7 @@ Vagrant.configure("2") do |config|
         g++-7 \
         git \
         flex \
+        libfl-dev \
         libbz2-dev \
         libevent-dev \
         liblz4-dev \
@@ -39,6 +40,7 @@ Vagrant.configure("2") do |config|
         zlib1g-dev \
       && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 60 --slave /usr/bin/g++ g++ /usr/bin/g++-7 \
       && apt-get clean \
+      && apt-get autoremove -y \
       && rm -rf /var/lib/apt/lists/*
 
     if ! ldconfig -p | grep libboost_system.so.1.65.1 2>&1 >/dev/null; then

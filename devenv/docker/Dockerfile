@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     cmake \
     git \
     flex \
+    libfl-dev \
     libbz2-dev \
     libevent-dev \
     liblz4-dev \
@@ -27,10 +28,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && apt-get update && apt-get install -y \
     g++-7 \
   && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 60 --slave /usr/bin/g++ g++ /usr/bin/g++-7 \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
-
-RUN wget -q https://dl.bintray.com/boostorg/release/1.65.1/source/boost_1_65_1.tar.gz \
+  && wget -q https://dl.bintray.com/boostorg/release/1.65.1/source/boost_1_65_1.tar.gz \
   && tar xfz boost_1_65_1.tar.gz \
   && rm boost_1_65_1.tar.gz \
   && cd boost_1_65_1 \
@@ -38,7 +36,13 @@ RUN wget -q https://dl.bintray.com/boostorg/release/1.65.1/source/boost_1_65_1.t
   && ./b2 --without-python -j 4 link=static runtime-link=shared install \
   && cd .. \
   && rm -rf boost_1_65_1 \
-  && ldconfig
+  && ldconfig \
+  && apt-get autoremove -y \
+  && apt-get clean \
+  && rm -rf \
+    /var/lib/apt/lists/* \
+    /var/tmp/* \
+    /tmp/*
 
 RUN mkdir /viyadb
 VOLUME /viyadb
