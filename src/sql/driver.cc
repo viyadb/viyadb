@@ -45,10 +45,11 @@ void Driver::Parse(std::istream& stream) {
   }
 }
 
-void Driver::Run(std::istream& stream, query::RowOutput& output) {
+void Driver::Run(std::istream& stream, query::RowOutput& output, bool header) {
   Parse(stream);
 
   for (auto stmt : stmts_) {
+    stmt->descriptor()["header"] = header;
     util::Config desc(new json(stmt->descriptor()));
     switch (stmt->type()) {
       case Statement::Type::QUERY:

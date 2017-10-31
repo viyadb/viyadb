@@ -166,7 +166,9 @@ void ComparisonBuilder::Visit(const query::CompositeFilter* filter) {
 
 void ComparisonBuilder::Visit(const query::NotFilter* filter) {
   code_<<"!";
+  in_not_ = true;
   filter->filter()->Accept(*this);
+  in_not_ = false;
 }
 
 void ComparisonBuilder::Visit(const query::EmptyFilter* filter __attribute__((unused))) {
@@ -204,7 +206,7 @@ void SegmentSkipBuilder::Visit(const query::RelOpFilter* filter) {
     }
   }
   if (!applied) {
-    code_<<"1";
+    code_<<(in_not_ ? "0" : "1");
   }
 }
 
@@ -235,7 +237,7 @@ void SegmentSkipBuilder::Visit(const query::InFilter* filter) {
     for(size_t i = 0; i < filter->values().size(); ++i) {
       ++argidx_;
     }
-    code_<<"1";
+    code_<<(in_not_ ? "0" : "1");
   }
 }
 

@@ -33,7 +33,7 @@
 /* Tokens */
 %token TOK_EOF 0 "end of file"
 %token SELECT SEARCH FROM WHERE BY ORDER HAVING ASC DESC LIMIT
-%token AND OR NOT NE LE GE SHOW TABLES
+%token AND OR NOT NE LE GE IN SHOW TABLES
 %token <sval> IDENTIFIER STRING FLOATVAL INTVAL
 
 /* Data types */
@@ -49,7 +49,7 @@
 /* Non-terminal types */
 %type <stmt> statement select_statement show_statement
 %type <sval> table_name column_name string_literal filter_literal num_literal limit_opt
-%type <jsonval> select_cols select_col filter_opt filter comp_filter relop_filter
+%type <jsonval> select_cols select_col filter_opt filter comp_filter relop_filter filter_literals
 %type <jsonval> having_opt orderby_opt orderby_cols orderby_col
 %type <bval> order_opt
 
@@ -62,7 +62,7 @@
 %left     AND
 %right    NOT
 %nonassoc '=' NE
-%nonassoc '<' '>' LE GE
+%nonassoc '<' '>' LE GE IN
 %left     '[' ']'
 %left     '(' ')'
 %left     '.'
@@ -87,7 +87,6 @@ select_statement: SELECT select_cols FROM table_name filter_opt having_opt order
                     $$ = new Statement(Statement::Type::QUERY);
                     auto& d = $$->descriptor();
                     d["type"] = "aggregate";
-                    d["header"] = true;
                     d["table"] = $4; delete[] $4;
                     d["select"] = *$2; delete $2;
                     if ($5 != nullptr) { d["filter"] = *$5; delete $5; }
@@ -118,12 +117,14 @@ show_statement: SHOW TABLES {
 filter_opt: WHERE filter { $$ = $2; }
           | /* empty */ { $$ = nullptr; }
 
-filter: comp_filter
+filter: '(' filter ')' { $$ = $2; }
+      | comp_filter
       | relop_filter
 ;
          
 comp_filter: filter AND filter { $$ = new json {{"op", "and"}, {"filters", {*$1, *$3}}}; delete $1; delete $3; }
            | filter OR filter  { $$ = new json {{"op", "or"}, {"filters", {*$1, *$3}}}; delete $1; delete $3; }
+           | NOT filter  { $$ = new json {{"op", "not"}, {"filter", *$2}}; delete $2; }
 ;
 
 relop_filter: column_name '=' filter_literal { $$ = new json {{"op", "eq"}, {"column", $1}, {"value", $3}}; delete[] $1; delete[] $3; }
@@ -132,6 +133,9 @@ relop_filter: column_name '=' filter_literal { $$ = new json {{"op", "eq"}, {"co
             | column_name LE filter_literal { $$ = new json {{"op", "le"}, {"column", $1}, {"value", $3}}; delete[] $1; delete[] $3; }
             | column_name GE filter_literal { $$ = new json {{"op", "ge"}, {"column", $1}, {"value", $3}}; delete[] $1; delete[] $3; }
             | column_name NE filter_literal { $$ = new json {{"op", "ne"}, {"column", $1}, {"value", $3}}; delete[] $1; delete[] $3; }
+            | column_name IN '(' filter_literals ')' {
+                $$ = new json {{"op", "in"}, {"column", $1}, {"values", *$4}}; delete[] $1; delete $4;
+              }
 ;
 
 having_opt: HAVING filter { $$ = $2; }
@@ -162,6 +166,10 @@ select_cols: select_col { $$ = new json(); $$->push_back(*$1); delete $1; }
 
 select_col: column_name { $$ = new json {{"column", $1}}; delete[] $1; }
           | '*' { $$ = new json {{"column", "*"}}; }
+;
+
+filter_literals: filter_literal { $$ = new json(); $$->push_back($1); delete[] $1; }
+           | filter_literals ',' filter_literal { $1->push_back($3); delete[] $3; $$ = $1; }
 ;
 
 filter_literal: string_literal | num_literal

@@ -22,7 +22,7 @@ class Driver {
     Driver(db::Database& db);
     ~Driver();
 
-    void Run(std::istream& stream, query::RowOutput& output);
+    void Run(std::istream& stream, query::RowOutput& output, bool header = false);
     void Reset();
 
     const db::Database& db() const { return db_; }

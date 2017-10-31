@@ -68,7 +68,7 @@ class ValueDecoder: public db::ColumnVisitor {
 class ComparisonBuilder: public query::FilterVisitor {
   public:
     ComparisonBuilder(Code& code, const std::string& var_prefix = "farg")
-      :argidx_(0),code_(code),var_prefix_(var_prefix) {}
+      :argidx_(0),code_(code),var_prefix_(var_prefix),in_not_(false) {}
 
     void Visit(const query::RelOpFilter* filter);
     void Visit(const query::InFilter* filter);
@@ -80,6 +80,7 @@ class ComparisonBuilder: public query::FilterVisitor {
     size_t argidx_;
     Code& code_;
     const std::string var_prefix_;
+    bool in_not_;
 };
 
 class SegmentSkipBuilder: public ComparisonBuilder {

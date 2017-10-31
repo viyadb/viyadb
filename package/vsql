@@ -27,7 +27,7 @@ while IFS="" read -r -e -d $'\n' -p 'ViyaDB> ' query; do
   fi
   query="$(echo $query | sed 's/^\s*|\s*$//')"
   if [ ! -z "${query}" ]; then
-    http_code=$(curl -sS -o ${tmpfile} -w '%{http_code}' -d "${query}" http://${host}:${port}/sql)
+    http_code=$(curl -sS -o ${tmpfile} -w '%{http_code}' -d "${query}" http://${host}:${port}/sql?header)
     if [ $http_code -eq 200 ]; then
       cat $tmpfile | column -s $'\t' -t
     else

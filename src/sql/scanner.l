@@ -60,6 +60,7 @@ LIMIT           { return token::LIMIT; }
 AND             { return token::AND; }
 OR              { return token::OR; }
 NOT             { return token::NOT; }
+IN              { return token::IN; }
 SHOW            { return token::SHOW; }
 TABLES          { return token::TABLES; }
 "!="            { return token::NE; }

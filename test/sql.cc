@@ -75,6 +75,45 @@ TEST_F(SqlEvents, SelectNoFilter)
   EXPECT_EQ(expected, actual);
 }
 
+TEST_F(SqlEvents, SelectNotFilter)
+{
+  LoadEvents();
+
+  query::MemoryRowOutput output;
+  sql::Driver sql_driver(db);
+
+  std::istringstream query("SELECT event_name FROM events WHERE NOT event_name='donate'");
+  sql_driver.Run(query, output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {
+    {"purchase"}
+  };
+  auto actual = output.rows();
+  EXPECT_EQ(expected, actual);
+}
+
+TEST_F(SqlEvents, SelectNotAndFilter)
+{
+  LoadEvents();
+
+  query::MemoryRowOutput output;
+  sql::Driver sql_driver(db);
+
+  std::istringstream query("SELECT * FROM events WHERE NOT (event_name='purchase' AND revenue > 1);");
+  sql_driver.Run(query, output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {
+    {"US", "donate", "20141112", "1", "5"},
+    {"US", "purchase", "20141112", "1", "0.1"}
+  };
+  std::sort(expected.begin(), expected.end());
+
+  auto actual = output.rows();
+  std::sort(actual.begin(), actual.end());
+
+  EXPECT_EQ(expected, actual);
+}
+
 TEST_F(SqlEvents, SelectHaving)
 {
   LoadEvents();
@@ -175,3 +214,26 @@ TEST_F(SqlEvents, SearchQueryLimit)
 
   EXPECT_EQ(expected, actual);
 }
+
+TEST_F(SqlEvents, SelectIn)
+{
+  LoadSortEvents();
+
+  query::MemoryRowOutput output;
+  sql::Driver sql_driver(db);
+
+  std::istringstream query("SELECT country,event_name,revenue FROM events WHERE country IN ('CH', 'IL')");
+  sql_driver.Run(query, output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {
+    {"CH", "refund", "1.1"},
+    {"IL", "refund", "1.01"}
+  };
+  std::sort(expected.begin(), expected.end());
+
+  auto actual = output.rows();
+  std::sort(actual.begin(), actual.end());
+
+  EXPECT_EQ(expected, actual);
+}
+
