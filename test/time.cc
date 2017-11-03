@@ -1,17 +1,12 @@
 #include <algorithm>
 #include <gtest/gtest.h>
-#include "util/config.h"
-#include "db/database.h"
-#include "db/table.h"
 #include "db/store.h"
 #include "db/rollup.h"
 #include "query/output.h"
-#include "input/simple.h"
+#include "db.h"
 
-namespace db = viya::db;
 namespace util = viya::util;
 namespace query = viya::query;
-namespace input = viya::input;
 
 class IngestFormat : public testing::Test {
   protected:
@@ -587,26 +582,9 @@ TEST(DynamicRollup, FormatIngestion)
   EXPECT_EQ(expected.size(), table->store()->segments()[0]->size());
 }
 
-class TimeEvents : public testing::Test {
-  protected:
-    TimeEvents()
-      :db(std::move(util::Config(
-              "{\"tables\": [{\"name\": \"events\","
-              "               \"dimensions\": [{\"name\": \"country\"},"
-              "                                {\"name\": \"install_time\","
-              "                                 \"type\": \"time\"}],"
-              "               \"metrics\": [{\"name\": \"count\", \"type\": \"count\"}]}]}"))) {}
-    db::Database db;
-};
-
 TEST_F(TimeEvents, OutputFormat)
 {
-  auto table = db.GetTable("events");
-  input::SimpleLoader loader(*table);
-  loader.Load({
-    {"US", "1415791501"},
-    {"IL", "1447326002"}
-  });
+  LoadEvents();
 
   query::MemoryRowOutput output;
   db.Query(
@@ -619,8 +597,14 @@ TEST_F(TimeEvents, OutputFormat)
         " \"filter\": {\"op\": \"gt\", \"column\": \"count\", \"value\": \"0\"}}")), output);
 
   std::vector<query::MemoryRowOutput::Row> expected = {
-    {"US", "2014-11-12 11:25:01", "1"},
-    {"IL", "2015-11-12 11:00:02", "1"}
+    {"IL", "2015-01-03 12:13:14", "1"},
+    {"KZ", "2015-01-03 04:00:00", "1"},
+    {"KZ", "2015-01-05 20:00:00", "1"},
+    {"RU", "2015-01-01 22:11:24", "1"},
+    {"US", "2015-01-01 10:11:24", "1"},
+    {"US", "2015-01-02 05:55:11", "1"},
+    {"US", "2015-01-05 22:10:05", "1"},
+    {"US", "2015-01-07 10:05:32", "1"}
   };
   auto actual = output.rows();
 
@@ -632,12 +616,7 @@ TEST_F(TimeEvents, OutputFormat)
 
 TEST_F(TimeEvents, QueryGranularity)
 {
-  auto table = db.GetTable("events");
-  input::SimpleLoader loader(*table);
-  loader.Load({
-    {"US", "1415791501"},
-    {"IL", "1447326002"}
-  });
+  LoadEvents();
 
   query::MemoryRowOutput output;
   db.Query(
@@ -650,8 +629,10 @@ TEST_F(TimeEvents, QueryGranularity)
         " \"filter\": {\"op\": \"gt\", \"column\": \"count\", \"value\": \"0\"}}")), output);
 
   std::vector<query::MemoryRowOutput::Row> expected = {
-    {"US", "2014-11-01 00:00:00", "1"},
-    {"IL", "2015-11-01 00:00:00", "1"}
+    {"IL", "2015-01-01 00:00:00", "1"},
+    {"KZ", "2015-01-01 00:00:00", "2"},
+    {"RU", "2015-01-01 00:00:00", "1"},
+    {"US", "2015-01-01 00:00:00", "4"}
   };
   auto actual = output.rows();
 
