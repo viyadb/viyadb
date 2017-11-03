@@ -119,4 +119,33 @@ class UserEvents : public testing::Test {
     db::Database db;
 };
 
+class TimeEvents : public testing::Test {
+  protected:
+    TimeEvents()
+      :db(std::move(util::Config(
+              "{\"tables\": [{\"name\": \"events\","
+              "               \"dimensions\": [{\"name\": \"country\"},"
+              "                                {\"name\": \"event_name\"},"
+              "                                {\"name\": \"install_time\","
+              "                                 \"type\": \"time\"}],"
+              "               \"metrics\": [{\"name\": \"count\", \"type\": \"count\"}]}]}"))) {}
+
+    void LoadEvents() {
+      auto table = db.GetTable("events");
+      input::SimpleLoader loader(*table);
+      loader.Load({
+        {"US", "purchase", "1420107084"},
+        {"RU", "support", "1420150284"},
+        {"US", "openapp", "1420178111"},
+        {"IL", "purchase", "1420287194"},
+        {"KZ", "closeapp", "1420257600"},
+        {"US", "uninstall", "1420495805"},
+        {"KZ", "purchase", "1420488000"},
+        {"US", "purchase", "1420625132"},
+      });
+    }
+
+    db::Database db;
+};
+
 #endif // VIYA_TEST_DB_H_

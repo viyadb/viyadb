@@ -51,6 +51,7 @@ void Driver::Run(std::istream& stream, query::RowOutput& output, bool header) {
   for (auto stmt : stmts_) {
     stmt->descriptor()["header"] = header;
     util::Config desc(new json(stmt->descriptor()));
+    //std::cout<<desc.dump()<<std::endl;
     switch (stmt->type()) {
       case Statement::Type::QUERY:
         if (stmts_.size() != 1) {

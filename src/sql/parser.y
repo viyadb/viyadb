@@ -33,7 +33,7 @@
 /* Tokens */
 %token TOK_EOF 0 "end of file"
 %token SELECT SEARCH FROM WHERE BY ORDER HAVING ASC DESC LIMIT
-%token AND OR NOT NE LE GE IN SHOW TABLES
+%token AND OR NOT NE LE GE IN BETWEEN SHOW TABLES
 %token <sval> IDENTIFIER STRING FLOATVAL INTVAL
 
 /* Data types */
@@ -135,6 +135,13 @@ relop_filter: column_name '=' filter_literal { $$ = new json {{"op", "eq"}, {"co
             | column_name NE filter_literal { $$ = new json {{"op", "ne"}, {"column", $1}, {"value", $3}}; delete[] $1; delete[] $3; }
             | column_name IN '(' filter_literals ')' {
                 $$ = new json {{"op", "in"}, {"column", $1}, {"values", *$4}}; delete[] $1; delete $4;
+              }
+            | column_name BETWEEN filter_literal AND filter_literal {
+                $$ = new json {{"op", "and"}, {"filters", {
+                  {{"op", "ge"}, {"column", $1}, {"value", $3}},
+                  {{"op", "le"}, {"column", $1}, {"value", $5}}
+                }}};
+                delete[] $1; delete[] $3; delete[] $5;
               }
 ;
 

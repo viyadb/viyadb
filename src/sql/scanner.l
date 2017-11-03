@@ -61,6 +61,7 @@ AND             { return token::AND; }
 OR              { return token::OR; }
 NOT             { return token::NOT; }
 IN              { return token::IN; }
+BETWEEN         { return token::BETWEEN; }
 SHOW            { return token::SHOW; }
 TABLES          { return token::TABLES; }
 "!="            { return token::NE; }

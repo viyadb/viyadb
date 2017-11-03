@@ -12,6 +12,7 @@ namespace query = viya::query;
 namespace sql = viya::sql;
 
 using SqlEvents = InappEvents;
+using SqlTimeEvents = TimeEvents;
 
 TEST_F(SqlEvents, Select)
 {
@@ -237,3 +238,46 @@ TEST_F(SqlEvents, SelectIn)
   EXPECT_EQ(expected, actual);
 }
 
+TEST_F(SqlEvents, SelectBetween)
+{
+  LoadSortEvents();
+
+  query::MemoryRowOutput output;
+  sql::Driver sql_driver(db);
+
+  std::istringstream query("SELECT install_time,event_name,count FROM events WHERE install_time BETWEEN 20141111 AND 20141112");
+  sql_driver.Run(query, output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {
+    {"20141111", "refund", "3"},
+    {"20141112", "donate", "1"}
+  };
+  std::sort(expected.begin(), expected.end());
+
+  auto actual = output.rows();
+  std::sort(actual.begin(), actual.end());
+
+  EXPECT_EQ(expected, actual);
+}
+
+TEST_F(SqlTimeEvents, SelectBetweenTimes)
+{
+  LoadEvents();
+
+  query::MemoryRowOutput output;
+  sql::Driver sql_driver(db);
+
+  std::istringstream query("SELECT install_time,event_name,count FROM events WHERE install_time BETWEEN '2015-01-03' AND '2015-01-04'");
+  sql_driver.Run(query, output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {
+    {"1420257600", "closeapp", "1"},
+    {"1420287194", "purchase", "1"}
+  };
+  std::sort(expected.begin(), expected.end());
+
+  auto actual = output.rows();
+  std::sort(actual.begin(), actual.end());
+
+  EXPECT_EQ(expected, actual);
+}
