@@ -10,7 +10,7 @@ using json = nlohmann::json;
 
 class Statement {
   public:
-    enum Type { QUERY };
+    enum Type { QUERY, LOAD };
 
     Statement(Type type):type_(type) {}
 

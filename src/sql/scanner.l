@@ -64,6 +64,10 @@ IN              { return token::IN; }
 BETWEEN         { return token::BETWEEN; }
 SHOW            { return token::SHOW; }
 TABLES          { return token::TABLES; }
+COPY            { return token::COPY; }
+WITH            { return token::WITH; }
+FORMAT          { return token::FORMAT; }
+TSV             { return token::TSV; }
 "!="            { return token::NE; }
 "<>"            { return token::NE; }
 "<="            { return token::LE; }

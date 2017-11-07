@@ -31,6 +31,11 @@ Driver::~Driver() {
 void Driver::Reset() {
   delete location_;
   location_ = new location();
+
+  for (auto* stmt: stmts_) {
+    delete stmt;
+  }
+  stmts_.clear();
 }
 
 void Driver::Parse(std::istream& stream) {
@@ -45,7 +50,7 @@ void Driver::Parse(std::istream& stream) {
   }
 }
 
-void Driver::Run(std::istream& stream, query::RowOutput& output, bool header) {
+void Driver::Run(std::istream& stream, query::RowOutput* output, bool header) {
   Parse(stream);
 
   for (auto stmt : stmts_) {
@@ -57,7 +62,13 @@ void Driver::Run(std::istream& stream, query::RowOutput& output, bool header) {
         if (stmts_.size() != 1) {
           throw std::runtime_error("Multiple SQL statements are not supported in a single query");
         }
-        db_.Query(desc, output);
+        if (output == nullptr) {
+          throw std::runtime_error("Output handler is not provided");
+        }
+        db_.Query(desc, *output);
+        break;
+      case Statement::Type::LOAD:
+        db_.Load(desc);
         break;
       default:
         throw std::runtime_error("Wrong query statement");

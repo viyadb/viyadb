@@ -33,7 +33,7 @@
 /* Tokens */
 %token TOK_EOF 0 "end of file"
 %token SELECT SEARCH FROM WHERE BY ORDER HAVING ASC DESC LIMIT
-%token AND OR NOT NE LE GE IN BETWEEN SHOW TABLES
+%token AND OR NOT NE LE GE IN BETWEEN SHOW TABLES COPY WITH FORMAT TSV
 %token <sval> IDENTIFIER STRING FLOATVAL INTVAL
 
 /* Data types */
@@ -47,10 +47,11 @@
 }
 
 /* Non-terminal types */
-%type <stmt> statement select_statement show_statement
-%type <sval> table_name column_name string_literal filter_literal num_literal limit_opt
+%type <stmt> statement select_statement show_statement copy_statement
+%type <sval> table_name column_name string_literal filter_literal num_literal limit_opt copy_format
 %type <jsonval> select_cols select_col filter_opt filter comp_filter relop_filter filter_literals
-%type <jsonval> having_opt orderby_opt orderby_cols orderby_col
+%type <jsonval> having_opt orderby_opt orderby_cols orderby_col copy_opt copy_opts copy_opts_opt copy_source
+%type <jsonval> copy_cols_opt copy_cols
 %type <bval> order_opt
 
 /* Destructors */
@@ -81,6 +82,7 @@ statement_list: statement { driver.AddStatement($1); }
 
 statement: select_statement
          | show_statement
+         | copy_statement
 ;
 
 select_statement: SELECT select_cols FROM table_name filter_opt having_opt orderby_opt limit_opt {
@@ -114,8 +116,61 @@ show_statement: SHOW TABLES {
                 }
 ;
 
+copy_statement: COPY table_name copy_cols_opt FROM copy_source copy_opts_opt {
+                  $$ = new Statement(Statement::Type::LOAD);
+                  auto& d = $$->descriptor();
+                  d["table"] = $2; delete[] $2;
+                  if ($3 != nullptr) {
+                    d["columns"] = *$3; delete $3;
+                  }
+                  for (auto it = $5->begin(); it != $5->end(); ++it) {
+                    d[it.key()] = it.value();
+                  }
+                  delete $5;
+                  for (auto it = $6->begin(); it != $6->end(); ++it) {
+                    d[it.key()] = it.value();
+                  }
+                  delete $6;
+                }
+;
+
+copy_cols_opt: '(' copy_cols ')' { $$ = $2; }
+           | /* empty */ { $$ = nullptr; }
+;
+
+copy_cols: column_name { $$ = new json(); $$->push_back($1); delete[] $1; }
+         | copy_cols ',' column_name { $1->push_back($3); delete[] $3; $$ = $1; }
+;
+
+copy_source: string_literal {
+               $$ = new json {{"type", "file"}, {"file", $1}}; delete[] $1;
+             }
+;
+
+copy_opts_opt: WITH copy_opts { $$ = $2; }
+               | copy_opts
+               | /* empty */ { $$ = new json {{"format", "tsv"}}; }
+;
+
+copy_opts: copy_opt
+         | copy_opts copy_opt {
+             for (auto it = $2->begin(); it != $2->end(); ++it) {
+               (*$1)[it.key()] = it.value();
+             }
+             delete $2;
+             $$ = $1;
+           }
+;
+
+copy_opt: FORMAT copy_format { $$ = new json {{"format", $2}}; delete[] $2; }
+;
+
+copy_format: TSV { $$ = new char[4] {'t', 's', 'v', '\0'}; }
+;
+
 filter_opt: WHERE filter { $$ = $2; }
           | /* empty */ { $$ = nullptr; }
+;
 
 filter: '(' filter ')' { $$ = $2; }
       | comp_filter

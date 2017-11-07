@@ -97,7 +97,7 @@ void Http::Start() {
         std::istringstream query(request->content.string());
         ChunkedTsvOutput output(*response);
         auto params = request->parse_query_string();
-        sql_driver.Run(query, output, params.find("header") != params.end());
+        sql_driver.Run(query, &output, params.find("header") != params.end());
       } catch (std::exception& e) {
         SendError(response, std::string(e.what()));
       }
