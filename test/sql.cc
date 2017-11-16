@@ -316,3 +316,40 @@ TEST_F(SqlEvents, CopyFromFile)
   EXPECT_EQ(expected, actual);
 }
 
+TEST_F(SqlEvents, SupportHypens)
+{
+  db::Database db(std::move(util::Config(
+          "{\"tables\": [{\"name\": \"user-events\","
+          "               \"dimensions\": [{\"name\": \"app-id\"},"
+          "                                {\"name\": \"event-name\"}],"
+          "               \"metrics\": [{\"name\": \"count\", \"type\": \"count\"}]}]}")));
+
+  auto table = db.GetTable("user-events");
+  input::SimpleLoader loader(*table);
+  loader.Load({
+    {"a.b.c", "purchase"},
+    {"a.b.c", "sell"},
+    {"x.y.z", "purchase"},
+    {"a.b.c", "sell"},
+    {"x.y.z", "purchase"}
+  });
+
+  sql::Driver sql_driver(db);
+
+  query::MemoryRowOutput output;
+  std::istringstream query("SELECT `app-id`,count FROM \"user-events\"");
+  sql_driver.Reset();
+  sql_driver.Run(query, &output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {
+    {"a.b.c", "3"},
+    {"x.y.z", "2"}
+  };
+  std::sort(expected.begin(), expected.end());
+
+  auto actual = output.rows();
+  std::sort(actual.begin(), actual.end());
+
+  EXPECT_EQ(expected, actual);
+}
+

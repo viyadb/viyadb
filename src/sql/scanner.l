@@ -84,6 +84,8 @@ TSV             { return token::TSV; }
 
 \"[^\"\n]+\" { DUP_NQ(); return token::IDENTIFIER; }
 
+\`[^\`\n]+\` { DUP_NQ(); return token::IDENTIFIER; }
+
 '[^'\n]*' { DUP_NQ(); return token::STRING; }
 
 . {
