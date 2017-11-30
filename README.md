@@ -30,8 +30,10 @@ If your development machine is not Linux, unfortunately, refer to [this](devenv)
 
 You must have the following prerequisites installed:
 
- * CMake >= 3.2
- * Boost >= 1.64.0
+ * CMake >= 3.9
+ * Boost >= 1.65.1
+ * Flex >= 2.6.1
+ * Bison >= 2:3.0.4
  * g++ >= 7.1
 
 Additional third party dependencies are included into the project as Git submodules.

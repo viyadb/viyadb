@@ -7,6 +7,14 @@ Development environment vased on Vagrant.
 
 ## Preparing development environment
 
+You can either build your own Docker image, or pull a ready one from Docker Hub repository.
+
+To pull the latest Docker image containing the build environment, run:
+
+    docker pull viyadb/devenv:latest
+
+Otherwise, to build your own Docker image containing the devenv, run:
+
     ./prepare.sh
 
 After running this command, docker image containing everything needed for compiling and running ViyaDB
