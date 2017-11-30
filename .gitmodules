@@ -31,3 +31,10 @@
 [submodule "third_party/ThreadPool"]
 	path = third_party/ThreadPool
 	url = https://github.com/progschj/ThreadPool.git
+[submodule "third_party/librdkafka"]
+	path = third_party/librdkafka
+	url = https://github.com/edenhill/librdkafka.git
+	branch = 0.11.1.x
+[submodule "third_party/cppkafka"]
+	path = third_party/cppkafka
+	url = https://github.com/mfontanini/cppkafka.git

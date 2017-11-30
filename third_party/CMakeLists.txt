@@ -39,3 +39,9 @@ add_subdirectory(cpr)
 #set(AUTORUN_UNIT_TESTS OFF CACHE BOOL "AWS SDK disable autorun tests" FORCE)
 #list(APPEND AWS_COMPILER_WARNINGS "-Wno-noexcept-type")
 #add_subdirectory(aws-sdk-cpp)
+
+include(librdkafka.cmake)
+
+set(CPPKAFKA_BUILD_SHARED OFF CACHE BOOL "build static cppkafka" FORCE)
+add_subdirectory(cppkafka)
+

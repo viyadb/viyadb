@@ -1,7 +1,7 @@
 project(viya)
 cmake_minimum_required(VERSION 3.2)
 
-file (STRINGS ${CMAKE_CURRENT_SOURCE_DIR}/VERSION VIYA_VERSION)
+file(STRINGS ${CMAKE_CURRENT_SOURCE_DIR}/VERSION VIYA_VERSION)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -21,7 +21,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
 
 set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost 1.64.0 REQUIRED)
+find_package(Boost 1.64.0 REQUIRED COMPONENTS system filesystem)
 
 find_package(Git)
 execute_process(COMMAND
@@ -30,6 +30,8 @@ execute_process(COMMAND
   OUTPUT_VARIABLE GIT_SHA1
   ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
 
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cmake)
+
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/fmt
@@ -37,6 +39,7 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/Simple-Web-Server
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/CRoaring/cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/CRoaring/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cppkafka/include
   ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 add_subdirectory(third_party)

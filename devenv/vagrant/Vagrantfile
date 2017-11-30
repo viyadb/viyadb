@@ -21,7 +21,6 @@ Vagrant.configure("2") do |config|
         binutils-dev \
         bison \
         build-essential \
-        cmake \
         g++-7 \
         git \
         flex \
@@ -42,6 +41,11 @@ Vagrant.configure("2") do |config|
       && apt-get clean \
       && apt-get autoremove -y \
       && rm -rf /var/lib/apt/lists/*
+
+    if ! [ -f /usr/local/bin/cmake ]; then
+      wget -q https://cmake.org/files/v3.10/cmake-3.10.0-Linux-x86_64.sh -O cmake-install.sh \
+        && sh ./cmake-install.sh --prefix=/usr/local --skip-license \
+    fi
 
     if ! ldconfig -p | grep libboost_system.so.1.65.1 2>&1 >/dev/null; then
       wget -qc https://dl.bintray.com/boostorg/release/1.65.1/source/boost_1_65_1.tar.gz \
