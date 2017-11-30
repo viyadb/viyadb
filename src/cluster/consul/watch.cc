@@ -5,6 +5,7 @@
 
 namespace viya {
 namespace cluster {
+namespace consul {
 
 Watch::Watch(const Consul& consul, const std::string& key)
   :consul_(consul),key_(consul.prefix() + "/" + key)
@@ -31,4 +32,4 @@ json Watch::LastChanges() {
   return std::move(response);
 }
 
-}}
+}}}

@@ -1,5 +1,5 @@
-#ifndef VIYA_CLUSTER_SESSION_H_
-#define VIYA_CLUSTER_SESSION_H_
+#ifndef VIYA_CLUSTER_CONSUL_SESSION_H_
+#define VIYA_CLUSTER_CONSUL_SESSION_H_
 
 #include <memory>
 #include <functional>
@@ -7,6 +7,7 @@
 
 namespace viya {
 namespace cluster {
+namespace consul {
 
 class Consul;
 
@@ -35,6 +36,6 @@ class Session {
     std::unique_ptr<util::Repeat> repeat_;
 };
 
-}}
+}}}
 
-#endif // VIYA_CLUSTER_SESSION_H_
+#endif // VIYA_CLUSTER_CONSUL_SESSION_H_

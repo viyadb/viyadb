@@ -39,9 +39,6 @@ void Supervisor::EnableRestartHandler() {
 }
 
 void stop(int signal __attribute__((unused))) {
-  if (supervisor_ != nullptr) {
-    delete supervisor_;
-  }
   exit(0);
 }
 
@@ -177,7 +174,7 @@ void Supervisor::StartWorker(util::Config worker_config, Supervisor::Worker& inf
     sig_action.sa_handler = SIG_DFL;
     sig_action.sa_flags = 0;
     sigemptyset(&sig_action.sa_mask);
-    for (int sig = 0; sig < NSIG ; sig++) {
+    for (int sig = 1; sig < NSIG ; sig++) {
       if (sig != SIGSEGV && sig != SIGABRT) {
         sigaction(sig, &sig_action, NULL);
       }

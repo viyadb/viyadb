@@ -6,6 +6,7 @@
 
 namespace viya {
 namespace cluster {
+namespace consul {
 
 using json = nlohmann::json;
 
@@ -98,4 +99,4 @@ bool Session::EphemeralKey(const std::string& key, const std::string& value) con
   return r.text.compare(0, 4, "true") == 0;
 }
 
-}}
+}}}

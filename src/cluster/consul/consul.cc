@@ -6,6 +6,7 @@
 
 namespace viya {
 namespace cluster {
+namespace consul {
 
 Consul::Consul(const util::Config& config) {
   if (config.exists("consul")) {
@@ -101,4 +102,4 @@ void Consul::PutKey(const std::string& key, const std::string& content) const {
   }
 }
 
-}}
+}}}

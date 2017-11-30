@@ -1,5 +1,5 @@
-#ifndef VIYA_CLUSTER_CONSUL_H_
-#define VIYA_CLUSTER_CONSUL_H_
+#ifndef VIYA_CLUSTER_CONSUL_CONSUL_H_
+#define VIYA_CLUSTER_CONSUL_CONSUL_H_
 
 #include <memory>
 #include <functional>
@@ -11,6 +11,7 @@
 
 namespace viya {
 namespace cluster {
+namespace consul {
 
 namespace util = viya::util;
 
@@ -48,6 +49,6 @@ class Consul {
     std::string prefix_;
 };
 
-}}
+}}}
 
-#endif // VIYA_CLUSTER_CONSUL_H_
+#endif // VIYA_CLUSTER_CONSUL_CONSUL_H_

@@ -7,6 +7,7 @@
 
 namespace viya {
 namespace cluster {
+namespace consul {
 
 Service::Service(const Consul& consul, const std::string& name, uint16_t port, uint32_t ttl_sec, bool auto_hc):
   consul_(consul),name_(name),port_(port),ttl_sec_(ttl_sec),id_(name + ":" + std::to_string(port)),repeat_(nullptr) {
@@ -73,4 +74,4 @@ void Service::Notify(Status status, const std::string& message) {
   }
 }
 
-}}
+}}}

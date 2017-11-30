@@ -11,16 +11,16 @@ using json = nlohmann::json;
 
 Worker::Worker(const util::Config& config):config_(config),consul_(config) {
   if (consul_.Enabled()) {
-    session_ = consul_.CreateSession(std::string("viyadb-worker"), [this](const Session& session) {
+    session_ = consul_.CreateSession(std::string("viyadb-worker"), [this](auto& session) {
       CreateKey(session);
     });
   }
 }
 
-void Worker::CreateKey(const Session& session) const {
+void Worker::CreateKey(const consul::Session& session) const {
   std::string hostname = util::get_hostname();
-  std::ostringstream key;
-  key<<config_.str("cluster_id")<<"/nodes/workers/"<<hostname<<":"<<std::to_string(config_.num("http_port"));
+  auto worker_key = "clusters/" + config_.str("cluster_id")
+     + "/nodes/workers/" + hostname + ":" + std::to_string(config_.num("http_port"));
 
   json data = json({});
   if (config_.exists("rack_id")) {
@@ -32,7 +32,7 @@ void Worker::CreateKey(const Session& session) const {
   data["http_port"] = config_.num("http_port");
   data["hostname"] = hostname;
 
-  while (!session.EphemeralKey(key.str(), data.dump())) {
+  while (!session.EphemeralKey(worker_key, data.dump())) {
     LOG(WARNING)<<"The worker key is still locked by the previous process... waiting";
     std::this_thread::sleep_for(std::chrono::milliseconds(10000));
   }

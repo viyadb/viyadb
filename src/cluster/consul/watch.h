@@ -1,10 +1,11 @@
-#ifndef VIYA_CLUSTER_WATCH_H_
-#define VIYA_CLUSTER_WATCH_H_
+#ifndef VIYA_CLUSTER_CONSUL_WATCH_H_
+#define VIYA_CLUSTER_CONSUL_WATCH_H_
 
 #include <json.hpp>
 
 namespace viya {
 namespace cluster {
+namespace consul {
 
 using json = nlohmann::json;
 
@@ -24,6 +25,6 @@ class Watch {
     long index_;
 };
 
-}}
+}}}
 
-#endif // VIYA_CLUSTER_WATCH_H_
+#endif // VIYA_CLUSTER_CONSUL_WATCH_H_

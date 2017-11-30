@@ -1,4 +1,3 @@
-#include <sstream>
 #include <set>
 #include <json.hpp>
 #include <glog/logging.h>
@@ -17,7 +16,7 @@ Controller::Controller(const util::Config& config)
     ReadClusterConfig();
 
     session_ = consul_.CreateSession(std::string("viyadb-controller"));
-    le_ = consul_.ElectLeader(*session_, cluster_id_ + "/nodes/controller/leader");
+    le_ = consul_.ElectLeader(*session_, "clusters/" + cluster_id_ + "/nodes/controller/leader");
 
     repeat_ = std::make_unique<util::Repeat>(30000, [this]() {
       if (le_->Leader()) {
@@ -32,28 +31,27 @@ Controller::Controller(const util::Config& config)
 }
 
 void Controller::ReadClusterConfig() {
-  cluster_config_ = util::Config(consul_.GetKey(cluster_id_ + "/config"));
+  cluster_config_ = util::Config(consul_.GetKey("clusters/" + cluster_id_ + "/config"));
   LOG(INFO)<<"Using cluster configuration: "<<cluster_config_.dump();
 
   LOG(INFO)<<"Reading tables configurations";
   table_configs_.clear();
-  for (auto& table : cluster_config_.strlist("tables")) {
-    table_configs_[table] = util::Config(
-      consul_.GetKey("tables/" + table + "/config"));
+  for (auto& table : cluster_config_.strlist("tables", {})) {
+    table_configs_[table] = util::Config(consul_.GetKey("tables/" + table + "/config"));
   }
 }
 
 void Controller::GeneratePlan() {
   DLOG(INFO)<<"Finding active workers";
-  auto active_workers = consul_.ListKeys(cluster_id_ + "/nodes/workers");
+  auto active_workers = consul_.ListKeys("clusters/" + cluster_id_ + "/nodes/workers");
   if (active_workers != cached_workers_) {
 
     LOG(INFO)<<"Found new active workers";
     std::vector<util::Config> worker_configs;
     for (auto worker : active_workers) {
       // TODO: Validate worker configuration
-      worker_configs.emplace(worker_configs.end(),
-                             consul_.GetKey(cluster_id_ + "/nodes/workers/" + worker, "{}"));
+      worker_configs.emplace(worker_configs.end(), consul_.GetKey(
+          "clusters/" + cluster_id_ + "/nodes/workers/" + worker, false, "{}"));
     }
 
     PlanGenerator plan_generator(cluster_config_);
@@ -63,9 +61,8 @@ void Controller::GeneratePlan() {
       auto table = table_conf.first;
 
       LOG(INFO)<<"Retreiving partitioning for table: "<<table;
-      std::ostringstream key;
-      key<<"tables/"<<table<<"/batch/"<<cluster_config_.str("batch")<<"/partitions";
-      auto partitions = json::parse(consul_.GetKey(key.str())).get<std::map<std::string, int>>();
+      auto partitions = json::parse(consul_.GetKey(
+          "tables/" + table + "/batch/" + cluster_config_.str("batch") + "/partitions")).get<std::map<std::string, int>>();
       std::set<int> dist_parts;
       for (auto& p : partitions) {
         dist_parts.insert(p.second);
@@ -74,7 +71,7 @@ void Controller::GeneratePlan() {
       plan[table] = plan_generator.Generate(dist_parts.size(), worker_configs).ToJson();
     }
 
-    consul_.PutKey(cluster_id_ + "/plan", plan.dump());
+    consul_.PutKey("clusters/" + cluster_id_ + "/plan", plan.dump());
     cached_workers_ = active_workers;
   }
 }

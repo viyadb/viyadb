@@ -23,10 +23,10 @@ class Controller {
 
   private:
     const std::string cluster_id_;
-    const Consul consul_;
+    const consul::Consul consul_;
     util::Config cluster_config_;
-    std::unique_ptr<Session> session_;
-    std::unique_ptr<LeaderElector> le_;
+    std::unique_ptr<consul::Session> session_;
+    std::unique_ptr<consul::LeaderElector> le_;
     std::unique_ptr<util::Repeat> repeat_;
     std::unordered_map<std::string, util::Config> table_configs_;
     std::vector<std::string> cached_workers_;

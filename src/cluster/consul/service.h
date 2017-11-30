@@ -1,5 +1,5 @@
-#ifndef VIYA_CLUSTER_SERVICE_H_
-#define VIYA_CLUSTER_SERVICE_H_
+#ifndef VIYA_CLUSTER_CONSUL_SERVICE_H_
+#define VIYA_CLUSTER_CONSUL_SERVICE_H_
 
 #include <memory>
 #include <json.hpp>
@@ -7,6 +7,7 @@
 
 namespace viya {
 namespace cluster {
+namespace consul {
 
 using json = nlohmann::json;
 
@@ -36,6 +37,6 @@ class Service {
     std::unique_ptr<util::Repeat> repeat_;
 };
 
-}}
+}}}
 
-#endif // VIYA_CLUSTER_SERVICE_H_
+#endif // VIYA_CLUSTER_CONSUL_SERVICE_H_

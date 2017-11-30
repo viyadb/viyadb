@@ -7,6 +7,7 @@
 
 namespace viya {
 namespace cluster {
+namespace consul {
 
 LeaderElector::LeaderElector(const Consul& consul, const Session& session, const std::string& key)
   :session_(session),key_(key),watch_(consul.WatchKey(key)),leader_(false) {
@@ -35,4 +36,4 @@ void LeaderElector::Start() {
   });
 }
 
-}}
+}}}

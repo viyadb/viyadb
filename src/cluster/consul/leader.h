@@ -1,5 +1,5 @@
-#ifndef VIYA_CLUSTER_LEADER_H_
-#define VIYA_CLUSTER_LEADER_H_
+#ifndef VIYA_CLUSTER_CONSUL_LEADER_H_
+#define VIYA_CLUSTER_CONSUL_LEADER_H_
 
 #include <atomic>
 #include <memory>
@@ -8,6 +8,7 @@
 
 namespace viya {
 namespace cluster {
+namespace consul {
 
 class Consul;
 class Session;
@@ -30,6 +31,6 @@ class LeaderElector {
     std::unique_ptr<util::Always> always_;
 };
 
-}}
+}}}
 
-#endif // VIYA_CLUSTER_LEADER_H_
+#endif // VIYA_CLUSTER_CONSUL_LEADER_H_

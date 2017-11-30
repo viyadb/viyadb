@@ -15,12 +15,12 @@ class Worker {
     Worker(const util::Config& config);
     Worker(const Worker& other) = delete;
 
-    void CreateKey(const Session& session) const;
+    void CreateKey(const consul::Session& session) const;
 
   private:
     const util::Config& config_;
-    const Consul consul_;
-    std::unique_ptr<Session> session_;
+    const consul::Consul consul_;
+    std::unique_ptr<consul::Session> session_;
 };
 
 }}
