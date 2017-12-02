@@ -2,7 +2,7 @@
 #include "util/config.h"
 #include "cluster/consul/consul.h"
 #include "cluster/feed/feeder.h"
-#include "cluster/feed/listener.h"
+#include "cluster/feed/notifier.h"
 
 namespace viya {
 namespace cluster {
@@ -17,19 +17,19 @@ Feeder::Feeder(const consul::Consul& consul,
 }
 
 Feeder::~Feeder() {
-  for (auto l : listeners_) delete l;
-  listeners_.clear();
+  for (auto l : notifiers_) delete l;
+  notifiers_.clear();
 }
 
 void Feeder::Start() {
   LOG(INFO)<<"Reading indexers configurations";
   for (auto& indexer_id : cluster_config_.strlist("indexers", {})) {
     auto indexer_conf = util::Config(consul_.GetKey("indexers/" + indexer_id + "/config"));
-    auto listener = ListenerFactory::Create(indexer_conf.sub("indexer"));
-    listener->Start([this](const json& info) {
+    auto notifier = NotifierFactory::Create(indexer_conf.sub("realTime").sub("indexer"));
+    notifier->Listen([this](const json& info) {
       ProcessMicroBatch(info);
     });
-    listeners_.push_back(listener);
+    notifiers_.push_back(notifier);
   }
 }
 

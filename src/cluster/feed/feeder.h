@@ -12,7 +12,7 @@ namespace viya {
 namespace cluster {
 namespace feed {
 
-class Listener;
+class Notifier;
 
 using json = nlohmann::json;
 
@@ -31,7 +31,7 @@ class Feeder {
     const consul::Consul& consul_;
     const util::Config& cluster_config_;
     const std::unordered_map<std::string, util::Config>& table_configs_;
-    std::vector<Listener*> listeners_;
+    std::vector<Notifier*> notifiers_;
 };
 
 }}}
