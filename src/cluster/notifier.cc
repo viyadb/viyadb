@@ -1,10 +1,9 @@
 #include "util/config.h"
-#include "cluster/feed/notifier.h"
-#include "cluster/feed/kafka_notifier.h"
+#include "cluster/notifier.h"
+#include "cluster/kafka_notifier.h"
 
 namespace viya {
 namespace cluster {
-namespace feed {
 
 Notifier* NotifierFactory::Create(const util::Config& notifier_conf) {
   auto type = notifier_conf.str("type");
@@ -17,4 +16,4 @@ Notifier* NotifierFactory::Create(const util::Config& notifier_conf) {
   return notifier;
 }
 
-}}}
+}}

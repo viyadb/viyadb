@@ -1,4 +1,5 @@
 #include <json.hpp>
+#include <map>
 #include "cluster/plan.h"
 #include "util/config.h"
 #include "gtest/gtest.h"
@@ -11,7 +12,7 @@ using json = nlohmann::json;
 TEST(PlanGenerator, NoWorkers)
 {
   util::Config cluster_config;
-  std::vector<util::Config> worker_configs {};
+  std::map<std::string, util::Config> worker_configs {};
 
   cluster::PlanGenerator plan_generator(cluster_config);
   try {
@@ -28,10 +29,10 @@ TEST(PlanGenerator, NotEnoughWorkers)
     "{\"replication_factor\": 3}"
   );
 
-  std::vector<util::Config> worker_configs {
-    util::Config("{\"hostname\": \"host1\", \"rack_id\": \"1\", \"http_port\": 5000}"),
-    util::Config("{\"hostname\": \"host2\", \"rack_id\": \"1\", \"http_port\": 5001}"),
-    util::Config("{\"hostname\": \"host3\", \"rack_id\": \"1\", \"http_port\": 5002}")
+  std::map<std::string, util::Config> worker_configs {
+    {"worker1", util::Config("{\"hostname\": \"host1\", \"rack_id\": \"1\", \"http_port\": 5000}")},
+    {"worker2", util::Config("{\"hostname\": \"host2\", \"rack_id\": \"1\", \"http_port\": 5001}")},
+    {"worker3", util::Config("{\"hostname\": \"host3\", \"rack_id\": \"1\", \"http_port\": 5002}")}
   };
 
   cluster::PlanGenerator plan_generator(cluster_config);
@@ -49,10 +50,10 @@ TEST(PlanGenerator, LessReplicasThanRacks)
     "{\"replication_factor\": 3}"
   );
 
-  std::vector<util::Config> worker_configs {
-    util::Config("{\"hostname\": \"host1\", \"rack_id\": \"1\", \"http_port\": 5000}"),
-    util::Config("{\"hostname\": \"host2\", \"rack_id\": \"1\", \"http_port\": 5001}"),
-    util::Config("{\"hostname\": \"host3\", \"rack_id\": \"1\", \"http_port\": 5002}")
+  std::map<std::string, util::Config> worker_configs {
+    {"worker1", util::Config("{\"hostname\": \"host1\", \"rack_id\": \"1\", \"http_port\": 5000}")},
+    {"worker2", util::Config("{\"hostname\": \"host2\", \"rack_id\": \"1\", \"http_port\": 5001}")},
+    {"worker3", util::Config("{\"hostname\": \"host3\", \"rack_id\": \"1\", \"http_port\": 5002}")}
   };
 
   cluster::PlanGenerator plan_generator(cluster_config);
@@ -70,26 +71,27 @@ TEST(PlanGenerator, Placement1)
     "{\"replication_factor\": 2}"
   );
 
-  std::vector<util::Config> worker_configs {
-    util::Config("{\"hostname\": \"host1\", \"rack_id\": \"1\", \"http_port\": 5000}"),
-    util::Config("{\"hostname\": \"host1\", \"rack_id\": \"1\", \"http_port\": 5001}"),
-    util::Config("{\"hostname\": \"host2\", \"rack_id\": \"2\", \"http_port\": 5000}"),
-    util::Config("{\"hostname\": \"host2\", \"rack_id\": \"2\", \"http_port\": 5001}"),
-    util::Config("{\"hostname\": \"host3\", \"rack_id\": \"1\", \"http_port\": 5000}"),
-    util::Config("{\"hostname\": \"host3\", \"rack_id\": \"1\", \"http_port\": 5001}"),
-    util::Config("{\"hostname\": \"host4\", \"rack_id\": \"2\", \"http_port\": 5000}"),
-    util::Config("{\"hostname\": \"host4\", \"rack_id\": \"2\", \"http_port\": 5001}")
+  std::map<std::string, util::Config> worker_configs {
+    {"worker1", util::Config("{\"hostname\": \"host1\", \"rack_id\": \"1\", \"http_port\": 5000}")},
+    {"worker2", util::Config("{\"hostname\": \"host1\", \"rack_id\": \"1\", \"http_port\": 5001}")},
+    {"worker3", util::Config("{\"hostname\": \"host2\", \"rack_id\": \"2\", \"http_port\": 5000}")},
+    {"worker4", util::Config("{\"hostname\": \"host2\", \"rack_id\": \"2\", \"http_port\": 5001}")},
+    {"worker5", util::Config("{\"hostname\": \"host3\", \"rack_id\": \"1\", \"http_port\": 5000}")},
+    {"worker6", util::Config("{\"hostname\": \"host3\", \"rack_id\": \"1\", \"http_port\": 5001}")},
+    {"worker7", util::Config("{\"hostname\": \"host4\", \"rack_id\": \"2\", \"http_port\": 5000}")},
+    {"worker8", util::Config("{\"hostname\": \"host4\", \"rack_id\": \"2\", \"http_port\": 5001}")}
   };
 
   size_t partitions = 2;
   cluster::PlanGenerator plan_generator(cluster_config);
   auto actual = plan_generator.Generate(partitions, worker_configs);
   
-  cluster::Plan expected(partitions);
-  expected.AddPlacement(0, cluster::Placement("host1", 5000));
-  expected.AddPlacement(0, cluster::Placement("host2", 5000));
-  expected.AddPlacement(1, cluster::Placement("host3", 5000));
-  expected.AddPlacement(1, cluster::Placement("host4", 5000));
+  cluster::TablePlacements table_placements(partitions, cluster::PartitionPlacements {});
+  table_placements[0].emplace_back("host1", 5000);
+  table_placements[0].emplace_back("host2", 5000);
+  table_placements[1].emplace_back("host3", 5000);
+  table_placements[1].emplace_back("host4", 5000);
+  cluster::Plan expected(table_placements);
 
   EXPECT_EQ(expected.ToJson(), actual.ToJson());
 }

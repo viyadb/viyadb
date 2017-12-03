@@ -1,5 +1,5 @@
-#ifndef VIYA_CLUSTER_CONSUL_NOTIFIER_H_
-#define VIYA_CLUSTER_CONSUL_NOTIFIER_H_
+#ifndef VIYA_CLUSTER_NOTIFIER_H_
+#define VIYA_CLUSTER_NOTIFIER_H_
 
 #include <functional>
 #include <vector>
@@ -9,7 +9,6 @@ namespace viya { namespace util { class Config; }}
 
 namespace viya {
 namespace cluster {
-namespace feed {
 
 using json = nlohmann::json;
 
@@ -26,6 +25,6 @@ class NotifierFactory {
     static Notifier* Create(const util::Config& notifier_conf);
 };
 
-}}}
+}}
 
-#endif // VIYA_CLUSTER_CONSUL_NOTIFIER_H_
+#endif // VIYA_CLUSTER_NOTIFIER_H_

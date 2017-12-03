@@ -1,15 +1,30 @@
 #include <sstream>
-#include <unordered_map>
+#include <map>
 #include "cluster/plan.h"
 
 namespace viya {
 namespace cluster {
 
+Plan::Plan(const TablePlacements& placements):placements_(placements) {
+}
+
+Plan::Plan(const json& plan) {
+  for (auto plan_it = plan.begin(); plan_it != plan.end(); ++plan_it) {
+    PartitionPlacements part_placements;
+    for (auto placement_it = plan_it->begin(); placement_it != plan_it->end(); ++placement_it) {
+      json placement = *placement_it;
+      part_placements.emplace_back(
+        placement["hostname"].get<std::string>(), (uint16_t)placement["port"].get<int>());
+    }
+    placements_.emplace_back(std::move(part_placements));
+  }
+}
+
 json Plan::ToJson() const {
   json plan = json::array();
-  for (auto& v : placements_) {
+  for (auto& partition_placements : placements_) {
     json placements = json::array();
-    for (auto p : v) {
+    for (auto& p : partition_placements) {
       placements.push_back({{"hostname", p.hostname()}, {"port", p.port()}});
     } 
     std::sort(placements.begin(), placements.end());
@@ -23,17 +38,18 @@ PlanGenerator::PlanGenerator(const util::Config& cluster_config)
   :cluster_config_(cluster_config) {
 }
 
-Plan PlanGenerator::Generate(
-  size_t partitions_num, const std::vector<util::Config>& worker_configs) {
+Plan PlanGenerator::Generate(size_t partitions_num,
+                             const std::map<std::string, util::Config>& workers_configs) {
 
   typedef std::vector<util::Config> workers;
-  typedef std::unordered_map<std::string, workers> workers_by_host;
-  typedef std::unordered_map<std::string, workers_by_host> hosts_by_rack;
+  typedef std::map<std::string, workers> workers_by_host;
+  typedef std::map<std::string, workers_by_host> hosts_by_rack;
 
   hosts_by_rack hbr;
   size_t total_workers = 0;
 
-  for (auto& worker_conf : worker_configs) {
+  for (auto& it : workers_configs) {
+    auto& worker_conf = it.second;
     std::string rack_id = worker_conf.str("rack_id", "");
     std::string hostname = worker_conf.str("hostname");
 
@@ -89,9 +105,8 @@ Plan PlanGenerator::Generate(
     worker_idxs[i].resize(rh[i].size(), 0);
   }
 
-  Plan table_plan(partitions_num);
+  TablePlacements table_placements(partitions_num, PartitionPlacements {});
   size_t partition = 0;
-
   while (partition < partitions_num) {
     // Iterate on every rack and on every host in cycles.
     // Let's say we have two racks, two hosts under each rack and two workers under each host:
@@ -104,9 +119,7 @@ Plan PlanGenerator::Generate(
       if (wi < rh[ri][hi].size()) {
         auto next_worker = rh[ri][hi][wi];
         worker_idxs[ri][hi] = wi + 1;
-        table_plan.AddPlacement(partition, Placement(
-            next_worker.str("hostname"), next_worker.num("http_port")
-        ));
+        table_placements[partition].emplace_back(next_worker.str("hostname"), next_worker.num("http_port"));
         ++p;
       }
       host_idxs[ri] = (hi + 1) % rh[ri].size();
@@ -115,7 +128,7 @@ Plan PlanGenerator::Generate(
     ++partition;
   }
 
-  return table_plan;
+  return { table_placements };
 }
 
 }}

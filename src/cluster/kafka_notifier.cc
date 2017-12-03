@@ -6,11 +6,10 @@
 #include "util/config.h"
 #include "util/hostname.h"
 #include "util/schedule.h"
-#include "cluster/feed/kafka_notifier.h"
+#include "cluster/kafka_notifier.h"
 
 namespace viya {
 namespace cluster {
-namespace feed {
 
 KafkaNotifier::KafkaNotifier(const util::Config& config):
   brokers_(config.str("channel")),
@@ -32,7 +31,7 @@ cppkafka::Configuration KafkaNotifier::CreateConsumerConfig(const std::string& g
 }
 
 void KafkaNotifier::Listen(std::function<void(const json& info)> callback) {
-  auto config = CreateConsumerConfig("viyadb-feed-" + util::get_hostname());
+  auto config = CreateConsumerConfig("viyadb-" + util::get_hostname());
   consumer_ = std::make_unique<cppkafka::Consumer>(config);
   consumer_->subscribe({ topic_ });
 
@@ -60,8 +59,8 @@ void KafkaNotifier::Listen(std::function<void(const json& info)> callback) {
   });
 }
 
-std::unordered_map<uint32_t, int64_t> KafkaNotifier::GetLatestOffsets(cppkafka::Consumer& consumer) {
-  std::unordered_map<uint32_t, int64_t> last_offsets;
+std::map<uint32_t, int64_t> KafkaNotifier::GetLatestOffsets(cppkafka::Consumer& consumer) {
+  std::map<uint32_t, int64_t> last_offsets;
   auto metadata = consumer.get_metadata(consumer.get_topic(topic_));
   for (auto& partition : metadata.get_partitions()) {
     auto offsets = consumer.query_offsets({topic_, (int)partition.get_id()});
@@ -75,7 +74,7 @@ std::unordered_map<uint32_t, int64_t> KafkaNotifier::GetLatestOffsets(cppkafka::
 }
 
 std::vector<json> KafkaNotifier::GetAllMessages() {
-  auto config = CreateConsumerConfig("viyadb-feed-tmp-" + util::get_hostname());
+  auto config = CreateConsumerConfig("viyadb-tmp-" + util::get_hostname());
   cppkafka::Consumer consumer(config);
   auto latest_offsets = GetLatestOffsets(consumer);
   std::vector<json> messages;
@@ -103,7 +102,7 @@ std::vector<json> KafkaNotifier::GetAllMessages() {
 }
 
 json KafkaNotifier::GetLastMessage() {
-  auto config = CreateConsumerConfig("viyadb-feed-tmp-" + util::get_hostname());
+  auto config = CreateConsumerConfig("viyadb-tmp-" + util::get_hostname());
   cppkafka::Consumer consumer(config);
   auto latest_offsets = GetLatestOffsets(consumer);
   auto latest_offset = std::max_element(latest_offsets.begin(), latest_offsets.end(),
@@ -133,4 +132,4 @@ json KafkaNotifier::GetLastMessage() {
   return std::move(last_message);
 }
 
-}}}
+}}
