@@ -42,7 +42,7 @@ void Session::Create() {
     { "TTL", std::to_string(ttl_sec_) + "s" }
   };
 
-  LOG(INFO)<<"Creating new session '"<<name_<<"' with TTL="<<ttl_sec_<<"sec";
+  DLOG(INFO)<<"Creating new session '"<<name_<<"' with TTL="<<ttl_sec_<<"sec";
   auto r = cpr::Put(
     cpr::Url { consul_.url() + "/v1/session/create" },
     cpr::Body { data.dump() },
@@ -57,7 +57,7 @@ void Session::Create() {
 
   json response = json::parse(r.text);
   id_ = response["ID"];
-  LOG(INFO)<<"Created new session: "<<id_;
+  DLOG(INFO)<<"Created new session: "<<id_;
 
   if (on_create_) {
     on_create_(const_cast<const Session&>(*this));

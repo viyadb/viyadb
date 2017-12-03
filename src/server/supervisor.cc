@@ -67,7 +67,9 @@ void Supervisor::Start() {
 
   EnableRestartHandler();
 
-  controller_.reset(new cluster::Controller(config));
+  if (config.exists("cluster_id")) {
+    controller_.reset(new cluster::Controller(config));
+  }
 
   auto cpu_list = config.numlist("cpu_list");
   if (cpu_list.size() < workers_num) {

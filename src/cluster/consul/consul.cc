@@ -9,42 +9,28 @@ namespace cluster {
 namespace consul {
 
 Consul::Consul(const util::Config& config) {
-  if (config.exists("consul")) {
-    const auto& consul_conf = config.sub("consul");
+  url_ = config.str("consul_url");
+  url_.erase(std::find_if(url_.rbegin(), url_.rend(), [](unsigned char ch) {
+    return ch != '/';
+  }).base(), url_.end());
 
-    url_ = consul_conf.str("url");
-    url_.erase(std::find_if(url_.rbegin(), url_.rend(), [](unsigned char ch) {
-      return ch != '/';
-    }).base(), url_.end());
-
-    prefix_ = consul_conf.str("prefix", "viyadb");
-  }
-}
-
-void Consul::CheckEnabled() const {
-  if (!Enabled()) {
-    throw std::runtime_error("Consul integration is disabled!");
-  }
+  prefix_ = config.str("consul_prefix", "viyadb");
 }
 
 std::unique_ptr<Session> Consul::CreateSession(const std::string& name,
     std::function<void(const Session&)> on_create, uint32_t ttl_sec) const {
-  CheckEnabled();
   return std::make_unique<Session>(*this, name, on_create, ttl_sec);
 }
 
 std::unique_ptr<Service> Consul::RegisterService(const std::string& name, uint16_t port, uint32_t ttl_sec, bool auto_hc) const {
-  CheckEnabled();
   return std::make_unique<Service>(*this, name, port, ttl_sec, auto_hc);
 }
 
 std::unique_ptr<LeaderElector> Consul::ElectLeader(const Session& session, const std::string& key) const {
-  CheckEnabled();
   return std::make_unique<LeaderElector>(*this, session, key);
 }
 
 std::unique_ptr<Watch> Consul::WatchKey(const std::string& key) const {
-  CheckEnabled();
   return std::make_unique<Watch>(*this, key);
 }
 

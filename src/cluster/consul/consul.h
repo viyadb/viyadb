@@ -20,8 +20,6 @@ class Consul {
     Consul(const util::Config& config);
     Consul(const Consul& other) = delete;
 
-    bool Enabled() const { return !url_.empty(); }
-
     std::unique_ptr<Session> CreateSession(const std::string& name,
         std::function<void(const Session&)> on_create = {}, uint32_t ttl_sec = 10) const;
 
@@ -40,9 +38,6 @@ class Consul {
 
     const std::string& url() const { return url_; }
     const std::string& prefix() const { return prefix_; }
-
-  private:
-    void CheckEnabled() const;
 
   private:
     std::string url_;

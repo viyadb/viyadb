@@ -7,6 +7,7 @@
 #include "cluster/plan.h"
 #include "cluster/partitions.h"
 #include "util/config.h"
+#include "util/schedule.h"
 
 namespace viya {
 namespace cluster {
@@ -29,19 +30,21 @@ class Controller {
   private:
     void ReadClusterConfig();
     void ReadTablesConfigs();
-    void ReadWorkersConfigs();
+    bool ReadWorkersConfigs();
     void ReadIndexersConfigs();
     void FetchLatestBatchInfo();
-    void ReadPlan();
+    void InitializePlan();
+    bool ReadPlan();
     void GeneratePlan();
 
   private:
     const std::string cluster_id_;
     const consul::Consul consul_;
-    uint64_t batch_id_;
     util::Config cluster_config_;
     std::unique_ptr<consul::Session> session_;
     std::unique_ptr<consul::LeaderElector> le_;
+    std::unique_ptr<util::Later> plan_initializer_;
+    uint64_t batch_id_;
     std::map<std::string, util::Config> tables_configs_;
     std::map<std::string, util::Config> workers_configs_;
     std::map<std::string, util::Config> indexers_configs_;

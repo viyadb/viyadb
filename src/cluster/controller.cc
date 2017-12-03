@@ -12,22 +12,16 @@ Controller::Controller(const util::Config& config):
   consul_(config),
   batch_id_(0L) {
 
-  if (consul_.Enabled()) {
-    ReadClusterConfig();
-    ReadTablesConfigs();
-    ReadIndexersConfigs();
+  ReadClusterConfig();
+  ReadTablesConfigs();
+  ReadIndexersConfigs();
 
-    session_ = consul_.CreateSession(std::string("viyadb-controller"));
-    le_ = consul_.ElectLeader(*session_, "clusters/" + cluster_id_ + "/nodes/controller/leader");
+  session_ = consul_.CreateSession(std::string("viyadb-controller"));
+  le_ = consul_.ElectLeader(*session_, "clusters/" + cluster_id_ + "/nodes/controller/leader");
 
-    FetchLatestBatchInfo();
-
-    if (le_->Leader()) {
-      GeneratePlan();
-    } else {
-      ReadPlan();
-    }
-  }
+  plan_initializer_ = std::make_unique<util::Later>(10000L, [this]() {
+    InitializePlan();
+  });
 }
 
 void Controller::ReadClusterConfig() {
@@ -43,23 +37,23 @@ void Controller::ReadTablesConfigs() {
   }
 }
 
-void Controller::ReadWorkersConfigs() {
-  LOG(INFO)<<"Finding active workers";
+bool Controller::ReadWorkersConfigs() {
+  DLOG(INFO)<<"Finding active workers";
+
   auto active_workers = consul_.ListKeys("clusters/" + cluster_id_ + "/nodes/workers");
-  bool has_new_workers = false;
+  auto minimum_workers = (size_t)cluster_config_.num("minimum_workers", 0L);
+  if (minimum_workers > 0 && active_workers.size() < minimum_workers) {
+    LOG(INFO)<<"Number of active workers is less than the minimal number of workers ("<<minimum_workers<<")";
+    return false;
+  }
+
+  DLOG(INFO)<<"Reading workers configurations";
+  workers_configs_.clear();
   for (auto& worker_id : active_workers) {
-    if (workers_configs_.find(worker_id) == workers_configs_.end()) {
-      has_new_workers = true;
-    }
+    workers_configs_.emplace(worker_id, consul_.GetKey(
+        "clusters/" + cluster_id_ + "/nodes/workers/" + worker_id, false, "{}"));
   }
-  if (has_new_workers) {
-    LOG(INFO)<<"Found new active workers";
-    workers_configs_.clear();
-    for (auto& worker_id : active_workers) {
-      workers_configs_.emplace(worker_id, consul_.GetKey(
-          "clusters/" + cluster_id_ + "/nodes/workers/" + worker_id, false, "{}"));
-    }
-  }
+  return true;
 }
 
 void Controller::ReadIndexersConfigs() {
@@ -71,17 +65,20 @@ void Controller::ReadIndexersConfigs() {
 }
 
 void Controller::FetchLatestBatchInfo() {
+  LOG(INFO)<<"Fetching latest batch info from indexers";
   for (auto& conf_it : indexers_configs_) {
+
     auto& indexer_conf = conf_it.second;
     auto notifier = NotifierFactory::Create(indexer_conf.sub("batch").sub("notifier"));
     auto info = notifier->GetLastMessage();
+
     if (!info.empty()) {
       uint64_t id = info["id"];
       if (batch_id_ == 0L) {
         batch_id_ = id;
       } else if (id != batch_id_) {
         throw std::runtime_error(
-          "Batch indexers are not aligned! Different batch ID were read from notification channels.");
+          "Batch indexers are not aligned! Different batch ID were read from notification channels");
       }
 
       json tables_info = info["tables"];
@@ -96,26 +93,47 @@ void Controller::FetchLatestBatchInfo() {
   }
 }
 
-void Controller::ReadPlan() {
-  while (true) {
-    // Read cached plan, and see whether it's built for the current batch ID:
-    json existing_plan = json::parse(consul_.GetKey("clusters/" + cluster_id_ + "/plan", false, "{}"));
-    if (!existing_plan.empty() && existing_plan["batch_id"].get<uint64_t>() == batch_id_) {
-      tables_plans_.clear();
-      json tables_plans = existing_plan["plan"];
-      for (auto it = tables_plans.begin(); it != tables_plans.end(); ++it) {
-        tables_plans_.emplace(it.key(), it.value());
+void Controller::InitializePlan() {
+  FetchLatestBatchInfo();
+  if (batch_id_ == 0L) {
+    LOG(WARNING)<<"Latest batch info is not available";
+  } else {
+    while (true) {
+      if (le_->Leader()) {
+        GeneratePlan();
+        break;
       }
-      break;
+      if (ReadPlan()) {
+        break;
+      }
+      LOG(INFO)<<"Partitioning plan is not available yet... waiting for leader to generate it";
+      std::this_thread::sleep_for(std::chrono::seconds(10));
     }
-    LOG(INFO)<<"Partitioning plan is not available yet... waiting for leader to generate it";
-    std::this_thread::sleep_for(std::chrono::seconds(10));
   }
 }
 
-void Controller::GeneratePlan() {
-  ReadWorkersConfigs();
+bool Controller::ReadPlan() {
+  json existing_plan = json::parse(consul_.GetKey("clusters/" + cluster_id_ + "/plan", false, "{}"));
+  if (!existing_plan.empty() && existing_plan["batch_id"].get<uint64_t>() == batch_id_) {
 
+    LOG(INFO)<<"Reading cached plan from Consul";
+    tables_plans_.clear();
+
+    json tables_plans = existing_plan["plan"];
+    for (auto it = tables_plans.begin(); it != tables_plans.end(); ++it) {
+      tables_plans_.emplace(it.key(), it.value());
+    }
+    return true;
+  }
+  return false;
+}
+
+void Controller::GeneratePlan() {
+  while (!ReadWorkersConfigs()) {
+    std::this_thread::sleep_for(std::chrono::seconds(10));
+  }
+
+  LOG(INFO)<<"Generating partitioning plan";
   PlanGenerator plan_generator(cluster_config_);
   tables_plans_.clear();
 
@@ -126,7 +144,7 @@ void Controller::GeneratePlan() {
         table_name, std::move(plan_generator.Generate(partitions.partitions_num(), workers_configs_)));
   }
 
-  // Cache the plan in Consul for other controllers:
+  LOG(INFO)<<"Storing partitioning plan into Consul";
   json plans_cache = json({});
   for (auto& it : tables_plans_) {
     plans_cache[it.first] = it.second.ToJson();

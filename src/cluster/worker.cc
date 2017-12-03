@@ -10,11 +10,9 @@ namespace cluster {
 using json = nlohmann::json;
 
 Worker::Worker(const util::Config& config):config_(config),consul_(config) {
-  if (consul_.Enabled()) {
-    session_ = consul_.CreateSession(std::string("viyadb-worker"), [this](auto& session) {
-      CreateKey(session);
-    });
-  }
+  session_ = consul_.CreateSession(std::string("viyadb-worker"), [this](auto& session) {
+    CreateKey(session);
+  });
 }
 
 void Worker::CreateKey(const consul::Session& session) const {
