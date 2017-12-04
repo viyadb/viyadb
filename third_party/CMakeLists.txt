@@ -37,6 +37,8 @@ add_subdirectory(cpr)
 #set(CPP_STANDARD "17" CACHE STRING "AWS SDK use C++ standard: 17" FORCE)
 #set(ENABLE_TESTING OFF CACHE BOOL "AWS SDK disable testing" FORCE)
 #set(AUTORUN_UNIT_TESTS OFF CACHE BOOL "AWS SDK disable autorun tests" FORCE)
+#set(MINIMIZE_SIZE OFF CACHE BOOL "AWS SDK minimize size" FORCE)
+#set(BUILD_SHARED_LIBS OFF CACHE BOOL "AWS SDK disable shared libraries build" FORCE)
 #list(APPEND AWS_COMPILER_WARNINGS "-Wno-noexcept-type")
 #add_subdirectory(aws-sdk-cpp)
 

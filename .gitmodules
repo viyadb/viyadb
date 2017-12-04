@@ -4,6 +4,7 @@
 [submodule "third_party/cpp-subprocess"]
 	path = third_party/cpp-subprocess
 	url = https://github.com/spektom/cpp-subprocess.git
+	branch = popen_vector_argument
 [submodule "third_party/cityhash"]
 	path = third_party/cityhash
 	url = https://github.com/google/cityhash.git
