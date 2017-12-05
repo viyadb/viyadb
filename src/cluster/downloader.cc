@@ -13,8 +13,8 @@ std::string S3Downloader::Download(const std::string& path) const {
 
   // This may seem silly to call external AWS CLI binary instead of using AWS SDK,
   // but according to performance tests this command beats any AWS SDK:
-  if (util::Process::Run({"aws", "s3", "sync", "--only-show-errors", "--no-progress",
-    path.c_str(), target_path.c_str()}) != 0) {
+  if (util::Process::Run(
+      {"aws", "s3", "sync", "--only-show-errors", "--no-progress", path.c_str(), target_path.c_str()}) != 0) {
     throw std::runtime_error("Can't fetch files from S3!");
   }
   return target_path;

@@ -1,6 +1,7 @@
 #include <boost/filesystem.hpp>
 #include <glog/logging.h>
 #include "util/config.h"
+#include "util/scope_guard.h"
 #include "cluster/controller.h"
 #include "cluster/feeder.h"
 #include "cluster/notifier.h"
@@ -23,6 +24,8 @@ Feeder::~Feeder() {
 }
 
 void Feeder::Start() {
+  LoadHistoricalData();
+
   for (auto& it : controller_.indexers_configs()) {
     auto& indexer_id = it.first;
     auto& indexer_conf = it.second;
@@ -35,17 +38,38 @@ void Feeder::Start() {
   }
 }
 
+void Feeder::LoadHistoricalData() {
+  for (auto& it : controller_.batches()) {
+    for (auto& tit : it.second->tables_info()) {
+      auto& table_name = tit.first;
+      auto& table_info = tit.second;
+
+      for (auto& path : table_info.paths()) {
+        std::string target_path = Downloader::Instance().Download(path);
+        util::ScopeGuard delete_tmpdir = [&]() {
+          if (target_path != path) {
+            fs::remove_all(target_path);
+          }
+        };
+      }
+    }
+  }
+}
+
 void Feeder::ProcessMicroBatch(const std::string& indexer_id, const MicroBatchInfo& info) {
   if (info.id() <= controller_.batches().at(indexer_id)->last_microbatch()) {
     LOG(WARNING)<<"Skipping already processed micro batch: "<<info.id();
   } else {
-    for (auto& it : info.tables_paths()) {
-      auto table = it.first;
-      auto paths = it.second;
-      
-      for (auto& path : paths) {
+    for (auto& it : info.tables_info()) {
+      auto& table_info = it.second;
+
+      for (auto& path : table_info.paths()) {
         std::string target_path = Downloader::Instance().Download(path);
-        fs::remove_all(target_path);
+        util::ScopeGuard delete_tmpdir = [&]() {
+          if (target_path != path) {
+            fs::remove_all(target_path);
+          }
+        };
       }
     }
   }

@@ -123,16 +123,14 @@ bool Controller::GeneratePlan() {
   tables_plans_.clear();
 
   for (auto& it : batches_) {
-    auto& batch_info = it.second;
-
-    for (auto& pit : batch_info->tables_partitions()) {
-      auto& table_name = pit.first;
+    for (auto& tit : it.second->tables_info()) {
+      auto& table_name = tit.first;
       if (tables_plans_.find(table_name) != tables_plans_.end()) {
         throw std::runtime_error("Multiple indexers operate on same tables!");
       }
-      auto& table_partitions = pit.second;
+      auto& table_info = tit.second;
       tables_plans_.emplace(table_name, std::move(
-          plan_generator.Generate(table_partitions.partitions_num(), workers_configs_)));
+          plan_generator.Generate(table_info.partitions().total(), workers_configs_)));
     }
   }
 

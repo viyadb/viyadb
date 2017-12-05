@@ -20,6 +20,7 @@ class Feeder {
 
   protected:
     void Start();
+    void LoadHistoricalData();
     void ProcessMicroBatch(const std::string& indexer_id, const MicroBatchInfo& info);
 
   private:
