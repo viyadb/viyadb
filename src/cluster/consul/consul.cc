@@ -42,7 +42,7 @@ std::vector<std::string> Consul::ListKeys(const std::string& key) const {
   switch (r.status_code) {
     case 200: break;
     case 0:
-      throw std::runtime_error("Can't contact Consul (host is unreachable)");
+      throw std::runtime_error("Can't contact Consul at: " + url_ + " (host is unreachable)");
     case 404:
       return std::move(std::vector<std::string> {});
     default:
@@ -63,7 +63,7 @@ std::string Consul::GetKey(const std::string& key, bool throw_if_not_exists, std
   switch (r.status_code) {
     case 200: break;
     case 0:
-      throw std::runtime_error("Can't contact Consul (host is unreachable)");
+      throw std::runtime_error("Can't contact Consul at: " + url_ + " (host is unreachable)");
     case 404:
       if (throw_if_not_exists) {
         throw std::runtime_error("Key doesn't exist: " + prefix_ + "/" + key);
@@ -82,7 +82,7 @@ void Consul::PutKey(const std::string& key, const std::string& content) const {
   );
   if (r.status_code != 200) {
     if (r.status_code == 0) {
-      throw std::runtime_error("Can't contact Consul (host is unreachable)");
+      throw std::runtime_error("Can't contact Consul at: " + url_ + " (host is unreachable)");
     }
     throw std::runtime_error("Can't put key contents (" + r.text + ")");
   }

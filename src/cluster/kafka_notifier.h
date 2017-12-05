@@ -13,11 +13,11 @@ namespace cluster {
 
 class KafkaNotifier: public Notifier {
   public:
-    KafkaNotifier(const util::Config& config);
+    KafkaNotifier(const util::Config& config, IndexerType indexer_type);
 
-    void Listen(std::function<void(const json& info)> callback);
-    std::vector<json> GetAllMessages();
-    json GetLastMessage();
+    void Listen(std::function<void(const Info& info)> callback);
+    std::vector<std::unique_ptr<Info>> GetAllMessages();
+    std::unique_ptr<Info> GetLastMessage();
 
   protected:
     cppkafka::Configuration CreateConsumerConfig(const std::string& group_id);
@@ -26,6 +26,7 @@ class KafkaNotifier: public Notifier {
   private:
     const std::string brokers_;
     const std::string topic_;
+    IndexerType indexer_type_;
     std::unique_ptr<cppkafka::Consumer> consumer_;
     std::unique_ptr<util::Always> always_;
 };

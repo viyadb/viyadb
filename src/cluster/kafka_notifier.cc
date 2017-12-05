@@ -6,14 +6,16 @@
 #include "util/config.h"
 #include "util/hostname.h"
 #include "util/schedule.h"
+#include "cluster/batch_info.h"
 #include "cluster/kafka_notifier.h"
 
 namespace viya {
 namespace cluster {
 
-KafkaNotifier::KafkaNotifier(const util::Config& config):
+KafkaNotifier::KafkaNotifier(const util::Config& config, IndexerType indexer_type):
   brokers_(config.str("channel")),
-  topic_(config.str("queue")) {
+  topic_(config.str("queue")),
+  indexer_type_(indexer_type) {
 }
 
 cppkafka::Configuration KafkaNotifier::CreateConsumerConfig(const std::string& group_id) {
@@ -30,7 +32,7 @@ cppkafka::Configuration KafkaNotifier::CreateConsumerConfig(const std::string& g
   return std::move(consumer_config);
 }
 
-void KafkaNotifier::Listen(std::function<void(const json& info)> callback) {
+void KafkaNotifier::Listen(std::function<void(const Info& info)> callback) {
   auto config = CreateConsumerConfig("viyadb-" + util::get_hostname());
   consumer_ = std::make_unique<cppkafka::Consumer>(config);
   consumer_->subscribe({ topic_ });
@@ -45,10 +47,11 @@ void KafkaNotifier::Listen(std::function<void(const json& info)> callback) {
           LOG(WARNING)<<"Error occurred while consuming messages: "<<msg.get_error();
         }
       } else {
-        auto info = json::parse(msg.get_payload());
-        DLOG(INFO)<<"Received new message: "<<info.dump();
+        auto& payload = msg.get_payload();
+        DLOG(INFO)<<"Received new message: "<<payload;
+        auto info = InfoFactory::Create(payload, indexer_type_);
         try {
-          callback(info);
+          callback(*info);
           consumer_->commit(msg);
         } catch (std::exception& e) {
           LOG(ERROR)<<"Error processing Kafka message: "<<e.what();
@@ -73,11 +76,11 @@ std::map<uint32_t, int64_t> KafkaNotifier::GetLatestOffsets(cppkafka::Consumer& 
   return std::move(last_offsets);
 }
 
-std::vector<json> KafkaNotifier::GetAllMessages() {
+std::vector<std::unique_ptr<Info>> KafkaNotifier::GetAllMessages() {
   auto config = CreateConsumerConfig("viyadb-tmp-" + util::get_hostname());
   cppkafka::Consumer consumer(config);
   auto latest_offsets = GetLatestOffsets(consumer);
-  std::vector<json> messages;
+  std::vector<std::unique_ptr<Info>> messages;
 
   consumer.subscribe({ topic_ });
 
@@ -90,7 +93,7 @@ std::vector<json> KafkaNotifier::GetAllMessages() {
           LOG(WARNING)<<"Error occurred while consuming messages: "<<msg.get_error();
         }
       } else {
-        messages.emplace_back(std::move(json::parse(msg.get_payload())));
+        messages.emplace_back(std::move(InfoFactory::Create(msg.get_payload(), indexer_type_)));
       }
       auto msg_partition = msg.get_partition();
       if (latest_offsets[msg_partition] <= msg.get_offset()) {
@@ -101,7 +104,7 @@ std::vector<json> KafkaNotifier::GetAllMessages() {
   return std::move(messages);
 }
 
-json KafkaNotifier::GetLastMessage() {
+std::unique_ptr<Info> KafkaNotifier::GetLastMessage() {
   auto config = CreateConsumerConfig("viyadb-tmp-" + util::get_hostname());
   cppkafka::Consumer consumer(config);
   auto latest_offsets = GetLatestOffsets(consumer);
@@ -113,7 +116,7 @@ json KafkaNotifier::GetLastMessage() {
     consumer.assign({{topic_, (int)latest_offset->first}});
   }
 
-  json last_message;
+  std::unique_ptr<Info> last_message;
   while (true) {
     auto msg = consumer.poll();
     if (msg) {
@@ -122,7 +125,7 @@ json KafkaNotifier::GetLastMessage() {
           LOG(WARNING)<<"Error occurred while consuming messages: "<<msg.get_error();
         }
       } else {
-        last_message = std::move(json::parse(msg.get_payload()));
+        last_message = std::move(InfoFactory::Create(msg.get_payload(), indexer_type_));
       }
       if (latest_offset->second <= msg.get_offset()) {
         break;

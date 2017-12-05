@@ -3,16 +3,15 @@
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <cityhash/src/city.h>
-#include <cpp-subprocess/subprocess.hpp>
 #include <glog/logging.h>
 #include "db/defs.h"
+#include "util/process.h"
 #include "codegen/compiler.h"
 
 namespace viya {
 namespace codegen {
 
 namespace fs = boost::filesystem;
-namespace sp = subprocess;
 namespace cr = std::chrono;
 
 Compiler::Compiler():Compiler(util::Config()) {}
@@ -101,9 +100,7 @@ std::shared_ptr<SharedLibrary> Compiler::Compile(const std::string& code) {
       DLOG(INFO)<<code;
       auto begin = cr::steady_clock::now();
 
-      auto p = sp::Popen(cmd_, sp::input {sp::PIPE});
-      p.communicate(code.c_str(), code.size());
-      if (p.wait() != 0) {
+      if (util::Process::RunWithInput(cmd_, code) != 0) {
         throw std::runtime_error("Can't compile: " + code);
       }
 

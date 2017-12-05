@@ -56,7 +56,8 @@ void Session::Create() {
   }
 
   json response = json::parse(r.text);
-  id_ = response["ID"];
+  id_ = response["ID"].get<std::string>();
+
   DLOG(INFO)<<"Created new session: "<<id_;
 
   if (on_create_) {

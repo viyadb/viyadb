@@ -3,11 +3,12 @@
 
 #include <memory>
 #include <map>
-#include "cluster/consul/consul.h"
-#include "cluster/plan.h"
-#include "cluster/partitions.h"
 #include "util/config.h"
 #include "util/schedule.h"
+#include "cluster/consul/consul.h"
+#include "cluster/plan.h"
+#include "cluster/feeder.h"
+#include "cluster/batch_info.h"
 
 namespace viya {
 namespace cluster {
@@ -24,18 +25,17 @@ class Controller {
     const std::map<std::string, util::Config>& tables_configs() const { return tables_configs_; }
     const std::map<std::string, util::Config>& workers_configs() const { return workers_configs_; }
     const std::map<std::string, util::Config>& indexers_configs() const { return indexers_configs_; }
-    const std::map<std::string, Partitions>& tables_partitions() const { return tables_partitions_; }
+    const std::map<std::string, std::unique_ptr<BatchInfo>>& batches() const { return batches_; }
     const std::map<std::string, Plan>& tables_plans() const { return tables_plans_; }
 
   private:
     void ReadClusterConfig();
-    void ReadTablesConfigs();
     bool ReadWorkersConfigs();
-    void ReadIndexersConfigs();
     void FetchLatestBatchInfo();
+    void Initialize();
     void InitializePlan();
     bool ReadPlan();
-    void GeneratePlan();
+    bool GeneratePlan();
 
   private:
     const std::string cluster_id_;
@@ -43,13 +43,13 @@ class Controller {
     util::Config cluster_config_;
     std::unique_ptr<consul::Session> session_;
     std::unique_ptr<consul::LeaderElector> le_;
-    std::unique_ptr<util::Later> plan_initializer_;
-    uint64_t batch_id_;
+    std::unique_ptr<util::Later> initializer_;
     std::map<std::string, util::Config> tables_configs_;
     std::map<std::string, util::Config> workers_configs_;
     std::map<std::string, util::Config> indexers_configs_;
-    std::map<std::string, Partitions> tables_partitions_;
+    std::map<std::string, std::unique_ptr<BatchInfo>> batches_;
     std::map<std::string, Plan> tables_plans_;
+    std::unique_ptr<Feeder> feeder_;
 };
 
 }}

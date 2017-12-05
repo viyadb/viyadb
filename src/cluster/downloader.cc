@@ -1,20 +1,20 @@
 #include <glog/logging.h>
 #include <stdexcept>
-#include <cstdio>
-#include <cpp-subprocess/subprocess.hpp>
+#include <cstdlib>
+#include "util/process.h"
 #include "cluster/downloader.h"
 
 namespace viya {
 namespace cluster {
 
-namespace sp = subprocess;
-
 std::string S3Downloader::Download(const std::string& path) const {
-  std::string target_path = std::tmpnam(nullptr);
+  char tmpdir[] = "/tmp/viyadb-download.XXXXXX";
+  std::string target_path(mkdtemp(tmpdir));
+
   // This may seem silly to call external AWS CLI binary instead of using AWS SDK,
   // but according to performance tests this command beats any AWS SDK:
-  auto p = sp::Popen({"aws", "s3", "sync", "--only-show-errors", "--no-progress", path.c_str(), target_path.c_str()});
-  if (p.wait() != 0) {
+  if (util::Process::Run({"aws", "s3", "sync", "--only-show-errors", "--no-progress",
+    path.c_str(), target_path.c_str()}) != 0) {
     throw std::runtime_error("Can't fetch files from S3!");
   }
   return target_path;

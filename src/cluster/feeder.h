@@ -2,7 +2,7 @@
 #define VIYA_CLUSTER_FEEDER_H_
 
 #include <vector>
-#include <json.hpp>
+#include "cluster/batch_info.h"
 
 namespace viya { namespace util { class Config; }}
 namespace viya { namespace cluster { class Controller; }}
@@ -12,8 +12,6 @@ namespace cluster {
 
 class Notifier;
 
-using json = nlohmann::json;
-
 class Feeder {
   public:
     Feeder(cluster::Controller& controller);
@@ -22,7 +20,7 @@ class Feeder {
 
   protected:
     void Start();
-    void ProcessMicroBatch(const json& info);
+    void ProcessMicroBatch(const std::string& indexer_id, const MicroBatchInfo& info);
 
   private:
     cluster::Controller& controller_;

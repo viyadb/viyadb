@@ -2,38 +2,38 @@
 #include <glog/logging.h>
 #include "cluster/controller.h"
 #include "cluster/notifier.h"
-#include "cluster/plan.h"
 
 namespace viya {
 namespace cluster {
 
 Controller::Controller(const util::Config& config):
   cluster_id_(config.str("cluster_id")),
-  consul_(config),
-  batch_id_(0L) {
+  consul_(config) {
 
   ReadClusterConfig();
-  ReadTablesConfigs();
-  ReadIndexersConfigs();
 
   session_ = consul_.CreateSession(std::string("viyadb-controller"));
   le_ = consul_.ElectLeader(*session_, "clusters/" + cluster_id_ + "/nodes/controller/leader");
 
-  plan_initializer_ = std::make_unique<util::Later>(10000L, [this]() {
-    InitializePlan();
+  initializer_ = std::make_unique<util::Later>(10000L, [this]() {
+    Initialize();
   });
 }
 
 void Controller::ReadClusterConfig() {
   cluster_config_ = util::Config(consul_.GetKey("clusters/" + cluster_id_ + "/config"));
   LOG(INFO)<<"Using cluster configuration: "<<cluster_config_.dump();
-}
 
-void Controller::ReadTablesConfigs() {
   LOG(INFO)<<"Reading tables configurations";
   tables_configs_.clear();
   for (auto& table : cluster_config_.strlist("tables", {})) {
     tables_configs_[table] = util::Config(consul_.GetKey("tables/" + table + "/config"));
+  }
+
+  LOG(INFO)<<"Reading indexers configurations";
+  indexers_configs_.clear();
+  for (auto& indexer_id : cluster_config_.strlist("indexers", {})) {
+    indexers_configs_.emplace(indexer_id, consul_.GetKey("indexers/" + indexer_id + "/config"));
   }
 }
 
@@ -56,53 +56,40 @@ bool Controller::ReadWorkersConfigs() {
   return true;
 }
 
-void Controller::ReadIndexersConfigs() {
-  LOG(INFO)<<"Reading indexers configurations";
-  indexers_configs_.clear();
-  for (auto& indexer_id : cluster_config_.strlist("indexers", {})) {
-    indexers_configs_.emplace(indexer_id, consul_.GetKey("indexers/" + indexer_id + "/config"));
+void Controller::FetchLatestBatchInfo() {
+  LOG(INFO)<<"Fetching latest batches info from indexers notifiers";
+  batches_.clear();
+
+  for (auto& it : indexers_configs_) {
+    auto& indexer_id = it.first;
+    auto& indexer_conf = it.second;
+
+    auto notifier = NotifierFactory::Create(indexer_conf.sub("batch").sub("notifier"), IndexerType::BATCH);
+    auto info = notifier->GetLastMessage();
+    if(!info) {
+      continue;
+    }
+    batches_.emplace(indexer_id, std::move(static_cast<BatchInfo*>(info.release())));
   }
 }
 
-void Controller::FetchLatestBatchInfo() {
-  LOG(INFO)<<"Fetching latest batch info from indexers";
-  for (auto& conf_it : indexers_configs_) {
+void Controller::Initialize() {
+  FetchLatestBatchInfo();
 
-    auto& indexer_conf = conf_it.second;
-    auto notifier = NotifierFactory::Create(indexer_conf.sub("batch").sub("notifier"));
-    auto info = notifier->GetLastMessage();
+  InitializePlan();
 
-    if (!info.empty()) {
-      uint64_t id = info["id"];
-      if (batch_id_ == 0L) {
-        batch_id_ = id;
-      } else if (id != batch_id_) {
-        throw std::runtime_error(
-          "Batch indexers are not aligned! Different batch ID were read from notification channels");
-      }
-
-      json tables_info = info["tables"];
-      tables_partitions_.clear();
-      for (auto info_it = tables_info.begin(); info_it != tables_info.end(); ++info_it) {
-        std::string table_name = info_it.key();
-        if (tables_configs_.find(table_name) != tables_configs_.end()) {
-          tables_partitions_.emplace(table_name, info_it.value());
-        }
-      }
-    }
-  }
+  feeder_ = std::make_unique<Feeder>(*this);
 }
 
 void Controller::InitializePlan() {
-  FetchLatestBatchInfo();
-  if (batch_id_ == 0L) {
-    LOG(WARNING)<<"Latest batch info is not available";
-  } else {
-    while (true) {
-      if (le_->Leader()) {
-        GeneratePlan();
+  while (true) {
+    if (le_->Leader()) {
+      if (GeneratePlan()) {
         break;
       }
+      LOG(INFO)<<"Can't generate or store partitioning plan right now... will retry soon";
+      std::this_thread::sleep_for(std::chrono::seconds(10));
+    } else {
       if (ReadPlan()) {
         break;
       }
@@ -114,21 +101,19 @@ void Controller::InitializePlan() {
 
 bool Controller::ReadPlan() {
   json existing_plan = json::parse(consul_.GetKey("clusters/" + cluster_id_ + "/plan", false, "{}"));
-  if (!existing_plan.empty() && existing_plan["batch_id"].get<uint64_t>() == batch_id_) {
-
-    LOG(INFO)<<"Reading cached plan from Consul";
-    tables_plans_.clear();
-
-    json tables_plans = existing_plan["plan"];
-    for (auto it = tables_plans.begin(); it != tables_plans.end(); ++it) {
-      tables_plans_.emplace(it.key(), it.value());
-    }
-    return true;
+  if (existing_plan.empty()) {
+    return false;
   }
-  return false;
+  LOG(INFO)<<"Reading cached plan from Consul";
+  tables_plans_.clear();
+  json tables_plans = existing_plan["plan"];
+  for (auto it = tables_plans.begin(); it != tables_plans.end(); ++it) {
+    tables_plans_.emplace(it.key(), it.value());
+  }
+  return true;
 }
 
-void Controller::GeneratePlan() {
+bool Controller::GeneratePlan() {
   while (!ReadWorkersConfigs()) {
     std::this_thread::sleep_for(std::chrono::seconds(10));
   }
@@ -137,23 +122,26 @@ void Controller::GeneratePlan() {
   PlanGenerator plan_generator(cluster_config_);
   tables_plans_.clear();
 
-  for (auto& it : tables_partitions_) {
-    auto& table_name = it.first;
-    auto& partitions = it.second;
-    tables_plans_.emplace(
-        table_name, std::move(plan_generator.Generate(partitions.partitions_num(), workers_configs_)));
+  for (auto& it : batches_) {
+    auto& batch_info = it.second;
+
+    for (auto& pit : batch_info->tables_partitions()) {
+      auto& table_name = pit.first;
+      if (tables_plans_.find(table_name) != tables_plans_.end()) {
+        throw std::runtime_error("Multiple indexers operate on same tables!");
+      }
+      auto& table_partitions = pit.second;
+      tables_plans_.emplace(table_name, std::move(
+          plan_generator.Generate(table_partitions.partitions_num(), workers_configs_)));
+    }
   }
 
-  LOG(INFO)<<"Storing partitioning plan into Consul";
-  json plans_cache = json({});
+  LOG(INFO)<<"Storing partitioning plan to Consul";
+  json cache = json({});
   for (auto& it : tables_plans_) {
-    plans_cache[it.first] = it.second.ToJson();
+    cache[it.first] = it.second.ToJson();
   }
-  json cache = {
-    {"plan", plans_cache},
-    {"batch_id", batch_id_}
-  };
-  consul_.PutKey("clusters/" + cluster_id_ + "/plan", cache.dump());
+  return session_->EphemeralKey("clusters/" + cluster_id_ + "/plan", cache.dump());
 }
 
 }}
