@@ -29,26 +29,31 @@ class Placement {
     uint16_t port_;
 };
 
-using PartitionPlacements = std::vector<Placement>;
-using TablePlacements = std::vector<PartitionPlacements>;
+using Replicas = std::vector<Placement>;
+using Partitions = std::vector<Replicas>;
 
 class Plan {
   public:
-    Plan(const json& plan);
-    Plan(const TablePlacements& placements);
+    Plan(const json& plan, const std::map<std::string, util::Config>& worker_configs);
+    Plan(const Partitions& partitions, const std::map<std::string, util::Config>& worker_configs);
     Plan(const Plan& other) = delete;
     Plan(Plan&& other) = default;
 
-    const TablePlacements& placements() const { return placements_; }
+    const Partitions& partitions() const { return partitions_; }
+    const std::map<std::string, uint32_t>& workers_partitions() const { return workers_partitions_; }
 
     bool operator==(const Plan& other) const {
-      return placements_ == other.placements_;
+      return partitions_ == other.partitions_;
     }
 
     json ToJson() const;
 
   private:
-    TablePlacements placements_;
+    void AssignPartitionsToWorkers(const std::map<std::string, util::Config>& worker_configs);
+
+  private:
+    Partitions partitions_;
+    std::map<std::string, uint32_t> workers_partitions_;
 };
 
 class PlanGenerator {

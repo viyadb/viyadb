@@ -21,7 +21,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
 
 set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost 1.64.0 REQUIRED COMPONENTS system filesystem)
+find_package(Boost 1.64.0 REQUIRED COMPONENTS system filesystem iostreams)
 
 find_package(Git)
 execute_process(COMMAND

@@ -28,6 +28,7 @@ class Downloader: public DownloaderBase {
   public:
     static Downloader& Instance();
     std::string Download(const std::string& path) const;
+    static std::string Fetch(const std::string& path);
 
   private:
     const S3Downloader s3_downloader_;

@@ -7,9 +7,9 @@ namespace cluster {
 
 using json = nlohmann::json;
 
-Partitions::Partitions(const std::map<std::string, uint32_t>& partitions):partitions_(partitions) {
+Partitioning::Partitioning(const std::map<std::string, uint32_t>& partitioning):partitioning_(partitioning) {
   std::set<uint32_t> d;
-  for (auto& it : partitions) {
+  for (auto& it : partitioning) {
     d.insert(it.second);
   }
   total_ = d.size();
@@ -31,16 +31,15 @@ BatchInfo::BatchInfo(const std::string& info):last_microbatch_(0L) {
 
     auto paths = table_info["paths"].get<std::vector<std::string>>();
 
-    json partitions = table_info["partitions"];
-    std::map<std::string, uint32_t> table_partitions;
-    for (auto pit = partitions.begin(); pit != partitions.end(); ++pit) {
-      uint32_t partition = it.value(); 
-      table_partitions.emplace(it.key(), partition);
+    json part = table_info["partitioning"];
+    std::map<std::string, uint32_t> partitioning;
+    for (auto pit = part.begin(); pit != part.end(); ++pit) {
+      partitioning.emplace(it.key(), it.value().get<uint32_t>());
     }
 
     tables_info_.emplace(std::piecewise_construct,
                          std::forward_as_tuple(table_name),
-                         std::forward_as_tuple(paths, table_partitions));
+                         std::forward_as_tuple(paths, partitioning));
   }
 }
 

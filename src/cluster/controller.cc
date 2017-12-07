@@ -2,11 +2,13 @@
 #include <glog/logging.h>
 #include "cluster/controller.h"
 #include "cluster/notifier.h"
+#include "cluster/configurator.h"
 
 namespace viya {
 namespace cluster {
 
 Controller::Controller(const util::Config& config):
+  config_(config),
   cluster_id_(config.str("cluster_id")),
   consul_(config) {
 
@@ -78,7 +80,12 @@ void Controller::Initialize() {
 
   InitializePlan();
 
-  feeder_ = std::make_unique<Feeder>(*this);
+  std::string load_prefix = config_.str("state_dir") + "/input";
+
+  Configurator configurator(*this, load_prefix);
+  configurator.ConfigureWorkers();
+
+  feeder_ = std::make_unique<Feeder>(*this, load_prefix);
 }
 
 void Controller::InitializePlan() {
@@ -108,7 +115,9 @@ bool Controller::ReadPlan() {
   tables_plans_.clear();
   json tables_plans = existing_plan["plan"];
   for (auto it = tables_plans.begin(); it != tables_plans.end(); ++it) {
-    tables_plans_.emplace(it.key(), it.value());
+    tables_plans_.emplace(std::piecewise_construct,
+                          std::forward_as_tuple(it.key()),
+                          std::forward_as_tuple(it.value(), workers_configs_));
   }
   return true;
 }
@@ -130,7 +139,7 @@ bool Controller::GeneratePlan() {
       }
       auto& table_info = tit.second;
       tables_plans_.emplace(table_name, std::move(
-          plan_generator.Generate(table_info.partitions().total(), workers_configs_)));
+          plan_generator.Generate(table_info.partitioning().TotalPartitions(), workers_configs_)));
     }
   }
 

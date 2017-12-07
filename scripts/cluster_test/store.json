@@ -1,0 +1,6 @@
+{
+  "supervise": true,
+  "cluster_id": "cluster001",
+  "consul_url": "http://localhost:8500",
+  "state_dir": "/tmp/viyadb"
+}

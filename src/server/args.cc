@@ -63,6 +63,7 @@ util::Config CmdlineArgs::Defaults() {
   config.set_num("http_port", 5000);
   config.set_num("query_threads", 1);
   config.set_boolean("supervise", false);
+  config.set_str("state_dir", "/var/lib/viyadb");
 
   size_t available_cpus = std::thread::hardware_concurrency();
   std::vector<long> cpu_list(available_cpus);

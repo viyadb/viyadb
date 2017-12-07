@@ -5,33 +5,60 @@
 namespace viya {
 namespace cluster {
 
-Plan::Plan(const TablePlacements& placements):placements_(placements) {
+Plan::Plan(const Partitions& partitions, const std::map<std::string, util::Config>& worker_configs):
+  partitions_(partitions) {
+
+  AssignPartitionsToWorkers(worker_configs);
 }
 
-Plan::Plan(const json& plan) {
+Plan::Plan(const json& plan, const std::map<std::string, util::Config>& worker_configs) {
   for (auto plan_it = plan.begin(); plan_it != plan.end(); ++plan_it) {
-    PartitionPlacements part_placements;
+    Replicas replicas;
     for (auto placement_it = plan_it->begin(); placement_it != plan_it->end(); ++placement_it) {
       json placement = *placement_it;
-      part_placements.emplace_back(
+      replicas.emplace_back(
         placement["hostname"].get<std::string>(), (uint16_t)placement["port"].get<int>());
     }
-    placements_.emplace_back(std::move(part_placements));
+    partitions_.emplace_back(std::move(replicas));
   }
+
+  AssignPartitionsToWorkers(worker_configs);
 }
 
 json Plan::ToJson() const {
   json plan = json::array();
-  for (auto& partition_placements : placements_) {
-    json placements = json::array();
-    for (auto& p : partition_placements) {
-      placements.push_back({{"hostname", p.hostname()}, {"port", p.port()}});
+  for (auto& replicas : partitions_) {
+    json partitions = json::array();
+    for (auto& p : replicas) {
+      partitions.push_back({{"hostname", p.hostname()}, {"port", p.port()}});
     } 
-    std::sort(placements.begin(), placements.end());
-    plan.push_back(placements);
+    std::sort(partitions.begin(), partitions.end());
+    plan.push_back(partitions);
   }
   std::sort(plan.begin(), plan.end());
   return std::move(plan);
+}
+
+void Plan::AssignPartitionsToWorkers(const std::map<std::string, util::Config>& worker_configs) {
+  workers_partitions_.clear();
+
+  std::vector<uint32_t> partitions;
+  uint32_t partition = 0;
+
+  for (auto& replicas : partitions_) {
+    for (auto& worker_it : worker_configs) {
+
+      auto& worker_id = worker_it.first;
+      auto& worker_conf = worker_it.second;
+
+      if (std::find_if(replicas.begin(), replicas.end(), [&worker_conf](auto& rep) {
+        return rep.hostname() == worker_conf.str("hostname") && rep.port() == worker_conf.num("http_port");
+      }) != replicas.end()) {
+        workers_partitions_.emplace(worker_id, partition);
+      }
+    }
+    ++partition;
+  }
 }
 
 PlanGenerator::PlanGenerator(const util::Config& cluster_config)
@@ -105,7 +132,7 @@ Plan PlanGenerator::Generate(size_t partitions_num,
     worker_idxs[i].resize(rh[i].size(), 0);
   }
 
-  TablePlacements table_placements(partitions_num, PartitionPlacements {});
+  Partitions partitions(partitions_num, Replicas {});
   size_t partition = 0;
   while (partition < partitions_num) {
     // Iterate on every rack and on every host in cycles.
@@ -119,7 +146,7 @@ Plan PlanGenerator::Generate(size_t partitions_num,
       if (wi < rh[ri][hi].size()) {
         auto next_worker = rh[ri][hi][wi];
         worker_idxs[ri][hi] = wi + 1;
-        table_placements[partition].emplace_back(next_worker.str("hostname"), next_worker.num("http_port"));
+        partitions[partition].emplace_back(next_worker.str("hostname"), next_worker.num("http_port"));
         ++p;
       }
       host_idxs[ri] = (hi + 1) % rh[ri].size();
@@ -128,7 +155,7 @@ Plan PlanGenerator::Generate(size_t partitions_num,
     ++partition;
   }
 
-  return { table_placements };
+  return { partitions, workers_configs };
 }
 
 }}

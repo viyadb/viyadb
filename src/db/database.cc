@@ -9,7 +9,7 @@ namespace viya {
 namespace db {
 
 Database::Database(const util::Config& config)
-  :compiler_(config.sub("compiler")),
+  :compiler_(config),
   write_pool_(1),
   read_pool_(config.num("query_threads", 1)),
   watcher_(*this) {

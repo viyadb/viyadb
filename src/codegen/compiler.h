@@ -14,7 +14,6 @@ namespace util = viya::util;
 
 class Compiler {
   public:
-    Compiler();
     Compiler(const util::Config& config);
     std::shared_ptr<SharedLibrary> Compile(const std::string& code);
 

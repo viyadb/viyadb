@@ -8,6 +8,9 @@ include_directories(${CPR_INCLUDE_DIRS}
 
 target_link_libraries(viya_cluster
   glog
+  ${Boost_SYSTEM_LIBRARY_RELEASE}
+  ${Boost_FILESYSTEM_LIBRARY_RELEASE}
+  ${Boost_IOSTREAMS_LIBRARY_RELEASE}
   ${CPR_LIBRARIES}
   ${RDKAFKA_LIBRARY}
   cppkafka)

@@ -29,7 +29,8 @@ Service::~Service() {
 void Service::Deregister() {
   LOG(INFO)<<"Deregistering service '"<<id_<<"'";
   cpr::Put(
-    cpr::Url { consul_.url() + "/v1/agent/service/deregister/" + id_ }
+    cpr::Url { consul_.url() + "/v1/agent/service/deregister/" + id_ },
+    cpr::Timeout { 3000L }
   );
 }
 
@@ -46,7 +47,8 @@ void Service::Register() {
   auto r = cpr::Put(
     cpr::Url { consul_.url() + "/v1/agent/service/register" },
     cpr::Body { data.dump() },
-    cpr::Header {{ "Content-Type", "application/json" }}
+    cpr::Header {{ "Content-Type", "application/json" }},
+    cpr::Timeout { 3000L }
   );
   if (r.status_code != 200) {
     if (r.status_code == 0) {
@@ -66,7 +68,8 @@ void Service::Notify(Status status, const std::string& message) {
   DLOG(INFO)<<"Updating '"<<id_<<"' service status to '"<<path<<"'";
   auto r = cpr::Get(
     cpr::Url { consul_.url() + "/v1/agent/check/" + path + "/service:" + id_ },
-    cpr::Parameters {{ "note", message }}
+    cpr::Parameters {{ "note", message }},
+    cpr::Timeout { 3000L }
   );
   if (r.status_code == 404) {
     LOG(WARNING)<<"Service '"<<id_<<"' has been deregistered externally";

@@ -41,4 +41,8 @@ Downloader& Downloader::Instance() {
   return instance;
 }
 
+std::string Downloader::Fetch(const std::string& path) {
+  return Instance().Download(path);
+}
+
 }}

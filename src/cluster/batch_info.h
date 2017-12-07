@@ -6,19 +6,6 @@
 namespace viya {
 namespace cluster {
 
-class Partitions {
-  public:
-    Partitions(const std::map<std::string, uint32_t>& partitions);
-    Partitions(const Partitions& other) = delete;
-
-    uint32_t Get(const std::string& key) { return partitions_[key]; }
-    size_t total() const { return total_; }
-
-  private:
-    std::map<std::string, uint32_t> partitions_;
-    size_t total_;
-};
-
 class Info {
   public:
     virtual ~Info() = default;
@@ -51,18 +38,31 @@ class MicroBatchInfo: public Info {
     std::map<std::string, MicroBatchTableInfo> tables_info_;
 };
 
+class Partitioning {
+  public:
+    Partitioning(const std::map<std::string, uint32_t>& partitioning);
+    Partitioning(const Partitioning& other) = delete;
+
+    uint32_t Get(const std::string& key) { return partitioning_[key]; }
+    size_t TotalPartitions() const { return total_; }
+
+  private:
+    std::map<std::string, uint32_t> partitioning_;
+    size_t total_;
+};
+
 class BatchTableInfo {
   public:
     BatchTableInfo(const std::vector<std::string>& paths,
-                   const std::map<std::string, uint32_t>& partitions)
-      :paths_(paths),partitions_(partitions) {}
+                   const std::map<std::string, uint32_t>& partitioning)
+      :paths_(paths),partitioning_(partitioning) {}
 
     const std::vector<std::string>& paths() const { return paths_; }
-    const Partitions& partitions() const { return partitions_; }
+    const Partitioning& partitioning() const { return partitioning_; }
 
   private:
     const std::vector<std::string> paths_;
-    const Partitions partitions_;
+    const Partitioning partitioning_;
 };
 
 class BatchInfo: public Info {

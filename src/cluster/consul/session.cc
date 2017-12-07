@@ -29,7 +29,8 @@ Session::~Session() {
 void Session::Destroy() {
   LOG(INFO)<<"Destroying session '"<<id_<<"'";
   cpr::Put(
-    cpr::Url { consul_.url() + "/v1/session/destroy/" + id_ }
+    cpr::Url { consul_.url() + "/v1/session/destroy/" + id_ },
+    cpr::Timeout { 3000L }
   );
 }
 
@@ -46,7 +47,8 @@ void Session::Create() {
   auto r = cpr::Put(
     cpr::Url { consul_.url() + "/v1/session/create" },
     cpr::Body { data.dump() },
-    cpr::Header {{ "Content-Type", "application/json" }}
+    cpr::Header {{ "Content-Type", "application/json" }},
+    cpr::Timeout { 3000L }
   );
   if (r.status_code != 200) {
     if (r.status_code == 0) {
@@ -68,7 +70,8 @@ void Session::Create() {
 void Session::Renew() {
   DLOG(INFO)<<"Renewing session '"<<id_<<"'";
   auto r = cpr::Put(
-    cpr::Url { consul_.url() + "/v1/session/renew/" + id_ }
+    cpr::Url { consul_.url() + "/v1/session/renew/" + id_ },
+    cpr::Timeout { 3000L }
   );
 
   if (r.status_code == 0) {
@@ -88,7 +91,8 @@ bool Session::EphemeralKey(const std::string& key, const std::string& value) con
     cpr::Url { consul_.url() + "/v1/kv/" + target_key },
     cpr::Body { value },
     cpr::Parameters {{ "acquire", id_ }},
-    cpr::Header {{ "Content-Type", "application/json" }}
+    cpr::Header {{ "Content-Type", "application/json" }},
+    cpr::Timeout { 3000L }
   );
 
   if (r.status_code != 200) {

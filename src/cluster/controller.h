@@ -33,11 +33,13 @@ class Controller {
     bool ReadWorkersConfigs();
     void FetchLatestBatchInfo();
     void Initialize();
+    void AssignPartitionsToWorkers();
     void InitializePlan();
     bool ReadPlan();
     bool GeneratePlan();
 
   private:
+    util::Config config_;
     const std::string cluster_id_;
     const consul::Consul consul_;
     util::Config cluster_config_;

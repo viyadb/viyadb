@@ -82,16 +82,16 @@ TEST(PlanGenerator, Placement1)
     {"worker8", util::Config("{\"hostname\": \"host4\", \"rack_id\": \"2\", \"http_port\": 5001}")}
   };
 
-  size_t partitions = 2;
+  size_t partitions_num = 2;
   cluster::PlanGenerator plan_generator(cluster_config);
-  auto actual = plan_generator.Generate(partitions, worker_configs);
+  auto actual = plan_generator.Generate(partitions_num, worker_configs);
   
-  cluster::TablePlacements table_placements(partitions, cluster::PartitionPlacements {});
-  table_placements[0].emplace_back("host1", 5000);
-  table_placements[0].emplace_back("host2", 5000);
-  table_placements[1].emplace_back("host3", 5000);
-  table_placements[1].emplace_back("host4", 5000);
-  cluster::Plan expected(table_placements);
+  cluster::Partitions partitions(partitions_num, cluster::Replicas {});
+  partitions[0].emplace_back("host1", 5000);
+  partitions[0].emplace_back("host2", 5000);
+  partitions[1].emplace_back("host3", 5000);
+  partitions[1].emplace_back("host4", 5000);
+  cluster::Plan expected(partitions, worker_configs);
 
   EXPECT_EQ(expected.ToJson(), actual.ToJson());
 }

@@ -1,3 +1,4 @@
+#include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <glog/logging.h>
 #include "util/config.h"
@@ -12,7 +13,10 @@ namespace cluster {
 
 namespace fs = boost::filesystem;
 
-Feeder::Feeder(cluster::Controller& controller):controller_(controller) {
+Feeder::Feeder(const Controller& controller, const std::string& load_prefix):
+  controller_(controller),
+  splitter_(load_prefix) {
+
   Start();
 }
 
@@ -43,14 +47,21 @@ void Feeder::LoadHistoricalData() {
     for (auto& tit : it.second->tables_info()) {
       auto& table_name = tit.first;
       auto& table_info = tit.second;
+      auto partitions = controller_.tables_plans().at(table_name).workers_partitions();
 
       for (auto& path : table_info.paths()) {
-        std::string target_path = Downloader::Instance().Download(path);
-        util::ScopeGuard delete_tmpdir = [&]() {
-          if (target_path != path) {
-            fs::remove_all(target_path);
-          }
-        };
+        auto prefix = boost::trim_right_copy_if(path, boost::is_any_of("/"));
+
+        for (auto& pit : partitions) {
+          std::string target_path = Downloader::Fetch(prefix + "/part=" + std::to_string(pit.second));
+          util::ScopeGuard delete_tmpdir = [&]() {
+            if (target_path != path) {
+              fs::remove_all(target_path);
+            }
+          };
+
+          splitter_.LoadFolder(target_path, table_name, pit.first);
+        }
       }
     }
   }
@@ -64,7 +75,7 @@ void Feeder::ProcessMicroBatch(const std::string& indexer_id, const MicroBatchIn
       auto& table_info = it.second;
 
       for (auto& path : table_info.paths()) {
-        std::string target_path = Downloader::Instance().Download(path);
+        std::string target_path = Downloader::Fetch(path);
         util::ScopeGuard delete_tmpdir = [&]() {
           if (target_path != path) {
             fs::remove_all(target_path);

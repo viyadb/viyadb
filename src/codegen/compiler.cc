@@ -14,8 +14,6 @@ namespace codegen {
 namespace fs = boost::filesystem;
 namespace cr = std::chrono;
 
-Compiler::Compiler():Compiler(util::Config()) {}
-
 Compiler::Compiler(const util::Config& config) {
   cmd_ = {
     "g++",
@@ -69,7 +67,9 @@ Compiler::Compiler(const util::Config& config) {
     "-o",
     ""           // This will hold the target .so file path
   };
-  path_ = config.str("tmp_path", "/tmp");
+
+  path_ = config.str("state_dir", "/tmp/viyadb") + "/codegen";
+  fs::create_directories(fs::path(path_));
 }
 
 std::shared_ptr<SharedLibrary> Compiler::Compile(const std::string& code) {

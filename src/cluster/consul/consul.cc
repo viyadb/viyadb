@@ -37,7 +37,8 @@ std::unique_ptr<Watch> Consul::WatchKey(const std::string& key) const {
 std::vector<std::string> Consul::ListKeys(const std::string& key) const {
   auto r = cpr::Get(
     cpr::Url { url_ + "/v1/kv/" + prefix_ + "/" + key },
-    cpr::Parameters {{ "keys", "true" }}
+    cpr::Parameters {{ "keys", "true" }},
+    cpr::Timeout { 3000L }
   );
   switch (r.status_code) {
     case 200: break;
@@ -58,7 +59,8 @@ std::vector<std::string> Consul::ListKeys(const std::string& key) const {
 std::string Consul::GetKey(const std::string& key, bool throw_if_not_exists, std::string default_value) const {
   auto r = cpr::Get(
     cpr::Url { url_ + "/v1/kv/" + prefix_ + "/" + key },
-    cpr::Parameters {{ "raw", "true" }}
+    cpr::Parameters {{ "raw", "true" }},
+    cpr::Timeout { 3000L }
   );
   switch (r.status_code) {
     case 200: break;
@@ -78,7 +80,8 @@ std::string Consul::GetKey(const std::string& key, bool throw_if_not_exists, std
 void Consul::PutKey(const std::string& key, const std::string& content) const {
   auto r = cpr::Put(
     cpr::Url { url_ + "/v1/kv/" + prefix_ + "/" + key },
-    cpr::Body { content }
+    cpr::Body { content },
+    cpr::Timeout { 3000L }
   );
   if (r.status_code != 200) {
     if (r.status_code == 0) {

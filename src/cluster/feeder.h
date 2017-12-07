@@ -3,6 +3,7 @@
 
 #include <vector>
 #include "cluster/batch_info.h"
+#include "cluster/splitter.h"
 
 namespace viya { namespace util { class Config; }}
 namespace viya { namespace cluster { class Controller; }}
@@ -14,7 +15,7 @@ class Notifier;
 
 class Feeder {
   public:
-    Feeder(cluster::Controller& controller);
+    Feeder(const Controller& controller, const std::string& load_prefix);
     Feeder(const Feeder& other) = delete;
     ~Feeder();
 
@@ -24,7 +25,8 @@ class Feeder {
     void ProcessMicroBatch(const std::string& indexer_id, const MicroBatchInfo& info);
 
   private:
-    cluster::Controller& controller_;
+    const Controller& controller_;
+    const Splitter splitter_;
     std::vector<Notifier*> notifiers_;
 };
 

@@ -1,0 +1,67 @@
+[
+	{
+		"key": "viyadb/clusters/cluster001/config",
+		"flags": 0,
+		"value": "ewogICJ0YWJsZXMiOiBbImV2ZW50cyJdCn0="
+	},
+	{
+		"key": "viyadb/clusters/cluster001/nodes/controller/leader",
+		"flags": 0,
+		"value": ""
+	},
+	{
+		"key": "viyadb/clusters/cluster001/nodes/workers/gibraltar:5000",
+		"flags": 0,
+		"value": "eyJjcHVfbGlzdCI6WzBdLCJob3N0bmFtZSI6ImdpYnJhbHRhciIsImh0dHBfcG9ydCI6NTAwMH0="
+	},
+	{
+		"key": "viyadb/clusters/cluster001/nodes/workers/gibraltar:5001",
+		"flags": 0,
+		"value": "eyJjcHVfbGlzdCI6WzFdLCJob3N0bmFtZSI6ImdpYnJhbHRhciIsImh0dHBfcG9ydCI6NTAwMX0="
+	},
+	{
+		"key": "viyadb/clusters/cluster001/nodes/workers/gibraltar:5002",
+		"flags": 0,
+		"value": "eyJjcHVfbGlzdCI6WzJdLCJob3N0bmFtZSI6ImdpYnJhbHRhciIsImh0dHBfcG9ydCI6NTAwMn0="
+	},
+	{
+		"key": "viyadb/clusters/cluster001/nodes/workers/gibraltar:5003",
+		"flags": 0,
+		"value": "eyJjcHVfbGlzdCI6WzNdLCJob3N0bmFtZSI6ImdpYnJhbHRhciIsImh0dHBfcG9ydCI6NTAwM30="
+	},
+	{
+		"key": "viyadb/clusters/cluster001/nodes/workers/gibraltar:5004",
+		"flags": 0,
+		"value": "eyJjcHVfbGlzdCI6WzRdLCJob3N0bmFtZSI6ImdpYnJhbHRhciIsImh0dHBfcG9ydCI6NTAwNH0="
+	},
+	{
+		"key": "viyadb/clusters/cluster001/nodes/workers/gibraltar:5005",
+		"flags": 0,
+		"value": "eyJjcHVfbGlzdCI6WzVdLCJob3N0bmFtZSI6ImdpYnJhbHRhciIsImh0dHBfcG9ydCI6NTAwNX0="
+	},
+	{
+		"key": "viyadb/clusters/cluster001/nodes/workers/gibraltar:5006",
+		"flags": 0,
+		"value": "eyJjcHVfbGlzdCI6WzZdLCJob3N0bmFtZSI6ImdpYnJhbHRhciIsImh0dHBfcG9ydCI6NTAwNn0="
+	},
+	{
+		"key": "viyadb/clusters/cluster001/nodes/workers/gibraltar:5007",
+		"flags": 0,
+		"value": "eyJjcHVfbGlzdCI6WzddLCJob3N0bmFtZSI6ImdpYnJhbHRhciIsImh0dHBfcG9ydCI6NTAwN30="
+	},
+	{
+		"key": "viyadb/clusters/cluster001/plan",
+		"flags": 0,
+		"value": "e30="
+	},
+	{
+		"key": "viyadb/indexers/main/config",
+		"flags": 0,
+		"value": "ewogICJ0YWJsZXMiOiBbImV2ZW50cyJdCn0="
+	},
+	{
+		"key": "viyadb/tables/events/config",
+		"flags": 0,
+		"value": "ewogICJuYW1lIjogImV2ZW50cyIsCiAgImRpbWVuc2lvbnMiOiBbCiAgICB7Im5hbWUiOiAiYXBwX2lkIn0sCiAgICB7Im5hbWUiOiAidXNlcl9pZCJ9LAogICAgewogICAgICAibmFtZSI6ICJldmVudF90aW1lIiwgInR5cGUiOiAidGltZSIsCiAgICAgICJmb3JtYXQiOiAibWlsbGlzIiwgImdyYW51bGFyaXR5IjogImRheSIKICAgIH0sCiAgICB7Im5hbWUiOiAiY291bnRyeSJ9LAogICAgeyJuYW1lIjogImNpdHkifSwKICAgIHsibmFtZSI6ICJkZXZpY2VfdHlwZSJ9LAogICAgeyJuYW1lIjogImRldmljZV92ZW5kb3IifSwKICAgIHsibmFtZSI6ICJhZF9uZXR3b3JrIn0sCiAgICB7Im5hbWUiOiAiY2FtcGFpZ24ifSwKICAgIHsibmFtZSI6ICJzaXRlX2lkIn0sCiAgICB7Im5hbWUiOiAiZXZlbnRfdHlwZSJ9LAogICAgeyJuYW1lIjogImV2ZW50X25hbWUifSwKICAgIHsibmFtZSI6ICJvcmdhbmljIiwgImNhcmRpbmFsaXR5IjogMn0sCiAgICB7Im5hbWUiOiAiZGF5c19mcm9tX2luc3RhbGwiLCAidHlwZSI6ICJ1c2hvcnQifQogIF0sCiAgIm1ldHJpY3MiOiBbCiAgICB7Im5hbWUiOiAicmV2ZW51ZSIgLCAidHlwZSI6ICJkb3VibGVfc3VtIn0sCiAgICB7Im5hbWUiOiAidXNlcnMiLCAidHlwZSI6ICJiaXRzZXQiLCAiZmllbGQiOiAidXNlcl9pZCJ9LAogICAgeyJuYW1lIjogImNvdW50IiAsICJ0eXBlIjogImNvdW50In0KICBdCn0="
+	}
+]

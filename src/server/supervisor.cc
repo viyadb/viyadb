@@ -84,6 +84,7 @@ void Supervisor::Start() {
   for (size_t worker_idx = 0; worker_idx < workers_num; ++worker_idx) {
     auto worker_config = PrepareWorkerConfig(config, worker_idx);
     StartWorker(worker_config, workers_[worker_idx]);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 
   uint8_t max_failures = 3;

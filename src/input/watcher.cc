@@ -6,6 +6,7 @@
 #include <cstring>
 #include <stdexcept>
 #include <algorithm>
+#include <boost/filesystem.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include "db/database.h"
 #include "db/table.h"
@@ -13,6 +14,8 @@
 
 namespace viya {
 namespace input {
+
+namespace fs = boost::filesystem;
 
 Watcher::Watcher(db::Database& db):db_(db) {
   fd_ = inotify_init();
@@ -28,8 +31,11 @@ void Watcher::AddWatch(const util::Config& config, db::Table* table) {
 
   std::lock_guard<std::mutex> lock(mutex_);
 
-  char* dir = realpath(config.str("directory").c_str(), nullptr);
-  LOG(INFO)<<"Watching directory for new files: "<<dir;
+  fs::path watch_dir(config.str("directory"));
+  fs::create_directories(watch_dir);
+
+  char* dir = realpath(fs::canonical(watch_dir).string().c_str(), nullptr);
+  LOG(INFO)<<"Started watching directory for new files: "<<dir;
 
   int wd = inotify_add_watch(fd_, dir, IN_MOVED_TO | IN_EXCL_UNLINK);
   if (wd == -1) {
