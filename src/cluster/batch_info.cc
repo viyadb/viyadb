@@ -7,53 +7,54 @@ namespace cluster {
 
 using json = nlohmann::json;
 
-Partitioning::Partitioning(const std::map<std::string, uint32_t>& partitioning):partitioning_(partitioning) {
+Info::Info(const json& info):id_(info["id"]) {
+}
+
+Partitioning::Partitioning(const json& info) {
   std::set<uint32_t> d;
-  for (auto& it : partitioning) {
-    d.insert(it.second);
+  for (auto it = info.begin(); it != info.end(); ++it) {
+    uint32_t partition = it.value().get<uint32_t>();
+    partitioning_.emplace(it.key(), partition);
+    d.insert(partition);
   }
   total_ = d.size();
 }
 
-BatchInfo::BatchInfo(const std::string& info):last_microbatch_(0L) {
-  json j = json::parse(info);
-  id_ = j["id"];
+PartitionConf::PartitionConf(const json& info):
+  columns_(info["columns"].get<std::vector<std::string>>()) {
+  if (info.find("hash") != info.end()) {
+    hashed_ = info["hash"].get<bool>();
+  }
+}
 
-  auto micro_batches = j["micro_batches"].get<std::vector<long>>();
+BatchTableInfo::BatchTableInfo(const json& info):
+  paths_(info["paths"].get<std::vector<std::string>>()),
+  partitioning_(info["partitioning"]),
+  partition_conf_(info["partitionConf"]) {
+}
+
+BatchInfo::BatchInfo(const json& info):
+  Info(info),last_microbatch_(0L) {
+
+  auto micro_batches = info["microBatches"].get<std::vector<long>>();
   if (!micro_batches.empty()) {
     last_microbatch_ = *std::max_element(micro_batches.begin(), micro_batches.end());
   }
 
-  auto tables = j["tables"].get<json>();
+  auto tables = info["tables"].get<json>();
   for (auto it = tables.begin(); it != tables.end(); ++it) {
-    auto table_name = it.key();
-    auto table_info = it.value().get<json>();
-
-    auto paths = table_info["paths"].get<std::vector<std::string>>();
-
-    json part = table_info["partitioning"];
-    std::map<std::string, uint32_t> partitioning;
-    for (auto pit = part.begin(); pit != part.end(); ++pit) {
-      partitioning.emplace(it.key(), it.value().get<uint32_t>());
-    }
-
-    tables_info_.emplace(std::piecewise_construct,
-                         std::forward_as_tuple(table_name),
-                         std::forward_as_tuple(paths, partitioning));
+    tables_info_.emplace(it.key(), it.value().get<json>());
   }
 }
 
-MicroBatchInfo::MicroBatchInfo(const std::string& info) {
-  json j = json::parse(info);
-  id_ = j["id"];
+MicroBatchTableInfo::MicroBatchTableInfo(const json& info):
+  paths_(info["paths"].get<std::vector<std::string>>()) {
+}
 
-  auto tables = j["tables"].get<json>();
+MicroBatchInfo::MicroBatchInfo(const json& info):Info(info) {
+  auto tables = info["tables"].get<json>();
   for (auto it = tables.begin(); it != tables.end(); ++it) {
-    auto table_name = it.key();
-    auto table_info = it.value().get<json>();
-
-    auto paths = table_info["paths"].get<std::vector<std::string>>();
-    tables_info_.emplace(table_name, paths);
+    tables_info_.emplace(it.key(), it.value().get<json>());
   }
 }
 

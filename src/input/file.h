@@ -27,6 +27,8 @@ class FileLoader: public Loader {
     const Format format_;
     std::string fname_;
     int fd_;
+    char* buf_;
+    size_t buf_size_;
 };
 
 }}

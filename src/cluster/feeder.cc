@@ -15,7 +15,7 @@ namespace fs = boost::filesystem;
 
 Feeder::Feeder(const Controller& controller, const std::string& load_prefix):
   controller_(controller),
-  splitter_(load_prefix) {
+  loader_(controller, load_prefix) {
 
   Start();
 }
@@ -60,7 +60,7 @@ void Feeder::LoadHistoricalData() {
             }
           };
 
-          splitter_.LoadFolder(target_path, table_name, pit.first);
+          loader_.LoadFolder(target_path, table_name, pit.first);
         }
       }
     }

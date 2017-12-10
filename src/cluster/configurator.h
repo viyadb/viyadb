@@ -18,8 +18,8 @@ class Configurator {
     void ConfigureWorkers();
 
   protected:
-    void AdaptTableConfig(const std::string& worker_id, util::Config& table_config);
-    void CreateTables(const std::string& worker_id, const util::Config& worker_config);
+    void AdaptTableConfig(util::Config& table_config);
+    void CreateTables(const util::Config& worker_config);
 
   private:
     const Controller& controller_;

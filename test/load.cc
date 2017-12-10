@@ -67,7 +67,7 @@ TEST_F(InappEvents, LoadFromTsvCols)
   out<<"purchase\tUS\t20141112\t1\t0.1\n";
   out<<"purchase\tUS\t20141112\t2\t1.1\n";
   out<<"\tUS\t20141112\t3\t0.3\n";
-  out<<"purchase\tIL\t20141112\t5\t0.0\n";
+  out<<"purchase\tIL\t20141112\t5\t0.0";
   out.close();
 
   util::Config load_conf(

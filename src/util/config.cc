@@ -191,6 +191,10 @@ std::string Config::dump() const {
   return reinterpret_cast<json*>(conf_)->dump(2);
 }
 
+void* Config::json_ptr() const {
+  return conf_;
+}
+
 void Config::MergeFrom(const Config& other) {
   auto this_json = reinterpret_cast<nlohmann::json*>(conf_);
   auto other_json = reinterpret_cast<nlohmann::json*>(other.conf_);

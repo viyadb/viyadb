@@ -3,7 +3,7 @@
 
 #include <vector>
 #include "cluster/batch_info.h"
-#include "cluster/splitter.h"
+#include "cluster/loader.h"
 
 namespace viya { namespace util { class Config; }}
 namespace viya { namespace cluster { class Controller; }}
@@ -26,7 +26,7 @@ class Feeder {
 
   private:
     const Controller& controller_;
-    const Splitter splitter_;
+    const Loader loader_;
     std::vector<Notifier*> notifiers_;
 };
 

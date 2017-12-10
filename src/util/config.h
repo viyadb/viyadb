@@ -42,6 +42,7 @@ class Config {
     void set_boolean(const char* key, bool value);
 
     std::string dump() const;
+    void* json_ptr() const;
     void MergeFrom(const Config& other);
 
   private:
