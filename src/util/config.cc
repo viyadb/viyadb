@@ -103,6 +103,15 @@ std::vector<long> Config::numlist(const char* key) const {
   }
 }
 
+std::vector<uint32_t> Config::numlist_uint32(const char* key) const {
+  ValidateKey(key);
+  try {
+    return (*reinterpret_cast<json*>(conf_))[key].get<std::vector<uint32_t>>();
+  } catch (std::exception& e) {
+    throw std::invalid_argument(std::string(key) + ": " + e.what());
+  }
+}
+
 void Config::set_num(const char* key, long value) {
   (*reinterpret_cast<json*>(conf_))[key] = value;
 }

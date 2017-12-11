@@ -60,7 +60,7 @@ bool Controller::ReadWorkersConfigs() {
 
 void Controller::FetchLatestBatchInfo() {
   LOG(INFO)<<"Fetching latest batches info from indexers notifiers";
-  batches_.clear();
+  indexers_batches_.clear();
 
   for (auto& it : indexers_configs_) {
     auto& indexer_id = it.first;
@@ -68,10 +68,9 @@ void Controller::FetchLatestBatchInfo() {
 
     auto notifier = NotifierFactory::Create(indexer_conf.sub("batch").sub("notifier"), IndexerType::BATCH);
     auto info = notifier->GetLastMessage();
-    if(!info) {
-      continue;
+    if (info) {
+      indexers_batches_.emplace(indexer_id, std::move(static_cast<BatchInfo*>(info.release())));
     }
-    batches_.emplace(indexer_id, std::move(static_cast<BatchInfo*>(info.release())));
   }
 }
 
@@ -131,7 +130,7 @@ bool Controller::GeneratePlan() {
   PlanGenerator plan_generator(cluster_config_);
   tables_plans_.clear();
 
-  for (auto& it : batches_) {
+  for (auto& it : indexers_batches_) {
     for (auto& tit : it.second->tables_info()) {
       auto& table_name = tit.first;
       if (tables_plans_.find(table_name) != tables_plans_.end()) {
@@ -139,7 +138,7 @@ bool Controller::GeneratePlan() {
       }
       auto& table_info = tit.second;
       tables_plans_.emplace(table_name, std::move(
-          plan_generator.Generate(table_info.partitioning().TotalPartitions(), workers_configs_)));
+          plan_generator.Generate(table_info.total_partitions(), workers_configs_)));
     }
   }
 

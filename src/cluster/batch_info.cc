@@ -10,27 +10,18 @@ using json = nlohmann::json;
 Info::Info(const json& info):id_(info["id"]) {
 }
 
-Partitioning::Partitioning(const json& info) {
-  std::set<uint32_t> d;
-  for (auto it = info.begin(); it != info.end(); ++it) {
-    uint32_t partition = it.value().get<uint32_t>();
-    partitioning_.emplace(it.key(), partition);
-    d.insert(partition);
-  }
-  total_ = d.size();
-}
-
-PartitionConf::PartitionConf(const json& info):
-  columns_(info["columns"].get<std::vector<std::string>>()) {
-  if (info.find("hash") != info.end()) {
-    hashed_ = info["hash"].get<bool>();
-  }
-}
-
 BatchTableInfo::BatchTableInfo(const json& info):
   paths_(info["paths"].get<std::vector<std::string>>()),
-  partitioning_(info["partitioning"]),
-  partition_conf_(info["partitionConf"]) {
+  total_partitions_(0L) {
+
+  if (info.find("partitioning") != info.end()) {
+    partitioning_ = info["partitioning"].get<std::vector<int>>();
+  }
+  if (info.find("partitionConf") != info.end()) {
+    json partition_conf = info["partitionConf"];
+    partition_columns_ = partition_conf["columns"].get<std::vector<std::string>>();
+    total_partitions_ = partition_conf["partitions"];
+  }
 }
 
 BatchInfo::BatchInfo(const json& info):

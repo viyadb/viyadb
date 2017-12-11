@@ -45,12 +45,12 @@ FileLoader::FileLoader(const util::Config& config, const db::Table& table):
 FileLoader::~FileLoader() {
   if (fd_ != -1) {
     if (close(fd_) == -1) {
-      LOG(WARNING)<<"Can't close() input file";
+      LOG(WARNING)<<"Can't close() input file: "<<desc_.fname();
     }
   }
   if (buf_ != nullptr) {
     if (munmap(buf_, buf_size_) == -1) {
-      LOG(WARNING)<<"Can't munmap() input file";
+      LOG(WARNING)<<"Can't munmap() input file: "<<desc_.fname();
     }
   }
 }

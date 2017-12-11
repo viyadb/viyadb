@@ -3,32 +3,43 @@
 
 #include <boost/filesystem.hpp>
 #include <vector>
+#include <unordered_map>
+#include <json.hpp>
 
 namespace viya {
 namespace cluster {
 
 namespace fs = boost::filesystem;
 
+using json = nlohmann::json;
+
 class Controller;
 
 class Loader {
   public:
-    Loader(const Controller& controller, const std::string& load_prefix)
-      :controller_(controller), load_prefix_(load_prefix) {}
+    Loader(const Controller& controller, const std::string& load_prefix);
+    Loader(const Loader& other) = delete;
 
-    void LoadFolder(const std::string& root, const std::string& table_name,
-                    const std::string& worker_id) const;
+    void LoadFolderToWorker(const std::string& root, const std::string& table_name,
+                            const std::string& worker_id) const;
+
+    void LoadFileToWorker(const std::string& file, const std::string& table_name,
+                          const std::string& worker_id) const;
+
+    void LoadFolderToAll(const std::string& root, const std::string& table_name) const;
+
+    void LoadFileToAll(const std::string& file, const std::string& table_name) const;
 
   private:
-    void LoadFile(const std::string& file, const std::string& table_name,
-                  const std::string& worker_id) const;
+    fs::path ExtractFiles(const std::string& root) const;
 
-    void ListFiles(const std::string& root,
-                   const std::vector<std::string>& exts, std::vector<fs::path>& files) const;
+    void ListFiles(const std::string& root, const std::vector<std::string>& exts,
+                   std::vector<fs::path>& files) const;
 
   private:
     const Controller& controller_;
     const std::string load_prefix_;
+    std::unordered_map<std::string, std::unordered_map<std::string, json>> partition_filters_;
 };
 
 }}

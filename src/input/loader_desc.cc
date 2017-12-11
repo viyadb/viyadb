@@ -12,8 +12,8 @@ namespace db = viya::db;
 
 PartitionFilter::PartitionFilter(const util::Config& config):
   columns_(config.strlist("columns")),
-  partitions_num_((size_t)config.num("partitions_num")),
-  partition_((uint32_t)config.num("partition")) {
+  total_partitions_((size_t)config.num("total_partitions")),
+  values_(config.numlist_uint32("values")) {
 }
 
 LoaderDesc::LoaderDesc(const util::Config& config, const db::Table& table):

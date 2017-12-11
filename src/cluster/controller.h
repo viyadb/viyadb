@@ -25,7 +25,7 @@ class Controller {
     const std::map<std::string, util::Config>& tables_configs() const { return tables_configs_; }
     const std::map<std::string, util::Config>& workers_configs() const { return workers_configs_; }
     const std::map<std::string, util::Config>& indexers_configs() const { return indexers_configs_; }
-    const std::map<std::string, std::unique_ptr<BatchInfo>>& batches() const { return batches_; }
+    const std::map<std::string, std::unique_ptr<BatchInfo>>& indexers_batches() const { return indexers_batches_; }
     const std::map<std::string, Plan>& tables_plans() const { return tables_plans_; }
 
   private:
@@ -49,7 +49,7 @@ class Controller {
     std::map<std::string, util::Config> tables_configs_;
     std::map<std::string, util::Config> workers_configs_;
     std::map<std::string, util::Config> indexers_configs_;
-    std::map<std::string, std::unique_ptr<BatchInfo>> batches_;
+    std::map<std::string, std::unique_ptr<BatchInfo>> indexers_batches_;
     std::map<std::string, Plan> tables_plans_;
     std::unique_ptr<Feeder> feeder_;
 };

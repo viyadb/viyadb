@@ -14,7 +14,7 @@ Loader::Loader(const util::Config& config, const db::Table& table):
   before_upsert_ = upsert_gen.BeforeFunction();
   after_upsert_ = upsert_gen.AfterFunction();
   upsert_ = upsert_gen.Function();
-  upsert_gen.SetupFunction()(table);
+  upsert_gen.SetupFunction()(desc_);
 }
 
 void Loader::BeforeLoad() {

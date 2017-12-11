@@ -44,44 +44,20 @@ class MicroBatchInfo: public Info {
     std::map<std::string, MicroBatchTableInfo> tables_info_;
 };
 
-class Partitioning {
-  public:
-    Partitioning(const json& info);
-    Partitioning(const Partitioning& other) = delete;
-
-    uint32_t Get(const std::string& key) { return partitioning_.at(key); }
-    size_t TotalPartitions() const { return total_; }
-
-  private:
-    std::map<std::string, uint32_t> partitioning_;
-    size_t total_;
-};
-
-class PartitionConf {
-  public:
-    PartitionConf(const json& info);
-    PartitionConf(const PartitionConf& other) = delete;
-
-    const std::vector<std::string>& columns() const { return columns_; };
-    bool hashed() const { return hashed_; }
-
-  private:
-    const std::vector<std::string> columns_;
-    bool hashed_;
-};
-
 class BatchTableInfo {
   public:
     BatchTableInfo(const json& info);
 
     const std::vector<std::string>& paths() const { return paths_; }
-    const Partitioning& partitioning() const { return partitioning_; }
-    const PartitionConf& partition_conf() const { return partition_conf_; }
+    const std::vector<int>& partitioning() const { return partitioning_; }
+    size_t total_partitions() const { return total_partitions_; }
+    const std::vector<std::string>& partition_columns() const { return partition_columns_; };
 
   private:
     const std::vector<std::string> paths_;
-    const Partitioning partitioning_;
-    const PartitionConf partition_conf_;
+    std::vector<int> partitioning_;
+    std::vector<std::string> partition_columns_;
+    size_t total_partitions_;
 };
 
 class BatchInfo: public Info {

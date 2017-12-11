@@ -18,13 +18,13 @@ class PartitionFilter {
     PartitionFilter(const PartitionFilter& other) = delete;
 
     const std::vector<std::string>& columns() const { return columns_; }
-    size_t partitions_num() const { return partitions_num_; }
-    uint32_t partition() const { return partition_; }
+    size_t total_partitions() const { return total_partitions_; }
+    const std::vector<uint32_t>& values() const { return values_; }
 
   private:
     const std::vector<std::string> columns_;
-    const size_t partitions_num_;
-    const uint32_t partition_;
+    const size_t total_partitions_;
+    const std::vector<uint32_t> values_;
 };
 
 class LoaderDesc {

@@ -139,7 +139,10 @@ Code UpsertGenerator::SetupFunctionCode() const {
   auto& table = desc_.table();
   auto& cardinality_guards = table.cardinality_guards();
 
-  code.AddHeaders({"vector", "string", "db/store.h", "db/table.h", "db/dictionary.h", "util/likely.h"});
+  code.AddHeaders({
+    "vector", "string", "db/store.h", "db/table.h", "db/dictionary.h",
+    "util/likely.h", "input/loader_desc.h"
+  });
 
   if (!cardinality_guards.empty()) {
     code.AddHeaders({"util/bitset.h"});
@@ -147,6 +150,8 @@ Code UpsertGenerator::SetupFunctionCode() const {
   if (desc_.has_partition_filter()) {
     code.AddHeaders({"util/crc32.h"});
   }
+
+  code<<"namespace input = viya::input;\n";
 
   bool add_optimize = AddOptimize();
   bool has_time_dim = std::any_of(table.dimensions().cbegin(), table.dimensions().cend(),
@@ -196,11 +201,15 @@ Code UpsertGenerator::SetupFunctionCode() const {
     }
   }
 
+  if (desc_.has_partition_filter()) {
+    code<<"static bool partition_values["<<desc_.partition_filter().total_partitions()<<"] = {false};\n";
+  }
+
   code<<OptimizeFunctionCode();
 
-  code<<"extern \"C\" void viya_upsert_setup(const db::Table& t) __attribute__((__visibility__(\"default\")));\n";
-  code<<"extern \"C\" void viya_upsert_setup(const db::Table& t) {\n";
-  code<<" table = const_cast<db::Table*>(&t);\n";
+  code<<"extern \"C\" void viya_upsert_setup(const input::LoaderDesc& desc) __attribute__((__visibility__(\"default\")));\n";
+  code<<"extern \"C\" void viya_upsert_setup(const input::LoaderDesc& desc) {\n";
+  code<<" table = const_cast<db::Table*>(&(desc.table()));\n";
   for (auto* dimension : table.dimensions()) {
     if (dimension->dim_type() == db::Dimension::DimType::STRING) {
       auto dim_idx = std::to_string(dimension->index());
@@ -208,6 +217,9 @@ Code UpsertGenerator::SetupFunctionCode() const {
       code<<" v2c"<<dim_idx<<" = reinterpret_cast<db::DictImpl<"<<dimension->num_type().cpp_type()
         <<">*>(dict"<<dim_idx<<"->v2c());\n";
     }
+  }
+  if (desc_.has_partition_filter()) {
+    code<<" for(auto& v : desc.partition_filter().values()) partition_values[v] = true;\n";
   }
   code<<"}\n";
 
@@ -320,8 +332,7 @@ Code UpsertGenerator::PartitionFilter() const {
       code<<"  hash = crc32(hash, reinterpret_cast<const unsigned char*>(value.c_str()), value.size());\n";
       code<<" }\n";
     }
-    code<<" if(hash % "<<std::to_string(part_filter.partitions_num())<<" != "
-      <<std::to_string(part_filter.partition())<<") return;\n";
+    code<<" if(!partition_values[hash % "<<std::to_string(part_filter.total_partitions())<<"]) return;\n";
     code<<"}\n";
   }
   return code;

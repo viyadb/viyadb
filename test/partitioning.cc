@@ -13,8 +13,8 @@ TEST_F(MultiTenantEvents, PartitionBySingleColumn)
   LoadEvents(util::Config(
       "{\"partition_filter\": {"
       "  \"columns\": [\"app_id\"],"
-      "  \"partition\": 0,"
-      "  \"partitions_num\": 5}}"
+      "  \"values\": [0],"
+      "  \"total_partitions\": 5}}"
   ));
 
   query::MemoryRowOutput output;
@@ -41,8 +41,8 @@ TEST_F(MultiTenantEvents, PartitionByMultiColumn)
   LoadEvents(util::Config(
       "{\"partition_filter\": {"
       "  \"columns\": [\"app_id\", \"country\"],"
-      "  \"partition\": 0,"
-      "  \"partitions_num\": 5}}"
+      "  \"values\": [0],"
+      "  \"total_partitions\": 5}}"
   ));
 
   query::MemoryRowOutput output;

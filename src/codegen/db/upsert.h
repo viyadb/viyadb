@@ -4,6 +4,7 @@
 #include "db/column.h"
 #include "db/stats.h"
 #include "codegen/generator.h"
+#include "input/loader_desc.h"
 
 namespace viya { namespace input { class LoaderDesc; }}
 
@@ -31,7 +32,7 @@ class ValueParser: public db::ColumnVisitor {
     size_t& value_idx_;
 };
 
-using UpsertSetupFn = void (*)(const db::Table&);
+using UpsertSetupFn = void (*)(const input::LoaderDesc&);
 using BeforeUpsertFn = void (*)();
 using AfterUpsertFn = db::UpsertStats (*)();
 using UpsertFn = void (*)(std::vector<std::string>&);

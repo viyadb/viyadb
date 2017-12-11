@@ -34,6 +34,7 @@ class Config {
     long num(const char* key) const;
     long num(const char* key, long default_value) const;
     std::vector<long> numlist(const char* key) const;
+    std::vector<uint32_t> numlist_uint32(const char* key) const;
     void set_num(const char* key, long value);
     void set_numlist(const char* key, std::vector<long> value);
 

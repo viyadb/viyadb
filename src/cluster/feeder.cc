@@ -43,7 +43,10 @@ void Feeder::Start() {
 }
 
 void Feeder::LoadHistoricalData() {
-  for (auto& it : controller_.batches()) {
+  std::vector<std::string> delete_paths;
+  util::ScopeGuard cleanup = [&delete_paths]() { for (auto& path : delete_paths) fs::remove_all(path); };
+
+  for (auto& it : controller_.indexers_batches()) {
     for (auto& tit : it.second->tables_info()) {
       auto& table_name = tit.first;
       auto& table_info = tit.second;
@@ -54,13 +57,11 @@ void Feeder::LoadHistoricalData() {
 
         for (auto& pit : partitions) {
           std::string target_path = Downloader::Fetch(prefix + "/part=" + std::to_string(pit.second));
-          util::ScopeGuard delete_tmpdir = [&]() {
-            if (target_path != path) {
-              fs::remove_all(target_path);
-            }
-          };
+          if (target_path != path) {
+            delete_paths.emplace_back(target_path);
+          }
 
-          loader_.LoadFolder(target_path, table_name, pit.first);
+          loader_.LoadFolderToWorker(target_path, table_name, pit.first);
         }
       }
     }
@@ -68,19 +69,24 @@ void Feeder::LoadHistoricalData() {
 }
 
 void Feeder::ProcessMicroBatch(const std::string& indexer_id, const MicroBatchInfo& info) {
-  if (info.id() <= controller_.batches().at(indexer_id)->last_microbatch()) {
+  auto& indexer_batch = controller_.indexers_batches().at(indexer_id);
+
+  if (info.id() <= indexer_batch->last_microbatch()) {
     LOG(WARNING)<<"Skipping already processed micro batch: "<<info.id();
   } else {
     for (auto& it : info.tables_info()) {
+      auto& table_name = it.first;
       auto& table_info = it.second;
 
       for (auto& path : table_info.paths()) {
         std::string target_path = Downloader::Fetch(path);
-        util::ScopeGuard delete_tmpdir = [&]() {
+        util::ScopeGuard delete_tmpdir = [&path, &target_path]() {
           if (target_path != path) {
             fs::remove_all(target_path);
           }
         };
+
+        loader_.LoadFolderToAll(target_path, table_name);
       }
     }
   }
