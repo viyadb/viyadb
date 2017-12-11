@@ -1,5 +1,8 @@
 #include "db/defs.h"
+#include "db/table.h"
+#include "db/database.h"
 #include "db/column.h"
+#include "input/loader_desc.h"
 #include "codegen/db/upsert.h"
 #include "codegen/db/store.h"
 #include "codegen/db/rollup.h"
@@ -126,20 +129,30 @@ void ValueParser::Visit(const db::BitsetMetric* metric) {
   code_<<" upsert_metrics._"<<metric_idx<<".add(metric_val"<<metric_idx<<");\n";
 }
 
+UpsertGenerator::UpsertGenerator(const input::LoaderDesc& desc):
+  FunctionGenerator(const_cast<db::Database&>(desc.table().database()).compiler()),
+  desc_(desc) {
+}
+
 Code UpsertGenerator::SetupFunctionCode() const {
   Code code;
-  auto& cardinality_guards = table_.cardinality_guards();
+  auto& table = desc_.table();
+  auto& cardinality_guards = table.cardinality_guards();
 
-  code.AddHeaders({"vector", "string", "util/likely.h", "db/store.h", "db/table.h", "db/dictionary.h"});
+  code.AddHeaders({"vector", "string", "db/store.h", "db/table.h", "db/dictionary.h", "util/likely.h"});
+
   if (!cardinality_guards.empty()) {
     code.AddHeaders({"util/bitset.h"});
   }
+  if (desc_.has_partition_filter()) {
+    code.AddHeaders({"util/crc32.h"});
+  }
 
   bool add_optimize = AddOptimize();
-  bool has_time_dim = std::any_of(table_.dimensions().cbegin(), table_.dimensions().cend(),
+  bool has_time_dim = std::any_of(table.dimensions().cbegin(), table.dimensions().cend(),
                 [] (const db::Dimension* dim) { return dim->dim_type() == db::Dimension::DimType::TIME; });
 
-  StoreDefs store_defs(table_);
+  StoreDefs store_defs(table);
   code<<store_defs.GenerateCode();
 
   code<<"static db::Table* table;\n";
@@ -152,7 +165,7 @@ Code UpsertGenerator::SetupFunctionCode() const {
   }
 
   if (has_time_dim) {
-    RollupDefs rollup_defs(table_.dimensions());
+    RollupDefs rollup_defs(table.dimensions());
     code<<rollup_defs.GenerateCode();
   }
 
@@ -168,7 +181,7 @@ Code UpsertGenerator::SetupFunctionCode() const {
       <<","<<struct_name<<"Hasher> card_stats"<<dim_idx<<";\n";
   }
 
-  for (auto* dimension : table_.dimensions()) {
+  for (auto* dimension : table.dimensions()) {
     auto dim_idx = std::to_string(dimension->index());
     if (dimension->dim_type() == db::Dimension::DimType::STRING) {
       code<<"static db::DimensionDict* dict"<<dim_idx<<";\n";
@@ -176,7 +189,7 @@ Code UpsertGenerator::SetupFunctionCode() const {
     }
   }
 
-  for (auto* metric : table_.metrics()) {
+  for (auto* metric : table.metrics()) {
     if (metric->agg_type() == db::Metric::AggregationType::BITSET) {
       code<<"Bitset<"<<std::to_string(metric->num_type().size())
         <<"> empty_bitset"<<std::to_string(metric->index())<<";\n";
@@ -185,10 +198,10 @@ Code UpsertGenerator::SetupFunctionCode() const {
 
   code<<OptimizeFunctionCode();
 
-  code<<"extern \"C\" void viya_upsert_setup(db::Table& t) __attribute__((__visibility__(\"default\")));\n";
-  code<<"extern \"C\" void viya_upsert_setup(db::Table& t) {\n";
-  code<<" table = &t;\n";
-  for (auto* dimension : table_.dimensions()) {
+  code<<"extern \"C\" void viya_upsert_setup(const db::Table& t) __attribute__((__visibility__(\"default\")));\n";
+  code<<"extern \"C\" void viya_upsert_setup(const db::Table& t) {\n";
+  code<<" table = const_cast<db::Table*>(&t);\n";
+  for (auto* dimension : table.dimensions()) {
     if (dimension->dim_type() == db::Dimension::DimType::STRING) {
       auto dim_idx = std::to_string(dimension->index());
       code<<" dict"<<dim_idx<<" = static_cast<const db::StrDimension*>(table->dimension("<<dim_idx<<"))->dict();\n";
@@ -202,7 +215,7 @@ Code UpsertGenerator::SetupFunctionCode() const {
   code<<"extern \"C\" void viya_upsert_before() {\n";
   code<<" stats = db::UpsertStats();\n";
   if (has_time_dim) {
-    RollupReset rollup_reset(table_.dimensions());
+    RollupReset rollup_reset(table.dimensions());
     code<<rollup_reset.GenerateCode();
   }
   code<<"}\n";
@@ -217,18 +230,20 @@ Code UpsertGenerator::SetupFunctionCode() const {
 }
 
 bool UpsertGenerator::AddOptimize() const {
-  bool has_bitset_metric = std::any_of(table_.metrics().cbegin(), table_.metrics().cend(),
+  auto& table = desc_.table();
+  bool has_bitset_metric = std::any_of(table.metrics().cbegin(), table.metrics().cend(),
                 [] (const db::Metric* metric) { return metric->agg_type() == db::Metric::AggregationType::BITSET; });
-  return has_bitset_metric || !table_.cardinality_guards().empty();
+  return has_bitset_metric || !table.cardinality_guards().empty();
 }
 
 Code UpsertGenerator::OptimizeFunctionCode() const {
+  auto& table = desc_.table();
   Code code;
   code<<"void viya_upsert_optimize() {\n";
 
   bool add_optimize = AddOptimize();
   if (add_optimize) {
-    for (auto& guard : table_.cardinality_guards()) {
+    for (auto& guard : table.cardinality_guards()) {
       auto dim_idx = std::to_string(guard.dim()->index());
       code<<" for (auto it = card_stats"<<dim_idx<<".begin(); it != card_stats"<<dim_idx<<".end(); ++it) {\n";
       code<<"  it->second.optimize();\n";
@@ -236,7 +251,7 @@ Code UpsertGenerator::OptimizeFunctionCode() const {
     }
 
     std::vector<const db::Metric*> bitset_metrics;
-    for (auto* metric : table_.metrics()) {
+    for (auto* metric : table.metrics()) {
       if (metric->agg_type() == db::Metric::AggregationType::BITSET) {
         bitset_metrics.push_back(metric);
       }
@@ -261,7 +276,9 @@ Code UpsertGenerator::OptimizeFunctionCode() const {
 
 Code UpsertGenerator::CardinalityProtection() const {
   Code code;
-  for (auto& guard : table_.cardinality_guards()) {
+  auto& table = desc_.table();
+
+  for (auto& guard : table.cardinality_guards()) {
     code<<"{\n";
     auto dim_idx = std::to_string(guard.dim()->index());
     for (auto per_dim : guard.dimensions()) {
@@ -288,18 +305,44 @@ Code UpsertGenerator::CardinalityProtection() const {
   return code;
 }
 
+Code UpsertGenerator::PartitionFilter() const {
+  Code code;
+  if (desc_.has_partition_filter()) {
+    auto& part_filter = desc_.partition_filter();
+    auto & tuple_idx_map = desc_.tuple_idx_map();
+    auto& table = desc_.table();
+    code<<"{\n";
+    code<<" uint32_t hash = 0;\n";
+    for (auto& key_col : part_filter.columns()) {
+      auto dim = table.dimension(key_col);
+      code<<" {\n";
+      code<<"  auto& value = values["<<tuple_idx_map[dim->index()]<<"];\n";
+      code<<"  hash = crc32(hash, reinterpret_cast<const unsigned char*>(value.c_str()), value.size());\n";
+      code<<" }\n";
+    }
+    code<<" if(hash % "<<std::to_string(part_filter.partitions_num())<<" != "
+      <<std::to_string(part_filter.partition())<<") return;\n";
+    code<<"}\n";
+  }
+  return code;
+}
+
 Code UpsertGenerator::GenerateCode() const {
   Code code;
+  auto& table = desc_.table();
+
   code<<SetupFunctionCode();
 
   code<<"extern \"C\" void viya_upsert_do(std::vector<std::string>& values) __attribute__((__visibility__(\"default\")));\n";
   code<<"extern \"C\" void viya_upsert_do(std::vector<std::string>& values) {\n";
 
+  code<<PartitionFilter();
+
   size_t value_idx = 0;
   bool add_optimize = AddOptimize();
-  ValueParser value_parser(code, tuple_idx_map_, value_idx);
+  ValueParser value_parser(code, desc_.tuple_idx_map(), value_idx);
 
-  for (auto* dimension : table_.dimensions()) {
+  for (auto* dimension : table.dimensions()) {
     code<<"{\n";
     dimension->Accept(value_parser);
     code<<"}\n";
@@ -307,7 +350,7 @@ Code UpsertGenerator::GenerateCode() const {
 
   bool has_count_metric = false;
   bool has_avg_metric = false;
-  for (auto* metric : table_.metrics()) {
+  for (auto* metric : table.metrics()) {
     if (metric->agg_type() == db::Metric::AggregationType::AVG) {
       has_avg_metric = true;
     } else if (metric->agg_type() == db::Metric::AggregationType::COUNT) {
@@ -325,7 +368,7 @@ Code UpsertGenerator::GenerateCode() const {
   code<<" auto& segments = store->segments();\n";
   code<<" auto offset_it = tuple_offsets.find(upsert_dims);\n";
   code<<" if (offset_it != tuple_offsets.end()) {\n";
-  auto segment_size = std::to_string(table_.segment_size());
+  auto segment_size = std::to_string(table.segment_size());
   code<<"  size_t global_idx = offset_it->second;\n";
   code<<"  size_t segment_idx = global_idx / " <<segment_size<<";\n";
   code<<"  size_t tuple_idx = global_idx % " <<segment_size<<";\n";
@@ -347,7 +390,7 @@ Code UpsertGenerator::GenerateCode() const {
   code<<" }\n";
 
   // Empty temporary roaring bitsets:
-  for (auto* metric : table_.metrics()) {
+  for (auto* metric : table.metrics()) {
     if (metric->agg_type() == db::Metric::AggregationType::BITSET) {
       auto metric_idx = std::to_string(metric->index());
       code<<" upsert_metrics._"<<metric_idx<<" = empty_bitset"<<metric_idx<<";\n";

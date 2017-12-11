@@ -29,7 +29,7 @@ cppkafka::Configuration KafkaNotifier::CreateConsumerConfig(const std::string& g
     {"auto.offset.reset", "smallest"}
   });
 
-  return std::move(consumer_config);
+  return consumer_config;
 }
 
 void KafkaNotifier::Listen(std::function<void(const Info& info)> callback) {

@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <gtest/gtest.h>
+#include "db/table.h"
 #include "db/store.h"
 #include "db/rollup.h"
 #include "query/output.h"

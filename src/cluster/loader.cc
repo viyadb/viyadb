@@ -81,7 +81,7 @@ void Loader::LoadFile(const std::string& file, const std::string& table_name,
     cpr::Url { url },
     cpr::Body { load_desc.dump() },
     cpr::Header {{ "Content-Type", "application/json" }},
-    cpr::Timeout { 10000L }
+    cpr::Timeout { 120000L }
   );
   if (r.status_code != 200) {
     if (r.status_code == 0) {

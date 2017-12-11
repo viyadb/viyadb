@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -6,47 +7,38 @@
 #include <cstdio>
 #include <cassert>
 #include <cstring>
-#include <algorithm>
 #include <glog/logging.h>
+#include "db/table.h"
+#include "db/database.h"
 #include "input/file.h"
 #include "util/config.h"
 
 namespace viya {
 namespace input {
 
-FileLoader::Format parse_format(const std::string& format) {
-  if (format == "tsv") {
-    return FileLoader::Format::TSV;
-  }
-  throw std::invalid_argument("Unsupported input format: " + format);
-}
+FileLoader::FileLoader(const util::Config& config, const db::Table& table):
+  Loader(config, table),
+  fd_(-1),buf_(nullptr),buf_size_(0L) {
 
-FileLoader::FileLoader(db::Table& table, const util::Config& config, std::vector<int>& tuple_idx_map):
-  Loader(table, tuple_idx_map),
-  format_(parse_format(config.str("format"))),
-  fname_(config.str("file")),
-  fd_(-1),
-  buf_(nullptr),
-  buf_size_(0L) {
-
-  fd_ = open(fname_.c_str(), O_RDONLY);
+  auto& fname = desc_.fname();
+  fd_ = open(fname.c_str(), O_RDONLY);
   if (fd_ == -1) {
-    throw std::runtime_error("File not accessible: " + fname_);
+    throw std::runtime_error("File not accessible: " + fname);
   }
 
   struct stat fs;
   if (fstat(fd_, &fs) == -1) {
-    throw std::runtime_error("Can't get file status: " + fname_);
+    throw std::runtime_error("Can't get file status: " + fname);
   }
   buf_size_ = fs.st_size;
 
   buf_ = static_cast<char*>(mmap(NULL, buf_size_, PROT_READ, MAP_SHARED, fd_, 0));
   if (buf_ == MAP_FAILED) {
-    throw std::runtime_error("Can't mmap() on file: " + fname_);
+    throw std::runtime_error("Can't mmap() on file: " + fname);
   }
 
   if (madvise(buf_, buf_size_, MADV_WILLNEED | MADV_SEQUENTIAL) == -1) {
-    LOG(WARNING)<<"Can't madvise() on file: "<<fname_;
+    LOG(WARNING)<<"Can't madvise() on file: "<<fname;
   }
 }
 
@@ -64,12 +56,13 @@ FileLoader::~FileLoader() {
 }
 
 void FileLoader::LoadTsv() {
-  LOG(INFO)<<"Loading "<<fname_<<" into table: "<<table_.name();
+  LOG(INFO)<<"Loading "<<desc_.fname()<<" into table: "<<desc_.table().name();
 
   static const size_t MAX_TUPLE_SIZE = 1024000;
   static char line[MAX_TUPLE_SIZE];
 
-  size_t cols_num = *std::max_element(tuple_idx_map_.begin(), tuple_idx_map_.end()) + 1;
+  auto& tuple_idx_map = desc_.tuple_idx_map();
+  size_t cols_num = *std::max_element(tuple_idx_map.begin(), tuple_idx_map.end()) + 1;
 
   std::vector<std::string> tuple(cols_num);
   for (auto& s: tuple) {
@@ -85,7 +78,7 @@ void FileLoader::LoadTsv() {
     if (lend == NULL) {
       lend = buf_end;
     }
-    assert(lend - lstart + 1 < MAX_TUPLE_SIZE);
+    assert((size_t)(lend - lstart + 1) < MAX_TUPLE_SIZE);
     memcpy(line, lstart, lend - lstart + 1);
     line[lend - lstart] = '\0';
 
@@ -128,8 +121,10 @@ void FileLoader::LoadData() {
   stats_.OnBegin();
   BeforeLoad();
 
-  if (format_ == Format::TSV) {
+  if (desc_.format() == LoaderDesc::Format::TSV) {
     LoadTsv();
+  } else {
+    throw std::runtime_error("Unknown input file format");
   }
 
   stats_.upsert_stats = AfterLoad();

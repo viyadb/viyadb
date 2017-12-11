@@ -1,25 +1,23 @@
 #ifndef VIYA_INPUT_LOADER_H_
 #define VIYA_INPUT_LOADER_H_
 
+#include "input/loader_desc.h"
 #include "input/stats.h"
 #include "codegen/db/upsert.h"
-
-namespace viya { namespace db { class Table; class Column; }}
 
 namespace viya {
 namespace input {
 
-namespace db = viya::db;
 namespace cg = viya::codegen;
 
 class Loader {
   public:
-    Loader(db::Table& table, const std::vector<int>& tuple_idx_map);
+    Loader(const util::Config& config, const db::Table& table);
     Loader(const Loader& other) = delete;
-    virtual ~Loader() {}
+    virtual ~Loader() = default;
 
     virtual void LoadData() = 0;
-    static std::vector<const db::Column*> GetInputColumns(const db::Table& table);
+    const LoaderDesc& desc() const { return desc_; }
 
   protected:
     void BeforeLoad();
@@ -27,8 +25,7 @@ class Loader {
     db::UpsertStats AfterLoad();
 
   protected:
-    db::Table& table_;
-    const std::vector<int> tuple_idx_map_;
+    const LoaderDesc desc_;
     LoaderStats stats_;
     cg::BeforeUpsertFn before_upsert_;
     cg::AfterUpsertFn after_upsert_;

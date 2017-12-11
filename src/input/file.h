@@ -1,6 +1,8 @@
 #ifndef VIYA_INPUT_FILE_H_
 #define VIYA_INPUT_FILE_H_
 
+#include "input/stats.h"
+#include "input/loader_desc.h"
 #include "input/loader.h"
 
 namespace viya { namespace util { class Config; }}
@@ -12,9 +14,7 @@ namespace util = viya::util;
 
 class FileLoader: public Loader {
   public:
-    enum Format { TSV };
-
-    FileLoader(db::Table& table, const util::Config& config, std::vector<int>& tuple_idx_map);
+    FileLoader(const util::Config& config, const db::Table& table);
     FileLoader(const FileLoader&) = delete;
     ~FileLoader();
 
@@ -24,8 +24,6 @@ class FileLoader: public Loader {
     void LoadTsv();
 
   private:
-    const Format format_;
-    std::string fname_;
     int fd_;
     char* buf_;
     size_t buf_size_;

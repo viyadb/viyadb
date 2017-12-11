@@ -2,6 +2,7 @@
 #define VIYA_INPUT_STATS_H_
 
 #include <chrono>
+#include <string>
 #include "db/stats.h"
 
 namespace viya { namespace util { class Statsd; } }

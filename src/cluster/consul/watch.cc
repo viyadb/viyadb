@@ -29,7 +29,7 @@ json Watch::LastChanges() {
   }
   json response = json::parse(r.text)[0].get<json>();
   index_ = response["ModifyIndex"].get<long>();
-  return std::move(response);
+  return response;
 }
 
 }}}

@@ -1,15 +1,17 @@
 #ifndef VIYA_CODEGEN_DB_UPSERT_H_
 #define VIYA_CODEGEN_DB_UPSERT_H_
 
-#include "db/table.h"
 #include "db/column.h"
 #include "db/stats.h"
 #include "codegen/generator.h"
+
+namespace viya { namespace input { class LoaderDesc; }}
 
 namespace viya {
 namespace codegen {
 
 namespace db = viya::db;
+namespace input = viya::input;
 
 class ValueParser: public db::ColumnVisitor {
   public:
@@ -29,16 +31,14 @@ class ValueParser: public db::ColumnVisitor {
     size_t& value_idx_;
 };
 
-using UpsertSetupFn = void (*)(db::Table&);
+using UpsertSetupFn = void (*)(const db::Table&);
 using BeforeUpsertFn = void (*)();
 using AfterUpsertFn = db::UpsertStats (*)();
 using UpsertFn = void (*)(std::vector<std::string>&);
 
 class UpsertGenerator: public FunctionGenerator {
   public:
-    UpsertGenerator(Compiler& compiler, const db::Table& table, const std::vector<int>& tuple_idx_map)
-      :FunctionGenerator(compiler),table_(table),tuple_idx_map_(tuple_idx_map) {}
-
+    UpsertGenerator(const input::LoaderDesc& desc);
     UpsertGenerator(const UpsertGenerator& other) = delete;
 
     Code GenerateCode() const;
@@ -51,12 +51,12 @@ class UpsertGenerator: public FunctionGenerator {
   private:
     Code SetupFunctionCode() const;
     Code CardinalityProtection() const;
+    Code PartitionFilter() const;
     bool AddOptimize() const;
     Code OptimizeFunctionCode() const;
 
   private:
-    const db::Table& table_;
-    const std::vector<int>& tuple_idx_map_;
+    const input::LoaderDesc& desc_;
 };
 
 }}

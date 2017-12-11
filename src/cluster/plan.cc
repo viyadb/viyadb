@@ -36,7 +36,7 @@ json Plan::ToJson() const {
     plan.push_back(partitions);
   }
   std::sort(plan.begin(), plan.end());
-  return std::move(plan);
+  return plan;
 }
 
 void Plan::AssignPartitionsToWorkers(const std::map<std::string, util::Config>& worker_configs) {

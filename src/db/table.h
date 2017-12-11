@@ -39,7 +39,7 @@ class Table {
     ~Table();
 
     const std::string& name() const { return name_; }
-    Database& database() { return database_; }
+    const Database& database() const { return database_; }
 
     const Column* column(const std::string& name) const;
     const std::vector<const Column*> columns() const;
@@ -52,7 +52,7 @@ class Table {
     const SegmentStore* store() const { return store_; }
     SegmentStore* store() { return store_; }
     size_t segment_size() const { return segment_size_; }
-    const std::vector<CardinalityGuard>& cardinality_guards() const { return cardinality_guards_; }
+    const std::vector<CardinalityGuard>& cardinality_guards() const { return cardinality_guards_; } 
 
     void PrintMetadata(std::string&);
 

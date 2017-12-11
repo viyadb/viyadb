@@ -148,4 +148,34 @@ class TimeEvents : public testing::Test {
     db::Database db;
 };
 
+class MultiTenantEvents : public testing::Test {
+  protected:
+    MultiTenantEvents()
+      :db(std::move(util::Config(
+              "{\"tables\": [{\"name\": \"events\","
+              "               \"dimensions\": [{\"name\": \"app_id\"},"
+              "                                {\"name\": \"country\"},"
+              "                                {\"name\": \"event_name\"},"
+              "                                {\"name\": \"time\", \"type\": \"uint\"}],"
+              "               \"metrics\": [{\"name\": \"value\", \"type\": \"long_sum\"},"
+              "                             {\"name\": \"count\", \"type\": \"count\"}]}]}"))) {}
+
+    void LoadEvents(const util::Config& load_desc) {
+      auto table = db.GetTable("events");
+      input::SimpleLoader loader(load_desc, *table);
+      loader.Load({
+        {"com.bee", "US", "purchase", "1495475514", "15"},
+        {"com.bee", "RU", "support", "1495475517", "23"},
+        {"com.horse", "US", "openapp", "1495475632", "137"},
+        {"com.horse", "IL", "purchase", "1495475715", "148"},
+        {"com.horse", "KZ", "closeapp", "1495475716", "19"},
+        {"com.bird", "US", "uninstall", "1495475809", "35"},
+        {"com.bird", "KZ", "purchase", "1495475808", "231"},
+        {"com.bird", "US", "purchase", "1495476000", "32"},
+      });
+    }
+
+    db::Database db;
+};
+
 #endif // VIYA_TEST_DB_H_
