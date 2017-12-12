@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2017 ViyaDB Group
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <glog/logging.h>
@@ -46,22 +62,24 @@ void Feeder::LoadHistoricalData() {
   std::vector<std::string> delete_paths;
   util::ScopeGuard cleanup = [&delete_paths]() { for (auto& path : delete_paths) fs::remove_all(path); };
 
-  for (auto& it : controller_.indexers_batches()) {
-    for (auto& tit : it.second->tables_info()) {
-      auto& table_name = tit.first;
-      auto& table_info = tit.second;
+  for (auto& batches_it : controller_.indexers_batches()) {
+    for (auto& tables_it : batches_it.second->tables_info()) {
+      auto& table_name = tables_it.first;
+      auto& table_info = tables_it.second;
       auto partitions = controller_.tables_plans().at(table_name).workers_partitions();
 
       for (auto& path : table_info.paths()) {
         auto prefix = boost::trim_right_copy_if(path, boost::is_any_of("/"));
 
-        for (auto& pit : partitions) {
-          std::string target_path = Downloader::Fetch(prefix + "/part=" + std::to_string(pit.second));
-          if (target_path != path) {
-            delete_paths.emplace_back(target_path);
-          }
+        for (auto& part_it : partitions) {
+          auto& worker_id = part_it.first;
+          auto& partition = part_it.second;
 
-          loader_.LoadFolderToWorker(target_path, table_name, pit.first);
+          std::string target_path = Downloader::Fetch(prefix + "/part=" + std::to_string(partition));
+          if (target_path != path) {
+            delete_paths.push_back(target_path);
+          }
+          loader_.LoadFiles(target_path, table_name, worker_id);
         }
       }
     }
@@ -69,6 +87,8 @@ void Feeder::LoadHistoricalData() {
 }
 
 void Feeder::ProcessMicroBatch(const std::string& indexer_id, const MicroBatchInfo& info) {
+  std::vector<std::string> delete_paths;
+  util::ScopeGuard cleanup = [&delete_paths]() { for (auto& path : delete_paths) fs::remove_all(path); };
   auto& indexer_batch = controller_.indexers_batches().at(indexer_id);
 
   if (info.id() <= indexer_batch->last_microbatch()) {
@@ -80,13 +100,10 @@ void Feeder::ProcessMicroBatch(const std::string& indexer_id, const MicroBatchIn
 
       for (auto& path : table_info.paths()) {
         std::string target_path = Downloader::Fetch(path);
-        util::ScopeGuard delete_tmpdir = [&path, &target_path]() {
-          if (target_path != path) {
-            fs::remove_all(target_path);
-          }
-        };
-
-        loader_.LoadFolderToAll(target_path, table_name);
+        if (target_path != path) {
+          delete_paths.push_back(target_path);
+        }
+        loader_.LoadFilesToAll(target_path, table_name);
       }
     }
   }
