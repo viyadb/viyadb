@@ -23,6 +23,7 @@
 #include "util/schedule.h"
 #include "cluster/consul/consul.h"
 #include "cluster/plan.h"
+#include "cluster/partitioning.h"
 #include "cluster/feeder.h"
 #include "cluster/batch_info.h"
 
@@ -43,14 +44,16 @@ class Controller {
     const std::map<std::string, util::Config>& indexers_configs() const { return indexers_configs_; }
     const std::map<std::string, std::unique_ptr<BatchInfo>>& indexers_batches() const { return indexers_batches_; }
     const std::map<std::string, Plan>& tables_plans() const { return tables_plans_; }
+    const std::map<std::string, Partitioning>& tables_partitioning() const { return tables_partitioning_; }
 
   private:
     void ReadClusterConfig();
     bool ReadWorkersConfigs();
     void FetchLatestBatchInfo();
     void Initialize();
-    void AssignPartitionsToWorkers();
+    void InitializePartitioning();
     void InitializePlan();
+    void AssignPartitionsToWorkers();
     bool ReadPlan();
     bool GeneratePlan();
 
@@ -67,6 +70,7 @@ class Controller {
     std::map<std::string, util::Config> indexers_configs_;
     std::map<std::string, std::unique_ptr<BatchInfo>> indexers_batches_;
     std::map<std::string, Plan> tables_plans_;
+    std::map<std::string, Partitioning> tables_partitioning_;
     std::unique_ptr<Feeder> feeder_;
 };
 

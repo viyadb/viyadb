@@ -45,31 +45,28 @@ Loader::Loader(const Controller& controller, const std::string& load_prefix):
 }
 
 void Loader::InitPartitionFilters() {
-  for (auto& batches_it : controller_.indexers_batches()) {
-    for (auto& tables_it : batches_it.second->tables_info()) {
-      auto& table_name = tables_it.first;
-      auto& table_info = tables_it.second;
-      auto& table_plan = controller_.tables_plans().at(table_name);
-      auto& table_filters = partition_filters_.emplace(
-                              table_name, std::unordered_map<std::string, json> {}).first->second;
+  for (auto& part_it : controller_.tables_partitioning()) {
+    auto& table_name = part_it.first;
+    auto& partitioning = part_it.second;
+    auto& table_filters = partition_filters_.emplace(
+      table_name, std::unordered_map<std::string, json> {}).first->second;
 
-      for (auto& it : table_plan.workers_partitions()) {
-        auto& worker_id = it.first;
-        auto& worker_partition = it.second;
+    auto& table_plan = controller_.tables_plans().at(table_name);
+    for (auto& plan_it : table_plan.workers_partitions()) {
+      auto& worker_id = plan_it.first;
+      auto& worker_partition = plan_it.second;
 
-        uint32_t value = 0;
-        std::vector<uint32_t> values;
-        for (auto partition : table_info.partitioning()) {
-          if (partition != -1 && (uint32_t)partition == worker_partition) {
-            values.push_back(value);
-          }
-          ++value;
+      std::vector<uint32_t> values;
+      auto& value_to_partition = partitioning.mapping();
+      for (uint32_t value = 0; value < value_to_partition.size(); ++value) {
+        if (value_to_partition[value] == worker_partition) {
+          values.push_back(value);
         }
-        auto& partition_filter = table_filters.emplace(worker_id, json {}).first->second;
-        partition_filter["total_partitions"] = table_info.total_partitions();
-        partition_filter["columns"] = table_info.partition_columns();
-        partition_filter["values"] = values;
       }
+      auto& partition_filter = table_filters.emplace(worker_id, json {}).first->second;
+      partition_filter["total_partitions"] = partitioning.total();
+      partition_filter["columns"] = partitioning.columns();
+      partition_filter["values"] = values;
     }
   }
 }

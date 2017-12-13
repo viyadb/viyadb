@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-#ifndef VIYA_CLUSTER_INFO_H_
-#define VIYA_CLUSTER_INFO_H_
+#ifndef VIYA_CLUSTER_BATCH_INFO_H_
+#define VIYA_CLUSTER_BATCH_INFO_H_
 
 #include <map>
+#include <memory>
 #include <json.hpp>
+#include "cluster/partitioning.h"
 
 namespace viya {
 namespace cluster {
@@ -65,15 +67,12 @@ class BatchTableInfo {
     BatchTableInfo(const json& info);
 
     const std::vector<std::string>& paths() const { return paths_; }
-    const std::vector<int>& partitioning() const { return partitioning_; }
-    size_t total_partitions() const { return total_partitions_; }
-    const std::vector<std::string>& partition_columns() const { return partition_columns_; };
+    const Partitioning& partitioning() const { return *partitioning_; }
+    bool has_partitioning() const { return (bool)partitioning_; }
 
   private:
     const std::vector<std::string> paths_;
-    std::vector<int> partitioning_;
-    std::vector<std::string> partition_columns_;
-    size_t total_partitions_;
+    std::unique_ptr<Partitioning> partitioning_;
 };
 
 class BatchInfo: public Info {
@@ -93,4 +92,4 @@ class BatchInfo: public Info {
 
 }}
 
-#endif // VIYA_CLUSTER_INFO_H_
+#endif // VIYA_CLUSTER_BATCH_INFO_H_

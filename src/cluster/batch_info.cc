@@ -27,16 +27,15 @@ Info::Info(const json& info):id_(info["id"]) {
 }
 
 BatchTableInfo::BatchTableInfo(const json& info):
-  paths_(info["paths"].get<std::vector<std::string>>()),
-  total_partitions_(0L) {
+  paths_(info["paths"].get<std::vector<std::string>>()) {
 
   if (info.find("partitioning") != info.end()) {
-    partitioning_ = info["partitioning"].get<std::vector<int>>();
-  }
-  if (info.find("partitionConf") != info.end()) {
     json partition_conf = info["partitionConf"];
-    partition_columns_ = partition_conf["columns"].get<std::vector<std::string>>();
-    total_partitions_ = partition_conf["partitions"];
+    partitioning_ = std::make_unique<Partitioning>(
+      info["partitioning"].get<std::vector<uint32_t>>(),
+      partition_conf["partitions"],
+      partition_conf["columns"].get<std::vector<std::string>>()
+    );
   }
 }
 

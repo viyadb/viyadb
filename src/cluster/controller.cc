@@ -74,24 +74,10 @@ bool Controller::ReadWorkersConfigs() {
   return true;
 }
 
-void Controller::FetchLatestBatchInfo() {
-  LOG(INFO)<<"Fetching latest batches info from indexers notifiers";
-  indexers_batches_.clear();
-
-  for (auto& it : indexers_configs_) {
-    auto& indexer_id = it.first;
-    auto& indexer_conf = it.second;
-
-    auto notifier = NotifierFactory::Create(indexer_conf.sub("batch").sub("notifier"), IndexerType::BATCH);
-    auto info = notifier->GetLastMessage();
-    if (info) {
-      indexers_batches_.emplace(indexer_id, std::move(static_cast<BatchInfo*>(info.release())));
-    }
-  }
-}
-
 void Controller::Initialize() {
   FetchLatestBatchInfo();
+
+  InitializePartitioning();
 
   InitializePlan();
 
@@ -101,6 +87,40 @@ void Controller::Initialize() {
   configurator.ConfigureWorkers();
 
   feeder_ = std::make_unique<Feeder>(*this, load_prefix);
+}
+
+void Controller::FetchLatestBatchInfo() {
+  LOG(INFO)<<"Fetching latest batches info from indexers notifiers";
+  indexers_batches_.clear();
+
+  for (auto& it : indexers_configs_) {
+    auto notifier = NotifierFactory::Create(it.second.sub("batch").sub("notifier"), IndexerType::BATCH);
+    auto msg = notifier->GetLastMessage();
+    if (msg) {
+      indexers_batches_.emplace(it.first, std::move(static_cast<BatchInfo*>(msg.release())));
+    }
+  }
+}
+
+void Controller::InitializePartitioning() {
+  tables_partitioning_.clear();
+
+  if (indexers_batches_.empty()) {
+    LOG(WARNING)<<"No historical batches information available - generating default partitioning";
+    // TODO: generate default partitioning
+    
+  } else {
+    for (auto& batches_it : indexers_batches_) {
+      for (auto& tables_it : batches_it.second->tables_info()) {
+        auto& table_name = tables_it.first;
+        if (tables_partitioning_.find(table_name) != tables_partitioning_.end()) {
+          throw std::runtime_error("Multiple indexers operate on same tables!");
+        }
+        // TODO: check whether partitioning is available (or make it mandatory on indexer side)
+        tables_partitioning_.emplace(table_name, tables_it.second.partitioning());
+      }
+    }
+  }
 }
 
 void Controller::InitializePlan() {
@@ -126,12 +146,13 @@ bool Controller::ReadPlan() {
   if (existing_plan.empty()) {
     return false;
   }
+
   LOG(INFO)<<"Reading cached plan from Consul";
   tables_plans_.clear();
+
   json tables_plans = existing_plan["plan"];
   for (auto it = tables_plans.begin(); it != tables_plans.end(); ++it) {
-    tables_plans_.emplace(std::piecewise_construct,
-                          std::forward_as_tuple(it.key()),
+    tables_plans_.emplace(std::piecewise_construct, std::forward_as_tuple(it.key()),
                           std::forward_as_tuple(it.value(), workers_configs_));
   }
   return true;
@@ -146,16 +167,9 @@ bool Controller::GeneratePlan() {
   PlanGenerator plan_generator(cluster_config_);
   tables_plans_.clear();
 
-  for (auto& it : indexers_batches_) {
-    for (auto& tit : it.second->tables_info()) {
-      auto& table_name = tit.first;
-      if (tables_plans_.find(table_name) != tables_plans_.end()) {
-        throw std::runtime_error("Multiple indexers operate on same tables!");
-      }
-      auto& table_info = tit.second;
-      tables_plans_.emplace(table_name, std::move(
-          plan_generator.Generate(table_info.total_partitions(), workers_configs_)));
-    }
+  for (auto& it : tables_partitioning_) {
+    tables_plans_.emplace(it.first, std::move(
+        plan_generator.Generate(it.second.total(), workers_configs_)));
   }
 
   LOG(INFO)<<"Storing partitioning plan to Consul";

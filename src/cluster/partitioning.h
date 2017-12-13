@@ -14,40 +14,30 @@
  * limitations under the License.
  */
 
-#ifndef VIYA_CLUSTER_FEEDER_H_
-#define VIYA_CLUSTER_FEEDER_H_
+#ifndef VIYA_CLUSTER_PARTITIONING_H_
+#define VIYA_CLUSTER_PARTITIONING_H_
 
 #include <vector>
-#include <map>
-#include "cluster/batch_info.h"
-#include "cluster/loader.h"
-
-namespace viya { namespace util { class Config; }}
-namespace viya { namespace cluster { class Controller; }}
+#include <string>
 
 namespace viya {
 namespace cluster {
 
-class Notifier;
-
-class Feeder {
+class Partitioning {
   public:
-    Feeder(const Controller& controller, const std::string& load_prefix);
-    Feeder(const Feeder& other) = delete;
-    ~Feeder();
+    Partitioning(const std::vector<uint32_t>& mapping, size_t total,
+                 const std::vector<std::string>& columns);
 
-  protected:
-    void Start();
-    void LoadHistoricalData();
-    void ProcessMicroBatch(const std::string& indexer_id, const MicroBatchInfo& info);
+    const std::vector<uint32_t>& mapping() const { return mapping_; }
+    size_t total() const { return total_; }
+    const std::vector<std::string>& columns() const { return columns_; };
 
   private:
-    const Controller& controller_;
-    Loader loader_;
-    std::vector<Notifier*> notifiers_;
-
+    std::vector<uint32_t> mapping_;
+    size_t total_;
+    std::vector<std::string> columns_;
 };
 
 }}
 
-#endif // VIYA_CLUSTER_FEEDER_H_
+#endif // VIYA_CLUSTER_PARTITIONING_H_
