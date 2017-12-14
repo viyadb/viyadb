@@ -107,8 +107,23 @@ void Controller::InitializePartitioning() {
 
   if (indexers_batches_.empty()) {
     LOG(WARNING)<<"No historical batches information available - generating default partitioning";
-    // TODO: generate default partitioning
-    
+
+    for (auto& table_it : tables_configs_) {
+      auto& table_name = table_it.first;
+      auto& table_conf = table_it.second;
+      auto partitioning = table_conf.sub("partitioning");
+      size_t total_partitions = partitioning.num("partitions");
+
+      // Every key value goes to a partition:
+      std::vector<uint32_t> mapping;
+      mapping.resize(total_partitions);
+      for (uint32_t v = 0; v < total_partitions; ++v) {
+        mapping[v] = v;
+      }
+      tables_partitioning_.emplace(
+        std::piecewise_construct, std::forward_as_tuple(table_name),
+        std::forward_as_tuple(mapping, total_partitions, partitioning.strlist("columns")));
+    }
   } else {
     for (auto& batches_it : indexers_batches_) {
       for (auto& tables_it : batches_it.second->tables_info()) {
