@@ -19,7 +19,6 @@
 
 #include <unordered_map>
 #include <memory>
-#include <mutex>
 #include "util/config.h"
 #include "codegen/shared_library.h"
 
@@ -39,7 +38,6 @@ class Compiler {
   private:
     std::vector<std::string> cmd_;
     std::string path_;
-    std::mutex mutex_;
     std::unordered_map<uint64_t,std::shared_ptr<SharedLibrary>> libs_;
 };
 

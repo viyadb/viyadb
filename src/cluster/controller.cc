@@ -16,6 +16,7 @@
 
 #include <chrono>
 #include <glog/logging.h>
+#include <boost/exception/diagnostic_information.hpp>
 #include "cluster/controller.h"
 #include "cluster/notifier.h"
 #include "cluster/configurator.h"
@@ -34,7 +35,11 @@ Controller::Controller(const util::Config& config):
   le_ = consul_.ElectLeader(*session_, "clusters/" + cluster_id_ + "/nodes/controller/leader");
 
   initializer_ = std::make_unique<util::Later>(10000L, [this]() {
-    Initialize();
+    try {
+      Initialize();
+    } catch (...) {
+      LOG(ERROR)<<"Error initializing controller: "<<boost::current_exception_diagnostic_information();
+    }
   });
 }
 
@@ -42,35 +47,34 @@ void Controller::ReadClusterConfig() {
   cluster_config_ = util::Config(consul_.GetKey("clusters/" + cluster_id_ + "/config"));
   LOG(INFO)<<"Using cluster configuration: "<<cluster_config_.dump();
 
-  LOG(INFO)<<"Reading tables configurations";
   tables_configs_.clear();
   for (auto& table : cluster_config_.strlist("tables", {})) {
     tables_configs_[table] = util::Config(consul_.GetKey("tables/" + table + "/config"));
   }
+  LOG(INFO)<<"Read "<<tables_configs_.size()<<" tables configurations";
 
-  LOG(INFO)<<"Reading indexers configurations";
   indexers_configs_.clear();
   for (auto& indexer_id : cluster_config_.strlist("indexers", {})) {
     indexers_configs_.emplace(indexer_id, consul_.GetKey("indexers/" + indexer_id + "/config"));
   }
+  LOG(INFO)<<"Read "<<indexers_configs_.size()<<" indexers configurations";
 }
 
 bool Controller::ReadWorkersConfigs() {
-  DLOG(INFO)<<"Finding active workers";
-
   auto active_workers = consul_.ListKeys("clusters/" + cluster_id_ + "/nodes/workers");
   auto minimum_workers = (size_t)cluster_config_.num("minimum_workers", 0L);
   if (minimum_workers > 0 && active_workers.size() < minimum_workers) {
     LOG(INFO)<<"Number of active workers is less than the minimal number of workers ("<<minimum_workers<<")";
     return false;
   }
+  LOG(INFO)<<"Found "<<active_workers.size()<<" active workers";
 
-  DLOG(INFO)<<"Reading workers configurations";
   workers_configs_.clear();
   for (auto& worker_id : active_workers) {
     workers_configs_.emplace(worker_id, consul_.GetKey(
         "clusters/" + cluster_id_ + "/nodes/workers/" + worker_id, false, "{}"));
   }
+  LOG(INFO)<<"Read "<<workers_configs_.size()<<" workers configurations";
   return true;
 }
 
@@ -90,16 +94,15 @@ void Controller::Initialize() {
 }
 
 void Controller::FetchLatestBatchInfo() {
-  LOG(INFO)<<"Fetching latest batches info from indexers notifiers";
   indexers_batches_.clear();
-
   for (auto& it : indexers_configs_) {
-    auto notifier = NotifierFactory::Create(it.second.sub("batch").sub("notifier"), IndexerType::BATCH);
+    auto notifier = NotifierFactory::Create(it.first, it.second.sub("batch").sub("notifier"), IndexerType::BATCH);
     auto msg = notifier->GetLastMessage();
     if (msg) {
       indexers_batches_.emplace(it.first, std::move(static_cast<BatchInfo*>(msg.release())));
     }
   }
+  LOG(INFO)<<"Fetched "<<indexers_batches_.size()<<" batches from indexers notifiers";
 }
 
 void Controller::InitializePartitioning() {
@@ -111,18 +114,40 @@ void Controller::InitializePartitioning() {
     for (auto& table_it : tables_configs_) {
       auto& table_name = table_it.first;
       auto& table_conf = table_it.second;
-      auto partitioning = table_conf.sub("partitioning");
-      size_t total_partitions = partitioning.num("partitions");
 
-      // Every key value goes to a partition:
-      std::vector<uint32_t> mapping;
-      mapping.resize(total_partitions);
-      for (uint32_t v = 0; v < total_partitions; ++v) {
-        mapping[v] = v;
+      util::Config partitioning;
+      if (table_conf.exists("partitioning")) {
+        partitioning = table_conf.sub("partitioning");
+      } else {
+        // Take partitioning config from indexer responsible for that table:
+        for (auto& indexer_it : indexers_configs_) {
+          auto indexer_tables = indexer_it.second.strlist("tables");
+          if (std::find_if(indexer_tables.begin(), indexer_tables.end(), [&table_name](auto& t) {
+            return table_name == t;
+          }) != indexer_tables.end()) {
+            auto batch_conf = indexer_it.second.sub("batch");
+            if (batch_conf.exists("partitioning")) {
+              partitioning = batch_conf.sub("partitioning");
+            }
+            break;
+          }
+        }
       }
-      tables_partitioning_.emplace(
-        std::piecewise_construct, std::forward_as_tuple(table_name),
-        std::forward_as_tuple(mapping, total_partitions, partitioning.strlist("columns")));
+
+      if (partitioning.exists("columns")) {
+        size_t total_partitions = partitioning.num("partitions");
+        // Every key value goes to a partition:
+        std::vector<uint32_t> mapping;
+        mapping.resize(total_partitions);
+        for (uint32_t v = 0; v < total_partitions; ++v) {
+          mapping[v] = v;
+        }
+        tables_partitioning_.emplace(
+          std::piecewise_construct, std::forward_as_tuple(table_name),
+          std::forward_as_tuple(mapping, total_partitions, partitioning.strlist("columns")));
+      } else {
+        // TODO: generate default partitioning based on workers number
+      }
     }
   } else {
     for (auto& batches_it : indexers_batches_) {

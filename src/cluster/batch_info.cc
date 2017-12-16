@@ -23,42 +23,44 @@ namespace cluster {
 
 using json = nlohmann::json;
 
-Info::Info(const json& info):id_(info["id"]) {
+Message::Message(const json& message):id_(message["id"]) {
 }
 
-BatchTableInfo::BatchTableInfo(const json& info):
-  paths_(info["paths"].get<std::vector<std::string>>()) {
+TableInfo::TableInfo(const json& message):
+  paths_(message["paths"].get<std::vector<std::string>>()),
+  columns_(message["columns"].get<std::vector<std::string>>()) {
+}
 
-  if (info.find("partitioning") != info.end()) {
-    json partition_conf = info["partitionConf"];
+BatchTableInfo::BatchTableInfo(const json& message):TableInfo(message) {
+  if (message.find("partitioning") != message.end()) {
+    json partition_conf = message["partitionConf"];
     partitioning_ = std::make_unique<Partitioning>(
-      info["partitioning"].get<std::vector<uint32_t>>(),
+      message["partitioning"].get<std::vector<uint32_t>>(),
       partition_conf["partitions"],
       partition_conf["columns"].get<std::vector<std::string>>()
     );
   }
 }
 
-BatchInfo::BatchInfo(const json& info):
-  Info(info),last_microbatch_(0L) {
+BatchInfo::BatchInfo(const json& message):
+  Message(message),last_microbatch_(0L) {
 
-  auto micro_batches = info["microBatches"].get<std::vector<long>>();
+  auto micro_batches = message["microBatches"].get<std::vector<long>>();
   if (!micro_batches.empty()) {
     last_microbatch_ = *std::max_element(micro_batches.begin(), micro_batches.end());
   }
 
-  auto tables = info["tables"].get<json>();
+  auto tables = message["tables"].get<json>();
   for (auto it = tables.begin(); it != tables.end(); ++it) {
     tables_info_.emplace(it.key(), it.value().get<json>());
   }
 }
 
-MicroBatchTableInfo::MicroBatchTableInfo(const json& info):
-  paths_(info["paths"].get<std::vector<std::string>>()) {
+MicroBatchTableInfo::MicroBatchTableInfo(const json& message):TableInfo(message) {
 }
 
-MicroBatchInfo::MicroBatchInfo(const json& info):Info(info) {
-  auto tables = info["tables"].get<json>();
+MicroBatchInfo::MicroBatchInfo(const json& message):Message(message) {
+  auto tables = message["tables"].get<json>();
   for (auto it = tables.begin(); it != tables.end(); ++it) {
     tables_info_.emplace(it.key(), it.value().get<json>());
   }

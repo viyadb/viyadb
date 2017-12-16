@@ -16,6 +16,7 @@
 
 #include <tuple>
 #include <glog/logging.h>
+#include <boost/exception/diagnostic_information.hpp>
 #include <cppkafka/consumer.h>
 #include <cppkafka/metadata.h>
 #include <cppkafka/topic.h>
@@ -28,7 +29,9 @@
 namespace viya {
 namespace cluster {
 
-KafkaNotifier::KafkaNotifier(const util::Config& config, IndexerType indexer_type):
+KafkaNotifier::KafkaNotifier(const std::string& indexer_id,
+                             const util::Config& config, IndexerType indexer_type):
+  indexer_id_(indexer_id),
   brokers_(config.str("channel")),
   topic_(config.str("queue")),
   indexer_type_(indexer_type) {
@@ -48,14 +51,14 @@ cppkafka::Configuration KafkaNotifier::CreateConsumerConfig(const std::string& g
   return consumer_config;
 }
 
-void KafkaNotifier::Listen(std::function<void(const Info& info)> callback) {
+void KafkaNotifier::Listen(MessageProcessor& processor) {
   auto config = CreateConsumerConfig("viyadb-" + util::get_hostname());
   consumer_ = std::make_unique<cppkafka::Consumer>(config);
+
   consumer_->subscribe({ topic_ });
+  LOG(INFO)<<"Start listening [topic="<<topic_<<",brokers="<<brokers_<<"]";
 
-  LOG(INFO)<<"Subscribed to topic: "<<topic_<<" on Kafka brokers: "<<brokers_;
-
-  always_ = std::make_unique<util::Always>([this, &callback]() {
+  always_ = std::make_unique<util::Always>([this, &processor]() {
     auto msg = consumer_->poll();
     if (msg) {
       if (msg.get_error()) {
@@ -64,15 +67,10 @@ void KafkaNotifier::Listen(std::function<void(const Info& info)> callback) {
         }
       } else {
         auto& payload = msg.get_payload();
-        DLOG(INFO)<<"Received new message: "<<payload;
-        auto info = InfoFactory::Create(payload, indexer_type_);
-        try {
-          callback(*info);
-          consumer_->commit(msg);
-        } catch (std::exception& e) {
-          LOG(ERROR)<<"Error processing Kafka message: "<<e.what();
-          throw e;
-        }
+        LOG(INFO)<<"Received new message: "<<payload;
+        auto message = MessageFactory::Create(payload, indexer_type_);
+        processor.ProcessMessage(indexer_id_, *message);
+        consumer_->commit(msg);
       }
     }
   });
@@ -92,13 +90,14 @@ std::map<uint32_t, int64_t> KafkaNotifier::GetLatestOffsets(cppkafka::Consumer& 
   return std::move(last_offsets);
 }
 
-std::vector<std::unique_ptr<Info>> KafkaNotifier::GetAllMessages() {
+std::vector<std::unique_ptr<Message>> KafkaNotifier::GetAllMessages() {
   auto config = CreateConsumerConfig("viyadb-tmp-" + util::get_hostname());
   cppkafka::Consumer consumer(config);
   auto latest_offsets = GetLatestOffsets(consumer);
-  std::vector<std::unique_ptr<Info>> messages;
+  std::vector<std::unique_ptr<Message>> messages;
 
   consumer.subscribe({ topic_ });
+  LOG(INFO)<<"Reading all messages [topic="<<topic_<<",brokers="<<brokers_<<"]";
 
   // Read all messages until latest partition offsets are meet:
   while (!latest_offsets.empty()) {
@@ -109,7 +108,7 @@ std::vector<std::unique_ptr<Info>> KafkaNotifier::GetAllMessages() {
           LOG(WARNING)<<"Error occurred while consuming messages: "<<msg.get_error();
         }
       } else {
-        messages.emplace_back(std::move(InfoFactory::Create(msg.get_payload(), indexer_type_)));
+        messages.emplace_back(std::move(MessageFactory::Create(msg.get_payload(), indexer_type_)));
       }
       auto msg_partition = msg.get_partition();
       if (latest_offsets[msg_partition] <= msg.get_offset()) {
@@ -117,36 +116,46 @@ std::vector<std::unique_ptr<Info>> KafkaNotifier::GetAllMessages() {
       }
     }
   }
+
+  LOG(INFO)<<"Read "<<messages.size()<<" messages";
   return std::move(messages);
 }
 
-std::unique_ptr<Info> KafkaNotifier::GetLastMessage() {
+std::unique_ptr<Message> KafkaNotifier::GetLastMessage() {
   auto config = CreateConsumerConfig("viyadb-tmp-" + util::get_hostname());
   cppkafka::Consumer consumer(config);
   auto latest_offsets = GetLatestOffsets(consumer);
   auto latest_offset = std::max_element(latest_offsets.begin(), latest_offsets.end(),
                                         [](auto& p1, auto& p2) { return p1.second < p2.second; });
 
+  std::unique_ptr<Message> last_message;
+  LOG(INFO)<<"Looking for last message [topic="<<topic_<<",brokers="<<brokers_<<"]";
+
   // Only assign the partition containing the latest offset:
   if (latest_offset != latest_offsets.end()) {
-    consumer.assign({{topic_, (int)latest_offset->first}});
-  }
+    auto last_partition = (int)latest_offset->first;
+    consumer.assign({{topic_, last_partition}});
 
-  std::unique_ptr<Info> last_message;
-  while (true) {
-    auto msg = consumer.poll();
-    if (msg) {
-      if (msg.get_error()) {
-        if (!msg.is_eof()) {
-          LOG(WARNING)<<"Error occurred while consuming messages: "<<msg.get_error();
+    LOG(INFO)<<"Start reading from partition: "<<last_partition;
+    while (true) {
+      auto msg = consumer.poll();
+      if (msg) {
+        if (msg.get_error()) {
+          if (!msg.is_eof()) {
+            LOG(WARNING)<<"Error occurred while consuming messages: "<<msg.get_error();
+          }
+        } else {
+          auto& payload = msg.get_payload();
+          LOG(INFO)<<"Read last message: "<<payload;
+          last_message = std::move(MessageFactory::Create(payload, indexer_type_));
         }
-      } else {
-        last_message = std::move(InfoFactory::Create(msg.get_payload(), indexer_type_));
-      }
-      if (latest_offset->second <= msg.get_offset()) {
-        break;
+        if (latest_offset->second <= msg.get_offset()) {
+          break;
+        }
       }
     }
+  } else {
+    LOG(INFO)<<"No messages available";
   }
   return std::move(last_message);
 }

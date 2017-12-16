@@ -29,6 +29,7 @@
 #include "util/latch.h"
 #include "cluster/controller.h"
 #include "cluster/loader.h"
+#include "cluster/batch_info.h"
 
 namespace viya {
 namespace cluster {
@@ -72,20 +73,21 @@ void Loader::InitPartitionFilters() {
 }
 
 void Loader::LoadFiles(const std::string& path, const std::string& table_name,
-                       const std::string& worker_id) {
+                       const TableInfo& table_info, const std::string& worker_id) {
   auto tmpfile = ExtractFiles(path);
   load_pool_.enqueue([&] {
-    LoadFile(tmpfile.string(), worker_id, table_name);
+    LoadFile(tmpfile.string(), table_name, table_info, worker_id);
   });
 }
 
 void Loader::LoadFile(const std::string& file, const std::string& table_name,
-                      const std::string& worker_id) {
+                      const TableInfo& table_info, const std::string& worker_id) {
   util::ScopeGuard cleanup = [&file]() {
     fs::remove(file);
   };
   json request {
     { "table", table_name },
+    { "columns", table_info.columns() },
     { "format", "tsv" },
     { "type", "file" },
     { "file", file }
@@ -93,12 +95,14 @@ void Loader::LoadFile(const std::string& file, const std::string& table_name,
   SendRequest(worker_id, request);
 }
 
-void Loader::LoadFilesToAll(const std::string& path, const std::string& table_name) {
+void Loader::LoadFilesToAll(const std::string& path, const std::string& table_name,
+                            const TableInfo& table_info) {
   auto tmpfile = ExtractFiles(path);
-  LoadFileToAll(tmpfile.string(), table_name);
+  LoadFileToAll(tmpfile.string(), table_name, table_info);
 }
 
-void Loader::LoadFileToAll(const std::string& file, const std::string& table_name) {
+void Loader::LoadFileToAll(const std::string& file, const std::string& table_name,
+                           const TableInfo& table_info) {
   util::ScopeGuard cleanup = [&file]() {
     fs::remove(file);
   };
@@ -136,12 +140,13 @@ void Loader::LoadFileToAll(const std::string& file, const std::string& table_nam
     auto& worker_id = worker_it.first;
     json request {
       { "table", table_name },
+      { "columns", table_info.columns() },
       { "format", "tsv" },
       { "type", "file" },
       { "file", file },
       { "partition_filter", partition_filters_.at(table_name).at(worker_id) }
     };
-    load_pool_.enqueue([&] {
+    load_pool_.enqueue([&, request] {
       SendRequest(worker_id, request);
       latch.CountDown();
     });
@@ -161,22 +166,22 @@ std::string Loader::GetLoadUrl(const std::string& worker_id) {
 void Loader::SendRequest(const std::string& worker_id, const json& request) {
   std::string url = GetLoadUrl(worker_id);
   auto r = cpr::Post(
-             cpr::Url { url },
-             cpr::Body { request.dump() },
-  cpr::Header {{ "Content-Type", "application/json" }},
-  cpr::Timeout { 120000L }
-           );
+    cpr::Url { url },
+    cpr::Body { request.dump() },
+    cpr::Header {{ "Content-Type", "application/json" }},
+    cpr::Timeout { 120000L }
+  );
   if (r.status_code != 200) {
     if (r.status_code == 0) {
       LOG(ERROR)<<"Can't contact worker at: "<<url<<" (host is unreachable)";
     } else {
-      LOG(ERROR)<<"Can't load data into worker ("<<r.text<<")";
+      throw std::runtime_error("Can't load data into worker (" + r.text + ")");
     }
   }
 }
 
 fs::path Loader::ExtractFiles(const std::string& path) {
-  auto tmpfile = fs::canonical(fs::unique_path());
+  auto tmpfile = fs::temp_directory_path() / fs::unique_path();
   std::vector<fs::path> files;
   ListFiles(path, std::vector<std::string> {".gz", ".tsv", ".csv"}, files);
 

@@ -15,6 +15,7 @@
  */
 
 #include <glog/logging.h>
+#include <boost/exception/diagnostic_information.hpp>
 #include "server/viyad.h"
 #include "server/supervisor.h"
 
@@ -29,8 +30,8 @@ int main(int argc, char* argv[]) {
     auto supervisor = std::make_unique<server::Supervisor>(std::vector<std::string>(argv, argv + argc));
     supervisor->Start();
 
-  } catch (std::exception& e) {
-    LOG(ERROR)<<e.what();
+  } catch (...) {
+    LOG(ERROR)<<boost::current_exception_diagnostic_information();
     exit(-1);
   }
 }

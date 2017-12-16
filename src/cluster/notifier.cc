@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <json.hpp>
 #include "util/config.h"
 #include "cluster/notifier.h"
 #include "cluster/kafka_notifier.h"
@@ -22,18 +23,21 @@
 namespace viya {
 namespace cluster {
 
-std::unique_ptr<Info> InfoFactory::Create(const std::string& info, IndexerType indexer_type) {
+using json = nlohmann::json;
+
+std::unique_ptr<Message> MessageFactory::Create(const std::string& message, IndexerType indexer_type) {
   if (indexer_type == IndexerType::REALTIME) {
-    return std::move(std::make_unique<MicroBatchInfo>(info));
+    return std::move(std::make_unique<MicroBatchInfo>(json::parse(message)));
   }
-  return std::move(std::make_unique<BatchInfo>(info));
+  return std::move(std::make_unique<BatchInfo>(json::parse(message)));
 }
 
-Notifier* NotifierFactory::Create(const util::Config& notifier_conf, IndexerType indexer_type) {
+Notifier* NotifierFactory::Create(const std::string& indexer_id,
+                                  const util::Config& notifier_conf, IndexerType indexer_type) {
   auto type = notifier_conf.str("type");
   Notifier* notifier = nullptr;
   if (type == "kafka") {
-    return new KafkaNotifier(notifier_conf, indexer_type);
+    return new KafkaNotifier(indexer_id, notifier_conf, indexer_type);
   } else {
     throw new std::runtime_error("Unsupported notifier type: " + type);
   }

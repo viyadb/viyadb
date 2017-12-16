@@ -31,6 +31,7 @@ namespace fs = boost::filesystem;
 using json = nlohmann::json;
 
 class Controller;
+class TableInfo;
 
 class Loader {
   public:
@@ -38,17 +39,19 @@ class Loader {
     Loader(const Loader& other) = delete;
 
     void LoadFiles(const std::string& path, const std::string& table_name,
-                   const std::string& worker_id);
+                   const TableInfo& table_info, const std::string& worker_id);
 
-    void LoadFilesToAll(const std::string& path, const std::string& table_name);
+    void LoadFilesToAll(const std::string& path, const std::string& table_name,
+                        const TableInfo& table_info);
 
   private:
     void InitPartitionFilters();
 
     void LoadFile(const std::string& file, const std::string& table_name,
-                  const std::string& worker_id);
+                  const TableInfo& table_info, const std::string& worker_id);
 
-    void LoadFileToAll(const std::string& file, const std::string& table_name);
+    void LoadFileToAll(const std::string& file, const std::string& table_name,
+                       const TableInfo& table_info);
 
     std::string GetLoadUrl(const std::string& worker_id);
 

@@ -25,6 +25,7 @@
  #include <sys/prctl.h>
 #endif
 #include <glog/logging.h>
+#include <boost/exception/diagnostic_information.hpp>
 #include "server/args.h"
 #include "server/supervisor.h"
 #include "server/viyad.h"
@@ -203,8 +204,8 @@ void Supervisor::StartWorker(util::Config worker_config, Supervisor::Worker& inf
     try {
       Viyad viyad(worker_config);
       viyad.Start();
-    } catch (std::exception& e) {
-      LOG(ERROR)<<"Exception thrown in worker: "<<e.what();
+    } catch (...) {
+      LOG(ERROR)<<"Exception thrown in worker: "<<boost::current_exception_diagnostic_information();
       exit(1);
     }
     exit(0);

@@ -47,13 +47,9 @@ void Feeder::Start() {
   LoadHistoricalData();
 
   for (auto& it : controller_.indexers_configs()) {
-    auto& indexer_id = it.first;
-    auto& indexer_conf = it.second;
-
-    auto notifier = NotifierFactory::Create(indexer_conf.sub("realTime").sub("notifier"), IndexerType::REALTIME);
-    notifier->Listen([this, &indexer_id](const Info& info) {
-      ProcessMicroBatch(indexer_id, static_cast<const MicroBatchInfo&>(info));
-    });
+    auto notifier = NotifierFactory::Create(
+      it.first, it.second.sub("realTime").sub("notifier"), IndexerType::REALTIME);
+    notifier->Listen(*this);
     notifiers_.push_back(notifier);
   }
 }
@@ -79,22 +75,29 @@ void Feeder::LoadHistoricalData() {
           if (target_path != path) {
             delete_paths.push_back(target_path);
           }
-          loader_.LoadFiles(target_path, table_name, worker_id);
+          loader_.LoadFiles(target_path, table_name, table_info, worker_id);
         }
       }
     }
   }
 }
 
-void Feeder::ProcessMicroBatch(const std::string& indexer_id, const MicroBatchInfo& info) {
+void Feeder::ProcessMessage(const std::string& indexer_id, const Message& message) {
+  const MicroBatchInfo& mb_info = static_cast<const MicroBatchInfo&>(message);
   std::vector<std::string> delete_paths;
   util::ScopeGuard cleanup = [&delete_paths]() { for (auto& path : delete_paths) fs::remove_all(path); };
-  auto& indexer_batch = controller_.indexers_batches().at(indexer_id);
 
-  if (info.id() <= indexer_batch->last_microbatch()) {
-    LOG(WARNING)<<"Skipping already processed micro batch: "<<info.id();
+  uint32_t last_microbatch = 0L;
+  auto& indexers_batches = controller_.indexers_batches();
+  if (indexers_batches.size() > 0) {
+    last_microbatch = controller_.indexers_batches().at(indexer_id)->last_microbatch();
+  }
+
+  if (mb_info.id() <= last_microbatch) {
+    LOG(WARNING)<<"Skipping already processed micro batch: "<<mb_info.id();
   } else {
-    for (auto& it : info.tables_info()) {
+    LOG(INFO)<<"Processing micro batch: "<<mb_info.id();
+    for (auto& it : mb_info.tables_info()) {
       auto& table_name = it.first;
       auto& table_info = it.second;
 
@@ -103,7 +106,7 @@ void Feeder::ProcessMicroBatch(const std::string& indexer_id, const MicroBatchIn
         if (target_path != path) {
           delete_paths.push_back(target_path);
         }
-        loader_.LoadFilesToAll(target_path, table_name);
+        loader_.LoadFilesToAll(target_path, table_name, table_info);
       }
     }
   }

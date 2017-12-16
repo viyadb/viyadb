@@ -26,26 +26,33 @@ namespace viya { namespace util { class Config; }}
 namespace viya {
 namespace cluster {
 
-class Info;
+class Message;
 
 enum IndexerType { REALTIME, BATCH };
+
+class MessageProcessor {
+  public:
+    virtual ~MessageProcessor() = default;
+    virtual void ProcessMessage(const std::string& indexer_id, const Message& message) = 0;
+};
 
 class Notifier {
   public:
     virtual ~Notifier() = default;
-    virtual void Listen(std::function<void(const Info& info)> callback) = 0;
-    virtual std::vector<std::unique_ptr<Info>> GetAllMessages() = 0;
-    virtual std::unique_ptr<Info> GetLastMessage() = 0;
+    virtual void Listen(MessageProcessor& processor) = 0;
+    virtual std::vector<std::unique_ptr<Message>> GetAllMessages() = 0;
+    virtual std::unique_ptr<Message> GetLastMessage() = 0;
 };
 
 class NotifierFactory {
   public:
-    static Notifier* Create(const util::Config& notifier_conf, IndexerType indexer_type);
+    static Notifier* Create(const std::string& indexer_id, const util::Config& notifier_conf,
+        IndexerType indexer_type);
 };
 
-class InfoFactory {
+class MessageFactory {
   public:
-    static std::unique_ptr<Info> Create(const std::string& info, IndexerType indexer_type);
+    static std::unique_ptr<Message> Create(const std::string& message, IndexerType indexer_type);
 };
 
 }}

@@ -21,6 +21,7 @@
 #include <map>
 #include "cluster/batch_info.h"
 #include "cluster/loader.h"
+#include "cluster/notifier.h"
 
 namespace viya { namespace util { class Config; }}
 namespace viya { namespace cluster { class Controller; }}
@@ -28,18 +29,17 @@ namespace viya { namespace cluster { class Controller; }}
 namespace viya {
 namespace cluster {
 
-class Notifier;
-
-class Feeder {
+class Feeder : public MessageProcessor {
   public:
     Feeder(const Controller& controller, const std::string& load_prefix);
     Feeder(const Feeder& other) = delete;
     ~Feeder();
 
+    void ProcessMessage(const std::string& indexer_id, const Message& message);
+
   protected:
     void Start();
     void LoadHistoricalData();
-    void ProcessMicroBatch(const std::string& indexer_id, const MicroBatchInfo& info);
 
   private:
     const Controller& controller_;

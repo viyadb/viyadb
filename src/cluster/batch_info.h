@@ -27,10 +27,10 @@ namespace cluster {
 
 using json = nlohmann::json;
 
-class Info {
+class Message {
   public:
-    Info(const json& info);
-    virtual ~Info() = default;
+    Message(const json& message);
+    virtual ~Message() = default;
 
     long id() const { return id_; }
 
@@ -38,20 +38,28 @@ class Info {
     const long id_;
 };
 
-class MicroBatchTableInfo {
+class TableInfo {
   public:
-    MicroBatchTableInfo(const json& info);
-    MicroBatchTableInfo(const MicroBatchTableInfo& other) = delete;
+    TableInfo(const json& message);
+    TableInfo(const TableInfo& other) = delete;
 
     const std::vector<std::string>& paths() const { return paths_; }
+    const std::vector<std::string>& columns() const { return columns_; }
 
   private:
     const std::vector<std::string> paths_;
+    const std::vector<std::string> columns_;
 };
 
-class MicroBatchInfo: public Info {
+class MicroBatchTableInfo : public TableInfo {
   public:
-    MicroBatchInfo(const json& info);
+    MicroBatchTableInfo(const json& message);
+    MicroBatchTableInfo(const MicroBatchTableInfo& other) = delete;
+};
+
+class MicroBatchInfo: public Message {
+  public:
+    MicroBatchInfo(const json& message);
     MicroBatchInfo(const MicroBatchInfo& other) = delete;
 
     const std::map<std::string, MicroBatchTableInfo>& tables_info() const {
@@ -62,22 +70,20 @@ class MicroBatchInfo: public Info {
     std::map<std::string, MicroBatchTableInfo> tables_info_;
 };
 
-class BatchTableInfo {
+class BatchTableInfo : public TableInfo {
   public:
-    BatchTableInfo(const json& info);
+    BatchTableInfo(const json& message);
 
-    const std::vector<std::string>& paths() const { return paths_; }
     const Partitioning& partitioning() const { return *partitioning_; }
     bool has_partitioning() const { return (bool)partitioning_; }
 
   private:
-    const std::vector<std::string> paths_;
     std::unique_ptr<Partitioning> partitioning_;
 };
 
-class BatchInfo: public Info {
+class BatchInfo: public Message {
   public:
-    BatchInfo(const json& info);
+    BatchInfo(const json& message);
 
     long last_microbatch() const { return last_microbatch_; }
 
