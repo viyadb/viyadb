@@ -95,18 +95,17 @@ std::shared_ptr<SharedLibrary> Compiler::Compile(const std::string& code) {
   std::string code_and_version(code + GIT_SHA1);
   uint64_t code_hash = CityHash64(code_and_version.c_str(), code_and_version.size());
 
-  std::string prefix = path_ + "/" + std::to_string(code_hash);
-  std::string so_file = prefix + ".so";
-  std::string lock_file = so_file + ".lock";
-
-  fs::ofstream(lock_file.c_str());
-  bi::file_lock fl(lock_file.c_str());
-  bi::scoped_lock<bi::file_lock> lock(fl);
-
   auto library = libs_[code_hash];
   if (library == nullptr) {
-
+    std::string prefix = path_ + "/" + std::to_string(code_hash);
+    std::string so_file = prefix + ".so";
     std::string tmp_so_file = prefix + "_.so";
+    std::string lock_file = so_file + ".lock";
+
+    fs::ofstream(lock_file.c_str());
+    bi::file_lock fl(lock_file.c_str());
+    bi::scoped_lock<bi::file_lock> lock(fl);
+
 #ifndef NDEBUG
     std::string cpp_file = prefix + ".cc";
     std::ofstream out(cpp_file);
