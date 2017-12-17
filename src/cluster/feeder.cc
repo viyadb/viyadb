@@ -82,7 +82,7 @@ void Feeder::LoadHistoricalData() {
   }
 }
 
-void Feeder::ProcessMessage(const std::string& indexer_id, const Message& message) {
+bool Feeder::ProcessMessage(const std::string& indexer_id, const Message& message) {
   const MicroBatchInfo& mb_info = static_cast<const MicroBatchInfo&>(message);
   std::vector<std::string> delete_paths;
   util::ScopeGuard cleanup = [&delete_paths]() { for (auto& path : delete_paths) fs::remove_all(path); };
@@ -95,21 +95,23 @@ void Feeder::ProcessMessage(const std::string& indexer_id, const Message& messag
 
   if (mb_info.id() <= last_microbatch) {
     LOG(WARNING)<<"Skipping already processed micro batch: "<<mb_info.id();
-  } else {
-    LOG(INFO)<<"Processing micro batch: "<<mb_info.id();
-    for (auto& it : mb_info.tables_info()) {
-      auto& table_name = it.first;
-      auto& table_info = it.second;
+    return true;
+  }
 
-      for (auto& path : table_info.paths()) {
-        std::string target_path = Downloader::Fetch(path);
-        if (target_path != path) {
-          delete_paths.push_back(target_path);
-        }
-        loader_.LoadFilesToAll(target_path, table_name, table_info);
+  LOG(INFO)<<"Processing micro batch: "<<mb_info.id();
+  for (auto& it : mb_info.tables_info()) {
+    auto& table_name = it.first;
+    auto& table_info = it.second;
+
+    for (auto& path : table_info.paths()) {
+      std::string target_path = Downloader::Fetch(path);
+      if (target_path != path) {
+        delete_paths.push_back(target_path);
       }
+      loader_.LoadFilesToAll(target_path, table_name, table_info);
     }
   }
+  return false;
 }
 
 }}

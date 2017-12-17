@@ -35,7 +35,7 @@ class Feeder : public MessageProcessor {
     Feeder(const Feeder& other) = delete;
     ~Feeder();
 
-    void ProcessMessage(const std::string& indexer_id, const Message& message);
+    bool ProcessMessage(const std::string& indexer_id, const Message& message);
 
   protected:
     void Start();

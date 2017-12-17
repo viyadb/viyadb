@@ -33,7 +33,7 @@ enum IndexerType { REALTIME, BATCH };
 class MessageProcessor {
   public:
     virtual ~MessageProcessor() = default;
-    virtual void ProcessMessage(const std::string& indexer_id, const Message& message) = 0;
+    virtual bool ProcessMessage(const std::string& indexer_id, const Message& message) = 0;
 };
 
 class Notifier {

@@ -7,7 +7,9 @@ fi
 
 start_consul() {
   docker run --rm -d --name viyadb-consul -p 8500:8500 consul >/dev/null
-  cat consul-backup.json | docker exec -i viyadb-consul consul kv import - >/dev/null
+  while ! cat consul-backup.json | docker exec -i viyadb-consul consul kv import - >/dev/null; do
+    sleep 1
+  done
 }
 
 stop_consul() {
@@ -15,8 +17,8 @@ stop_consul() {
   docker stop viyadb-consul >/dev/null
 }
 
-trap stop_consul EXIT
 start_consul
+trap stop_consul EXIT
 
 while true; do
   sleep 10
