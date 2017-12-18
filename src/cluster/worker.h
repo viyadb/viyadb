@@ -31,7 +31,7 @@ class Worker {
     Worker(const util::Config& config);
     Worker(const Worker& other) = delete;
 
-    void CreateKey(const consul::Session& session) const;
+    void CreateKey() const;
 
   private:
     const util::Config& config_;

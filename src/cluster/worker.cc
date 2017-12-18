@@ -26,12 +26,11 @@ namespace cluster {
 using json = nlohmann::json;
 
 Worker::Worker(const util::Config& config):config_(config),consul_(config) {
-  session_ = consul_.CreateSession(std::string("viyadb-worker"), [this](auto& session) {
-    CreateKey(session);
-  });
+  session_ = consul_.CreateSession(std::string("viyadb-worker"));
+  CreateKey();
 }
 
-void Worker::CreateKey(const consul::Session& session) const {
+void Worker::CreateKey() const {
   std::string hostname = util::get_hostname();
   auto worker_key = "clusters/" + config_.str("cluster_id")
      + "/nodes/workers/" + hostname + ":" + std::to_string(config_.num("http_port"));
@@ -46,7 +45,7 @@ void Worker::CreateKey(const consul::Session& session) const {
   data["http_port"] = config_.num("http_port");
   data["hostname"] = hostname;
 
-  while (!session.EphemeralKey(worker_key, data.dump())) {
+  while (!session_->EphemeralKey(worker_key, data.dump())) {
     LOG(WARNING)<<"The worker key is still locked by the previous process... waiting";
     std::this_thread::sleep_for(std::chrono::milliseconds(10000));
   }

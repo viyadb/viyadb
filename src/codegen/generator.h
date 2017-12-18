@@ -77,9 +77,11 @@ class FunctionGenerator: public CodeGenerator {
       return library->GetFunction<Func>(func_name);
     }
 
+  protected:
+    Compiler& compiler_;
+
   private:
     std::string code_;
-    Compiler& compiler_;
 };
 
 }};

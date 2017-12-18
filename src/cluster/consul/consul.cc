@@ -17,9 +17,8 @@ Consul::Consul(const util::Config& config) {
   prefix_ = config.str("consul_prefix", "viyadb");
 }
 
-std::unique_ptr<Session> Consul::CreateSession(const std::string& name,
-    std::function<void(const Session&)> on_create, uint32_t ttl_sec) const {
-  return std::make_unique<Session>(*this, name, on_create, ttl_sec);
+std::unique_ptr<Session> Consul::CreateSession(const std::string& name, uint32_t ttl_sec) const {
+  return std::make_unique<Session>(*this, name, ttl_sec);
 }
 
 std::unique_ptr<Service> Consul::RegisterService(const std::string& name, uint16_t port, uint32_t ttl_sec, bool auto_hc) const {

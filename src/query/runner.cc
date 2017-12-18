@@ -17,7 +17,8 @@
 #include "db/table.h"
 #include "query/runner.h"
 #include "codegen/query/filter.h"
-#include "codegen/query/query.h"
+#include "codegen/query/agg_query.h"
+#include "codegen/query/search_query.h"
 
 namespace viya {
 namespace query {
@@ -27,7 +28,7 @@ namespace cg = viya::codegen;
 void QueryRunner::Visit(AggregateQuery* query) {
   stats_.OnBegin("aggregate", query->table().name());
 
-  auto query_fn = cg::QueryGenerator(database_.compiler(), *query).AggQueryFunction();
+  auto query_fn = cg::AggQueryGenerator(database_.compiler(), *query).Function();
 
   cg::FilterArgsPacker filter_args;
   query->filter()->Accept(filter_args);
@@ -47,7 +48,7 @@ void QueryRunner::Visit(AggregateQuery* query) {
 void QueryRunner::Visit(SearchQuery* query) {
   stats_.OnBegin("search", query->table().name());
 
-  auto query_fn = cg::QueryGenerator(database_.compiler(), *query).SearchQueryFunction();
+  auto query_fn = cg::SearchQueryGenerator(database_.compiler(), *query).Function();
 
   cg::FilterArgsPacker filter_args;
   query->filter()->Accept(filter_args);

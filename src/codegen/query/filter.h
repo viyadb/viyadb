@@ -1,6 +1,7 @@
 #ifndef VIYA_CODEGEN_QUERY_FILTER_H_
 #define VIYA_CODEGEN_QUERY_FILTER_H_
 
+#include "db/column.h"
 #include "query/filter.h"
 #include "codegen/generator.h"
 

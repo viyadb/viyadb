@@ -10,9 +10,8 @@ namespace consul {
 
 using json = nlohmann::json;
 
-Session::Session(const Consul& consul, const std::string& name,
-                 std::function<void(const Session&)> on_create, uint32_t ttl_sec):
-  consul_(consul),name_(name),on_create_(on_create),ttl_sec_(ttl_sec),repeat_(nullptr) {
+Session::Session(const Consul& consul, const std::string& name, uint32_t ttl_sec):
+  consul_(consul),name_(name),ttl_sec_(ttl_sec),repeat_(nullptr) {
 
   Create();
 
@@ -61,10 +60,6 @@ void Session::Create() {
   id_ = response["ID"].get<std::string>();
 
   DLOG(INFO)<<"Created new session: "<<id_;
-
-  if (on_create_) {
-    on_create_(const_cast<const Session&>(*this));
-  }
 }
 
 void Session::Renew() {

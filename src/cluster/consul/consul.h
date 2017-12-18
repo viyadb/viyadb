@@ -20,8 +20,7 @@ class Consul {
     Consul(const util::Config& config);
     Consul(const Consul& other) = delete;
 
-    std::unique_ptr<Session> CreateSession(const std::string& name,
-        std::function<void(const Session&)> on_create = {}, uint32_t ttl_sec = 10) const;
+    std::unique_ptr<Session> CreateSession(const std::string& name, uint32_t ttl_sec = 10) const;
 
     std::unique_ptr<Service> RegisterService(const std::string& name,
         uint16_t port, uint32_t ttl_sec = 10, bool auto_hc = true) const;

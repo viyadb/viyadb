@@ -2,6 +2,7 @@
 #include <ctime>
 #include <cstring>
 #include "db/dictionary.h"
+#include "db/column.h"
 #include "codegen/query/filter.h"
 
 namespace viya {
@@ -140,12 +141,12 @@ void ComparisonBuilder::Visit(const query::InFilter* filter) {
     if (i > 0) {
       code_<<" | ";
     }
-    code_<<struct_name<<"._"<<dim_idx;
+    code_<<"("<<struct_name<<"._"<<dim_idx;
     if (!is_dim
         && static_cast<const db::Metric*>(filter->column())->agg_type() == db::Metric::AggregationType::BITSET) {
       code_<<".cardinality()";
     }
-    code_<<"=="<<var_prefix_<<std::to_string(argidx_++);
+    code_<<"=="<<var_prefix_<<std::to_string(argidx_++)<<")";
   }
   code_<<")";
 }
@@ -226,8 +227,8 @@ void SegmentSkipBuilder::Visit(const query::InFilter* filter) {
         if (i > 0) {
           code_<<" | ";
         }
-        code_<<"(segment->stats.dmin"<<dim_idx<<"<=farg"<<arg_idx<<" & "
-          <<"segment->stats.dmax"<<dim_idx<<">=farg"<<arg_idx<<")";
+        code_<<"((segment->stats.dmin"<<dim_idx<<"<=farg"<<arg_idx<<") & "
+          <<"(segment->stats.dmax"<<dim_idx<<">=farg"<<arg_idx<<"))";
       }
       code_<<")";
       applied = true;
