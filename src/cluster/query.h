@@ -14,34 +14,32 @@
  * limitations under the License.
  */
 
-#ifndef VIYA_CODEGEN_DB_SCAN_H_
-#define VIYA_CODEGEN_DB_SCAN_H_
+#ifndef VIYA_CLUSTER_QUERY_H_
+#define VIYA_CLUSTER_QUERY_H_
 
-#include "query/query.h"
+#include <memory>
+#include "util/config.h"
 
 namespace viya {
-namespace codegen {
+namespace cluster {
 
-namespace query = viya::query;
+class Controller;
 
-class ScanVisitor: public query::QueryVisitor {
+namespace util = viya::util;
+
+class ClusterQuery {
   public:
-    ScanVisitor(Code& code):code_(code) {}
-
-    void Visit(query::AggregateQuery* query);
-    void Visit(query::SearchQuery* query);
+    ClusterQuery(const Controller& controller, const util::Config& query);
 
   private:
-    void UnpackArguments(query::AggregateQuery* query);
-    void UnpackArguments(query::SearchQuery* query);
-
-    void IterationStart(query::FilterBasedQuery* query);
-    void IterationEnd();
+    void BuildRemoteQueries();
 
   private:
-    Code& code_;
+    const Controller& controller_;
+    const util::Config& query_;
+    std::unordered_map<std::string, util::Config> remote_queries_;
 };
 
 }}
 
-#endif // VIYA_CODEGEN_DB_SCAN_H_
+#endif // VIYA_CLUSTER_QUERY_H_

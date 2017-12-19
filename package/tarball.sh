@@ -18,7 +18,7 @@ cmake --build-target viyad ../.. \
   -DCMAKE_INSTALL_PREFIX=${package_name} \
   -DVIYA_IS_RELEASE=ON
 
-make -j8 install
+make -j4 install
 
 rm -rf \
   ${package_name}/lib/cmake \

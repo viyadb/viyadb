@@ -19,7 +19,6 @@
 
 #include "db/rollup.h"
 #include "query/filter.h"
-#include "util/config.h"
 
 namespace viya {
 namespace db {
@@ -31,6 +30,8 @@ class Metric;
 class Table;
 
 }}
+
+namespace viya { namespace util { class Config; }}
 
 namespace viya {
 namespace query {

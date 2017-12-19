@@ -16,7 +16,7 @@
 
 #include <algorithm>
 #include <stdexcept>
-#include "db/table.h"
+#include "util/config.h"
 #include "query/filter.h"
 
 namespace viya {
@@ -42,7 +42,7 @@ void EmptyFilter::Accept(FilterVisitor& visitor) const {
   visitor.Visit(this);
 }
 
-Filter* FilterFactory::Create(const util::Config& config, const db::Table& table) {
+Filter* FilterFactory::Create(const util::Config& config) {
   if (!config.exists("op")) {
     return new EmptyFilter();
   }
@@ -50,7 +50,7 @@ Filter* FilterFactory::Create(const util::Config& config, const db::Table& table
   if (op == "and" || op == "or") {
     std::vector<Filter*> filters;
     for (util::Config& filter_conf : config.sublist("filters")) {
-      filters.push_back(Create(filter_conf, table));
+      filters.push_back(Create(filter_conf));
     }
     std::sort(filters.begin(), filters.end(), [] (const Filter* a, const Filter* b) -> bool { 
         return a->precedence() < b->precedence();
@@ -59,10 +59,10 @@ Filter* FilterFactory::Create(const util::Config& config, const db::Table& table
         : CompositeFilter::Operator::OR, filters);
   }
   if (op == "not") {
-    return new NotFilter(Create(config.sub("filter"), table));
+    return new NotFilter(Create(config.sub("filter")));
   }
 
-  const auto column = table.column(config.str("column"));
+  const auto column = config.str("column");
   if (op == "in") {
     auto values = config.strlist("values");
     return new InFilter(column, values);

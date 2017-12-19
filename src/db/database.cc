@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <memory>
 #include <json.hpp>
 #include <glog/logging.h>
 #include "db/database.h"
@@ -97,18 +98,16 @@ void Database::PrintMetadata(std::string& metadata) {
 
 query::QueryStats Database::Query(const util::Config& query_conf, query::RowOutput& output) {
   query::QueryFactory query_factory;
-  auto* q = query_factory.Create(query_conf, *this);
+  std::unique_ptr<query::Query> q(query_factory.Create(query_conf, *this));
   query::QueryRunner query_runner(*this, output);
   q->Accept(query_runner);
-  delete q;
   return query_runner.stats();
 }
 
 void Database::Load(const util::Config& load_conf) {
   input::LoaderFactory loader_factory;
-  auto loader = loader_factory.Create(load_conf, *this);
+  std::unique_ptr<input::Loader> loader(loader_factory.Create(load_conf, *this));
   loader->LoadData();
-  delete loader;
 }
 
 }}

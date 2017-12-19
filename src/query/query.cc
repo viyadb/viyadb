@@ -27,7 +27,7 @@ FilterBasedQuery::FilterBasedQuery(const util::Config& config, db::Table& table)
   :TableQuery(table)
 {
   FilterFactory filter_factory;
-  filter_ = filter_factory.Create(config, table);
+  filter_ = filter_factory.Create(config);
 }
 
 DimOutputColumn::DimOutputColumn(const util::Config& config, const db::Dimension* dim, size_t index)
@@ -80,7 +80,7 @@ AggregateQuery::AggregateQuery(const util::Config& config, db::Table& table)
 
   if (config.exists("having")) {
     FilterFactory filter_factory;
-    having_ = filter_factory.Create(config.sub("having"), table);
+    having_ = filter_factory.Create(config.sub("having"));
   }
 
   if (config.exists("sort")) {

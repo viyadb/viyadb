@@ -95,16 +95,8 @@ Table::~Table() {
 }
 
 const Column* Table::column(const std::string& name) const {
-  for (auto d : dimensions_) {
-    if (d->name() == name) {
-      return d;
-    }
-  }
-  for (auto d : metrics_) {
-    if (d->name() == name) {
-      return d;
-    }
-  }
+  for (auto d : dimensions_) if (d->name() == name) return d;
+  for (auto d : metrics_) if (d->name() == name) return d;
   throw std::invalid_argument("No such column: " + name);
 }
 
@@ -117,20 +109,12 @@ const std::vector<const Column*> Table::columns() const {
 }
 
 const Dimension* Table::dimension(const std::string& name) const {
-  for (auto d : dimensions_) {
-    if (d->name() == name) {
-      return d;
-    }
-  }
+  for (auto d : dimensions_) if (d->name() == name) return d;
   throw std::invalid_argument("No such dimension: " + name);
 }
 
 const Metric* Table::metric(const std::string& name) const {
-  for (auto d : metrics_) {
-    if (d->name() == name) {
-      return d;
-    }
-  }
+  for (auto d : metrics_) if (d->name() == name) return d;
   throw std::invalid_argument("No such metric: " + name);
 }
 

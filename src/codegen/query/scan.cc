@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2017 ViyaDB Group
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include "codegen/db/rollup.h"
 #include "codegen/query/scan.h"
 #include "codegen/query/filter.h"
@@ -6,17 +22,17 @@ namespace viya {
 namespace codegen {
 
 void ScanVisitor::UnpackArguments(query::AggregateQuery* query) {
-  FilterArgsUnpack filter_args(query->filter(), "farg");
+  FilterArgsUnpack filter_args(query->table(), query->filter(), "farg");
   code_<<filter_args.GenerateCode();
 
   if (query->having() != nullptr) {
-    FilterArgsUnpack having_args(query->having(), "harg");
+    FilterArgsUnpack having_args(query->table(), query->having(), "harg");
     code_<<having_args.GenerateCode();
   }
 }
 
 void ScanVisitor::UnpackArguments(query::SearchQuery* query) {
-  FilterArgsUnpack args_unpack(query->filter(), "farg");
+  FilterArgsUnpack args_unpack(query->table(), query->filter(), "farg");
   code_<<args_unpack.GenerateCode();
 }
 
@@ -28,7 +44,7 @@ void ScanVisitor::IterationStart(query::FilterBasedQuery* query) {
   code_<<"  auto segment = static_cast<Segment*>(s);\n";
 
   // Check whether to skip this segment:
-  SegmentSkip segment_skip(query->filter());
+  SegmentSkip segment_skip(query->table(), query->filter());
   code_<<"  auto process_segment = "<<segment_skip.GenerateCode()<<";\n";
   code_<<"  if (!process_segment) continue;\n";
   code_<<"  stats.scanned_segments++;\n";
@@ -40,7 +56,7 @@ void ScanVisitor::IterationStart(query::FilterBasedQuery* query) {
 
   // Apply filter, and check it's return code:
   // TODO : is it possible to do it without IF branch?
-  FilterComparison comparison(query->filter(), "farg");
+  FilterComparison comparison(query->table(), query->filter(), "farg");
   code_<<"   auto r = "<<comparison.GenerateCode()<<";\n";
   code_<<"   if (r) {\n";
 }

@@ -1,21 +1,108 @@
+/*
+ * Copyright (c) 2017 ViyaDB Group
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include <algorithm>
 #include <ctime>
 #include <cstring>
 #include "db/dictionary.h"
 #include "db/column.h"
+#include "db/table.h"
 #include "codegen/query/filter.h"
 
 namespace viya {
 namespace codegen {
 
+class ArgsUnpacker: public query::FilterVisitor {
+  public:
+    ArgsUnpacker(const db::Table& table, Code& code, const std::string& var_prefix)
+      :table_(table),argidx_(0),code_(code),var_prefix_(var_prefix) {}
+
+    ArgsUnpacker(const ArgsUnpacker& other) = delete;
+
+    void Visit(const query::RelOpFilter* filter);
+    void Visit(const query::InFilter* filter);
+    void Visit(const query::CompositeFilter* filter);
+    void Visit(const query::NotFilter* filter);
+    void Visit(const query::EmptyFilter* filter);
+
+  private:
+    void UnpackArg(const db::Column* column);
+
+  private:
+    const db::Table& table_;
+    size_t argidx_;
+    Code& code_;
+    const std::string var_prefix_;
+};
+
+class ValueDecoder: public db::ColumnVisitor {
+  public:
+    ValueDecoder(const std::string& value):value_(value) {}
+
+    void Visit(const db::StrDimension* dimension);
+    void Visit(const db::NumDimension* dimension);
+    void Visit(const db::TimeDimension* dimension);
+    void Visit(const db::BoolDimension* dimension);
+    void Visit(const db::ValueMetric* metric);
+    void Visit(const db::BitsetMetric* metric);
+
+    const db::AnyNum& decoded_value() const { return decoded_value_; }
+
+  private:
+    const std::string& value_;
+    db::AnyNum decoded_value_;
+};
+
+class ComparisonBuilder: public query::FilterVisitor {
+  public:
+    ComparisonBuilder(const db::Table& table, Code& code, const std::string& var_prefix = "farg")
+      :table_(table),argidx_(0),code_(code),var_prefix_(var_prefix),in_not_(false) {}
+
+    void Visit(const query::RelOpFilter* filter);
+    void Visit(const query::InFilter* filter);
+    void Visit(const query::CompositeFilter* filter);
+    void Visit(const query::NotFilter* filter);
+    void Visit(const query::EmptyFilter* filter);
+
+  protected:
+    const db::Table& table_;
+    size_t argidx_;
+    Code& code_;
+    const std::string var_prefix_;
+    bool in_not_;
+};
+
+class SegmentSkipBuilder: public ComparisonBuilder {
+  public:
+    SegmentSkipBuilder(const db::Table& table, Code& code):
+      ComparisonBuilder(table, code) {}
+
+    void Visit(const query::RelOpFilter* filter);
+    void Visit(const query::InFilter* filter);
+};
+
 void FilterArgsPacker::Visit(const query::RelOpFilter* filter) {
+  const auto column = table_.column(filter->column());
   ValueDecoder value_decoder(filter->value());
-  filter->column()->Accept(value_decoder);
+  column->Accept(value_decoder);
   args_.push_back(value_decoder.decoded_value());
 }
 
 void FilterArgsPacker::Visit(const query::InFilter* filter) {
-  auto column = filter->column();
+  const auto column = table_.column(filter->column());
   auto & values = filter->values();
   for(size_t i = 0; i < values.size(); ++i) {
     ValueDecoder value_decoder(values[i]);
@@ -45,12 +132,13 @@ void ArgsUnpacker::UnpackArg(const db::Column* column) {
 }
 
 void ArgsUnpacker::Visit(const query::RelOpFilter* filter) {
-  UnpackArg(filter->column());
+  UnpackArg(table_.column(filter->column()));
 }
 
 void ArgsUnpacker::Visit(const query::InFilter* filter) {
+  const auto column = table_.column(filter->column());
   for(size_t i = 0; i < filter->values().size(); ++i) {
-    UnpackArg(filter->column());
+    UnpackArg(column);
   }
 }
 
@@ -118,13 +206,14 @@ void ValueDecoder::Visit(const db::BitsetMetric* metric) {
 }
 
 void ComparisonBuilder::Visit(const query::RelOpFilter* filter) {
-  if (filter->column()->type() == db::Column::Type::DIMENSION) {
-    code_<<"(tuple_dims._"<<std::to_string(filter->column()->index())
+  const auto column = table_.column(filter->column());
+  if (column->type() == db::Column::Type::DIMENSION) {
+    code_<<"(tuple_dims._"<<std::to_string(column->index())
       <<filter->opstr()<<var_prefix_<<std::to_string(argidx_++)<<")";
   }
   else {
-    code_<<"(tuple_metrics._"<<std::to_string(filter->column()->index());
-    auto metric = static_cast<const db::Metric*>(filter->column());
+    code_<<"(tuple_metrics._"<<std::to_string(column->index());
+    auto metric = static_cast<const db::Metric*>(column);
     if (metric->agg_type() == db::Metric::AggregationType::BITSET) {
       code_<<".cardinality()";
     }
@@ -133,9 +222,10 @@ void ComparisonBuilder::Visit(const query::RelOpFilter* filter) {
 }
 
 void ComparisonBuilder::Visit(const query::InFilter* filter) {
-  auto dim_idx = std::to_string(filter->column()->index());
+  const auto column = table_.column(filter->column());
+  auto dim_idx = std::to_string(column->index());
   code_<<"(";
-  bool is_dim = filter->column()->type() == db::Column::Type::DIMENSION;
+  bool is_dim = column->type() == db::Column::Type::DIMENSION;
   auto struct_name = is_dim ? "tuple_dims" : "tuple_metrics";
   for(size_t i = 0; i < filter->values().size(); ++i) {
     if (i > 0) {
@@ -143,7 +233,7 @@ void ComparisonBuilder::Visit(const query::InFilter* filter) {
     }
     code_<<"("<<struct_name<<"._"<<dim_idx;
     if (!is_dim
-        && static_cast<const db::Metric*>(filter->column())->agg_type() == db::Metric::AggregationType::BITSET) {
+        && static_cast<const db::Metric*>(column)->agg_type() == db::Metric::AggregationType::BITSET) {
       code_<<".cardinality()";
     }
     code_<<"=="<<var_prefix_<<std::to_string(argidx_++)<<")";
@@ -179,9 +269,10 @@ void ComparisonBuilder::Visit(const query::EmptyFilter* filter __attribute__((un
 void SegmentSkipBuilder::Visit(const query::RelOpFilter* filter) {
   bool applied = false;
   auto arg_idx = std::to_string(argidx_++);
+  const auto column = table_.column(filter->column());
 
-  if (filter->column()->type() == db::Column::Type::DIMENSION) {
-    auto dim = static_cast<const db::Dimension*>(filter->column());
+  if (column->type() == db::Column::Type::DIMENSION) {
+    auto dim = static_cast<const db::Dimension*>(column);
 
     if (dim->dim_type() == db::Dimension::DimType::NUMERIC
         || dim->dim_type() == db::Dimension::DimType::TIME) {
@@ -213,14 +304,15 @@ void SegmentSkipBuilder::Visit(const query::RelOpFilter* filter) {
 
 void SegmentSkipBuilder::Visit(const query::InFilter* filter) {
   bool applied = false;
+  const auto column = table_.column(filter->column());
 
-  if (filter->column()->type() == db::Column::Type::DIMENSION) {
-    auto dim = static_cast<const db::Dimension*>(filter->column());
+  if (column->type() == db::Column::Type::DIMENSION) {
+    auto dim = static_cast<const db::Dimension*>(column);
 
     if (dim->dim_type() == db::Dimension::DimType::NUMERIC
         || dim->dim_type() == db::Dimension::DimType::TIME) {
 
-      auto dim_idx = filter->column()->index();
+      auto dim_idx = column->index();
       code_<<"(";
       for(size_t i = 0; i < filter->values().size(); ++i) {
         auto arg_idx = std::to_string(argidx_++);
@@ -244,21 +336,21 @@ void SegmentSkipBuilder::Visit(const query::InFilter* filter) {
 
 Code FilterArgsUnpack::GenerateCode() const {
   Code code;
-  ArgsUnpacker b(code, var_prefix_);
+  ArgsUnpacker b(table_, code, var_prefix_);
   filter_->Accept(b);
   return code;
 }
 
 Code SegmentSkip::GenerateCode() const {
   Code code;
-  SegmentSkipBuilder b(code);
+  SegmentSkipBuilder b(table_, code);
   filter_->Accept(b);
   return code;
 }
 
 Code FilterComparison::GenerateCode() const {
   Code code;
-  ComparisonBuilder b(code, var_prefix_);
+  ComparisonBuilder b(table_, code, var_prefix_);
   filter_->Accept(b);
   return code;
 }

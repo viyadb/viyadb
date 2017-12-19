@@ -30,10 +30,10 @@ void QueryRunner::Visit(AggregateQuery* query) {
 
   auto query_fn = cg::AggQueryGenerator(database_.compiler(), *query).Function();
 
-  cg::FilterArgsPacker filter_args;
+  cg::FilterArgsPacker filter_args(query->table());
   query->filter()->Accept(filter_args);
 
-  cg::FilterArgsPacker having_args;
+  cg::FilterArgsPacker having_args(query->table());
   if (query->having() != nullptr) {
     query->having()->Accept(having_args);
   }
@@ -50,7 +50,7 @@ void QueryRunner::Visit(SearchQuery* query) {
 
   auto query_fn = cg::SearchQueryGenerator(database_.compiler(), *query).Function();
 
-  cg::FilterArgsPacker filter_args;
+  cg::FilterArgsPacker filter_args(query->table());
   query->filter()->Accept(filter_args);
 
   stats_.OnCompile();

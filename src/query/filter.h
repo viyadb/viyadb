@@ -17,18 +17,15 @@
 #ifndef VIYA_QUERY_FILTER_H_
 #define VIYA_QUERY_FILTER_H_
 
+#include <string>
 #include <vector>
 
-namespace viya {
-namespace db {
-
-class Column;
-class Table;
-
-}}
+namespace viya { namespace util { class Config; }}
 
 namespace viya {
 namespace query {
+
+namespace util = viya::util;
 
 class FilterVisitor;
 
@@ -50,7 +47,7 @@ class RelOpFilter: public Filter {
   public:
     enum Operator { EQUAL = 0, NOT_EQUAL, LESS, LESS_EQUAL, GREATER, GREATER_EQUAL };
 
-    RelOpFilter(const Operator& op, const db::Column* column, const std::string& value)
+    RelOpFilter(const Operator& op, const std::string& column, const std::string& value)
       :Filter(1),op_(op),column_(column),value_(value) {
     }
 
@@ -58,7 +55,7 @@ class RelOpFilter: public Filter {
 
     Operator op() const { return op_; }
     const char* opstr() const { return opstr_[op_]; }
-    const db::Column* column() const { return column_; }
+    const std::string& column() const { return column_; }
     const std::string& value() const { return value_; }
 
     void Accept(FilterVisitor& visitor) const;
@@ -66,24 +63,24 @@ class RelOpFilter: public Filter {
   private:
     Operator op_;
     const char* opstr_[6] = {"==", "!=", "<", "<=", ">", ">="};
-    const db::Column* column_;
+    const std::string column_;
     const std::string value_;
 };
 
 class InFilter: public Filter {
   public:
-    InFilter(const db::Column* column, const std::vector<std::string>& values)
+    InFilter(const std::string& column, const std::vector<std::string>& values)
       :Filter(4),column_(column),values_(values) {}
 
     InFilter(const InFilter& other) = delete;
 
-    const db::Column* column() const { return column_; }
+    const std::string& column() const { return column_; }
     const std::vector<std::string>& values() const { return values_; }
 
     void Accept(FilterVisitor& visitor) const;
 
   private:
-    const db::Column* column_;
+    const std::string column_;
     const std::vector<std::string> values_;
 };
 
@@ -150,7 +147,7 @@ class FilterVisitor {
 
 class FilterFactory {
   public:
-    Filter* Create(const util::Config& config, const db::Table& table);
+    Filter* Create(const util::Config& config);
 };
 
 }}

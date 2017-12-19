@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2017 ViyaDB Group
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include "db/column.h"
 #include "codegen/query/filter.h"
 #include "codegen/query/post_agg.h"
@@ -98,7 +114,7 @@ void PostAggVisitor::Visit(query::AggregateQuery* query) {
 
   // Apply HAVING filter:
   if (query->having() != nullptr) {
-    FilterComparison comparison(query->having(), "harg");
+    FilterComparison comparison(query->table(), query->having(), "harg");
     code_<<"  auto& tuple_dims = agg_it->first;\n";
     code_<<"  auto& tuple_metrics = agg_it->second;\n";
     code_<<"  auto r = "<<comparison.GenerateCode()<<";\n";
