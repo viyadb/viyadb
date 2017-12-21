@@ -113,7 +113,7 @@ void FilterAnalyzer::Visit(const query::RelOpFilter* filter) {
 void FilterAnalyzer::Visit(const query::InFilter* filter) {
   stack_.emplace(FilterAnalyzer::FilterValues {});
 
-  if (IsKeyColumn(filter->column())) {
+  if (filter->equal() && IsKeyColumn(filter->column())) {
     for (auto& value : filter->values()) {
       AddKeyValue(filter->column(), value);
     }
