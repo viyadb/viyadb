@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef VIYA_CODEGEN_DB_AGG_QUERY_H_
-#define VIYA_CODEGEN_DB_AGG_QUERY_H_
+#ifndef VIYA_CODEGEN_QUERY_AGG_QUERY_H_
+#define VIYA_CODEGEN_QUERY_AGG_QUERY_H_
 
 #include "query/query.h"
 #include "query/runner.h"
@@ -42,4 +42,4 @@ class AggQueryGenerator: public FunctionGenerator {
 
 }}
 
-#endif // VIYA_CODEGEN_DB_AGG_QUERY_H_
+#endif // VIYA_CODEGEN_QUERY_AGG_QUERY_H_

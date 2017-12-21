@@ -38,41 +38,44 @@ void ScanVisitor::UnpackArguments(query::SearchQuery* query) {
 
 void ScanVisitor::IterationStart(query::FilterBasedQuery* query) {
   // Iterate on segments:
-  code_<<" for (auto* s : table.store()->segments_copy()) {\n";
-  code_<<"  auto segment_size = s->size();\n";
-  code_<<"  stats.scanned_recs += segment_size;\n";
-  code_<<"  auto segment = static_cast<Segment*>(s);\n";
+  code_<<"for (auto* s : table.store()->segments_copy()) {\n";
+  code_<<" auto segment_size = s->size();\n";
+  code_<<" stats.scanned_recs += segment_size;\n";
+  code_<<" auto segment = static_cast<Segment*>(s);\n";
 
   // Check whether to skip this segment:
   SegmentSkip segment_skip(query->table(), query->filter());
-  code_<<"  auto process_segment = "<<segment_skip.GenerateCode()<<";\n";
-  code_<<"  if (!process_segment) continue;\n";
-  code_<<"  stats.scanned_segments++;\n";
+  code_<<" auto process_segment = "<<segment_skip.GenerateCode()<<";\n";
+  code_<<" if (!process_segment) continue;\n";
+  code_<<" stats.scanned_segments++;\n";
 
   // Iterate on tuples:
-  code_<<"  for (size_t tuple_idx = 0; tuple_idx < segment_size; ++tuple_idx) {\n";
-  code_<<"   Dimensions& tuple_dims = segment->d[tuple_idx];\n";
-  code_<<"   Metrics& tuple_metrics = segment->m[tuple_idx];\n";
+  code_<<" for (size_t tuple_idx = 0; tuple_idx < segment_size; ++tuple_idx) {\n";
+  code_<<"  Dimensions& tuple_dims = segment->d[tuple_idx];\n";
+  code_<<"  Metrics& tuple_metrics = segment->m[tuple_idx];\n";
 
   // Apply filter, and check it's return code:
   // TODO : is it possible to do it without IF branch?
   FilterComparison comparison(query->table(), query->filter(), "farg");
-  code_<<"   auto r = "<<comparison.GenerateCode()<<";\n";
-  code_<<"   if (r) {\n";
+  code_<<"  auto r = "<<comparison.GenerateCode()<<";\n";
+  code_<<"  if (r) {\n";
 }
 
 void ScanVisitor::IterationEnd() {
   // Close iteration loop:
-  code_<<"   }\n";
   code_<<"  }\n";
   code_<<" }\n";
+  code_<<"}\n";
 }
 
 void ScanVisitor::Visit(query::AggregateQuery* query) {
   // Structures for aggragation in memory:
-  code_<<" AggDimensions agg_dims;\n";
-  code_<<" AggMetrics agg_metrics;\n";
-  code_<<" std::unordered_map<AggDimensions,AggMetrics,AggDimensionsHasher> agg_map;\n";
+#ifdef NDEBUG
+  code_<<"// ========= scan ==========\n";
+#endif
+  code_<<"AggDimensions agg_dims;\n";
+  code_<<"AggMetrics agg_metrics;\n";
+  code_<<"std::unordered_map<AggDimensions,AggMetrics,AggDimensionsHasher> agg_map;\n";
 
   UnpackArguments(query);
 
@@ -135,20 +138,23 @@ void ScanVisitor::Visit(query::AggregateQuery* query) {
 
   IterationEnd();
 
-  code_<<" stats.aggregated_recs = agg_map.size();\n";
+  code_<<"stats.aggregated_recs = agg_map.size();\n";
 }
 
 void ScanVisitor::Visit(query::SearchQuery* query) {
+#ifdef NDEBUG
+  code_<<"// ========= scan ==========\n";
+#endif
   auto dim = query->dimension();
   auto dim_idx = std::to_string(dim->index());
 
-  code_<<" std::unordered_set<"<<dim->num_type().cpp_type()<<"> codes;\n";
-  code_<<" std::vector<std::string> values;\n";
-  code_<<" std::string check_value;\n";
+  code_<<"std::unordered_set<"<<dim->num_type().cpp_type()<<"> codes;\n";
+  code_<<"std::vector<std::string> values;\n";
+  code_<<"std::string check_value;\n";
   if (dim->dim_type() == db::Dimension::DimType::STRING) {
-    code_<<" auto dict = static_cast<const db::StrDimension*>(table.dimension("<<dim_idx<<"))->dict();\n";
+    code_<<"auto dict = static_cast<const db::StrDimension*>(table.dimension("<<dim_idx<<"))->dict();\n";
   }
-  code_<<" util::Format fmt;\n";
+  code_<<"util::Format fmt;\n";
 
   UnpackArguments(query);
 
@@ -156,21 +162,21 @@ void ScanVisitor::Visit(query::SearchQuery* query) {
 
   code_<<"if (codes.insert(tuple_dims._"<<dim_idx<<").second) {\n";
   if (dim->dim_type() == db::Dimension::DimType::STRING) {
-    code_<<"  dict->lock().lock_shared();\n";
-    code_<<"  check_value = dict->c2v()[tuple_dims._"<<dim_idx<<"];\n";
-    code_<<"  dict->lock().unlock_shared();\n";
+    code_<<" dict->lock().lock_shared();\n";
+    code_<<" check_value = dict->c2v()[tuple_dims._"<<dim_idx<<"];\n";
+    code_<<" dict->lock().unlock_shared();\n";
   } else {
-    code_<<"  check_value = fmt.num(tuple_dims._"<<dim_idx<<");\n";
+    code_<<" check_value = fmt.num(tuple_dims._"<<dim_idx<<");\n";
   }
-  code_<<"  if (check_value.find(term) != std::string::npos) {\n";
-  code_<<"    values.push_back(check_value);\n";
-  code_<<"    if (values.size() >= limit) break;\n";
-  code_<<"  }\n";
+  code_<<" if (check_value.find(term) != std::string::npos) {\n";
+  code_<<"   values.push_back(check_value);\n";
+  code_<<"   if (values.size() >= limit) break;\n";
+  code_<<" }\n";
   code_<<"}\n";
 
   IterationEnd();
 
-  code_<<" stats.aggregated_recs = codes.size();\n";
+  code_<<"stats.aggregated_recs = codes.size();\n";
 }
 
 }}

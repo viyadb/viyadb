@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef VIYA_CODEGEN_DB_SCAN_H_
-#define VIYA_CODEGEN_DB_SCAN_H_
+#ifndef VIYA_CODEGEN_QUERY_SCAN_H_
+#define VIYA_CODEGEN_QUERY_SCAN_H_
 
 #include "query/query.h"
 
@@ -44,4 +44,4 @@ class ScanVisitor: public query::QueryVisitor {
 
 }}
 
-#endif // VIYA_CODEGEN_DB_SCAN_H_
+#endif // VIYA_CODEGEN_QUERY_SCAN_H_

@@ -25,20 +25,21 @@
 
 namespace viya {
 namespace server {
+namespace http {
 
 namespace util = viya::util;
 
-Http::Http(const util::Config& config, db::Database& database):database_(database) {
-  server_.config.port = port_ = config.num("http_port");
+Service::Service(const util::Config& config, db::Database& database):database_(database) {
+  server_.config.port = config.num("http_port");
   server_.config.reuse_address = true;
 }
 
-void Http::SendError(ResponsePtr response, const std::string& error) {
+void Service::SendError(ResponsePtr response, const std::string& error) {
   LOG(ERROR)<<error;
   *response<<"HTTP/1.1 400 Bad Request\r\nContent-Length: "<<error.size()<<"\r\n\r\n"<<error;
 }
 
-void Http::Start() {
+void Service::Start() {
   server_.resource["^/tables$"]["POST"] = [&](ResponsePtr response, RequestPtr request) {
     database_.write_pool().enqueue([=] {
       try {
@@ -124,5 +125,5 @@ void Http::Start() {
   server_.start();
 }
 
-}}
+}}}
 

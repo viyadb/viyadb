@@ -40,6 +40,9 @@ Code AggQueryGenerator::GenerateCode() const {
   code<<"extern \"C\" void viya_query_agg(db::Table& table, query::RowOutput& output, query::QueryStats& stats,"
     <<"std::vector<db::AnyNum> fargs, size_t skip, size_t limit, std::vector<db::AnyNum> hargs) {\n";
 
+#ifdef NDEBUG
+  code<<"// ========= definitions ==========\n";
+#endif
   std::vector<const db::Dimension*> dims;
   for (auto& dim_col : query_.dimension_cols()) {
     dims.push_back(dim_col.dim());
@@ -60,8 +63,8 @@ Code AggQueryGenerator::GenerateCode() const {
   ScanVisitor scan_visitor(code);
   query_.Accept(scan_visitor);
 
-  PostAggGenerator postagg_generator(compiler_, query_);
-  code<<postagg_generator.GenerateCode();
+  PostAggVisitor postagg_visitor(code);
+  query_.Accept(postagg_visitor);
 
   code<<"}\n";
   return code;

@@ -22,6 +22,7 @@
 #include "util/config.h"
 #include "util/schedule.h"
 #include "cluster/consul/consul.h"
+#include "cluster/http/service.h"
 #include "cluster/plan.h"
 #include "cluster/partitioning.h"
 #include "cluster/feeder.h"
@@ -56,6 +57,7 @@ class Controller {
     void AssignPartitionsToWorkers();
     bool ReadPlan();
     bool GeneratePlan();
+    void StartHttpServer();
 
   private:
     util::Config config_;
@@ -65,6 +67,7 @@ class Controller {
     std::unique_ptr<consul::Session> session_;
     std::unique_ptr<consul::LeaderElector> le_;
     std::unique_ptr<util::Later> initializer_;
+    std::unique_ptr<http::Service> http_service_;
     std::map<std::string, util::Config> tables_configs_;
     std::map<std::string, util::Config> workers_configs_;
     std::map<std::string, util::Config> indexers_configs_;

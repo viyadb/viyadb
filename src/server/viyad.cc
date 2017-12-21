@@ -40,7 +40,7 @@ void Viyad::Start() {
 #endif
 
   db::Database database(config_);
-  Http http_service(config_, database);
+  http::Service http_service(config_, database);
   
   if (config_.exists("cluster_id")) {
     worker_ = std::make_unique<cluster::Worker>(config_);

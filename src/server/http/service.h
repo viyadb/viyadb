@@ -24,6 +24,7 @@ namespace viya { namespace db { class Database; }}
 
 namespace viya {
 namespace server {
+namespace http {
 
 namespace util = viya::util;
 namespace db = viya::db;
@@ -32,11 +33,9 @@ typedef SimpleWeb::Server<SimpleWeb::HTTP> HttpServer;
 typedef std::shared_ptr<HttpServer::Request> RequestPtr;
 typedef std::shared_ptr<HttpServer::Response> ResponsePtr;
 
-class Http {
+class Service {
   public:
-    Http(const util::Config& config, db::Database& database);
-
-    uint16_t port() const { return port_; }
+    Service(const util::Config& config, db::Database& database);
 
     void Start();
 
@@ -46,9 +45,8 @@ class Http {
   private:
     db::Database& database_;
     HttpServer server_;
-    uint16_t port_;
 };
 
-}}
+}}}
 
 #endif // VIYA_SERVER_HTTP_SERVICE_H_

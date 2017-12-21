@@ -40,14 +40,18 @@ Code SearchQueryGenerator::GenerateCode() const {
   code<<"extern \"C\" void viya_query_search(db::Table& table, query::RowOutput& output, query::QueryStats& stats, "
     <<"std::vector<db::AnyNum> fargs, const std::string& term, size_t limit) {\n";
 
+#ifdef NDEBUG
+  code<<"// ========= definitions ==========\n";
+#endif
+
   StoreDefs store_defs(query_.table());
   code<<store_defs.GenerateCode();
 
   ScanVisitor scan_visitor(code);
   query_.Accept(scan_visitor);
 
-  PostAggGenerator postagg_generator(compiler_, query_);
-  code<<postagg_generator.GenerateCode();
+  PostAggVisitor postagg_visitor(code);
+  query_.Accept(postagg_visitor);
 
   code<<"}\n";
   return code;

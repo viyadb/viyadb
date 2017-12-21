@@ -40,7 +40,7 @@ RUN mv /opt/viyadb* /opt/viyadb \
 RUN mkdir /opt/viyadb/conf
 ADD store.json /opt/viyadb/conf/store.json
 
-EXPOSE 5000
+EXPOSE 5000-5555
 
 WORKDIR "/opt/viyadb"
 CMD ["/opt/viyadb/bin/viyad", "/opt/viyadb/conf/store.json"]

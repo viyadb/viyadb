@@ -91,6 +91,8 @@ void Controller::Initialize() {
   configurator.ConfigureWorkers();
 
   feeder_ = std::make_unique<Feeder>(*this, load_prefix);
+
+  StartHttpServer();
 }
 
 void Controller::FetchLatestBatchInfo() {
@@ -218,6 +220,10 @@ bool Controller::GeneratePlan() {
     cache[it.first] = it.second.ToJson();
   }
   return session_->EphemeralKey("clusters/" + cluster_id_ + "/plan", cache.dump());
+}
+
+void Controller::StartHttpServer() {
+  http_service_ = std::make_unique<http::Service>(*this);
 }
 
 }}

@@ -22,6 +22,7 @@
 
 namespace viya {
 namespace server {
+namespace http {
 
 namespace query = viya::query;
 
@@ -78,6 +79,6 @@ class ChunkedTsvOutput: public query::RowOutput {
     std::ostringstream buf_;
 };
 
-}}
+}}}
 
 #endif // VIYA_SERVER_HTTP_OUTPUT_H_

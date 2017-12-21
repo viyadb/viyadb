@@ -14,28 +14,35 @@
  * limitations under the License.
  */
 
-#ifndef VIYA_CODEGEN_QUERY_POST_AGG_H_
-#define VIYA_CODEGEN_QUERY_POST_AGG_H_
+#ifndef VIYA_CLUSTER_HTTP_SERVICE_H_
+#define VIYA_CLUSTER_HTTP_SERVICE_H_
 
-#include "query/query.h"
-#include "codegen/generator.h"
+#include <server_http.hpp>
+
+namespace viya { namespace cluster { class Controller; }}
 
 namespace viya {
-namespace codegen {
+namespace cluster {
+namespace http {
 
-namespace query = viya::query;
+typedef SimpleWeb::Server<SimpleWeb::HTTP> HttpServer;
+typedef std::shared_ptr<HttpServer::Request> RequestPtr;
+typedef std::shared_ptr<HttpServer::Response> ResponsePtr;
 
-class PostAggVisitor: public query::QueryVisitor {
+class Service {
   public:
-    PostAggVisitor(Code& code):code_(code) {}
+    Service(const Controller& controller);
 
-    void Visit(query::AggregateQuery* query);
-    void Visit(query::SearchQuery* query);
+    void Start();
 
   private:
-    Code& code_;
+    void SendError(ResponsePtr response, const std::string& error);
+
+  private:
+    const Controller& controller_;
+    HttpServer server_;
 };
 
-}}
+}}}
 
-#endif // VIYA_CODEGEN_QUERY_POST_AGG_H_
+#endif // VIYA_CLUSTER_HTTP_SERVICE_H_
