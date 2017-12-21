@@ -5,21 +5,6 @@
 		"value": "ewogICJyZXBsaWNhdGlvbl9mYWN0b3IiOiAxLAogICJ0YWJsZXMiOiBbImV2ZW50cyJdLAogICJpbmRleGVycyI6IFsibWFpbiJdCn0="
 	},
 	{
-		"key": "viyadb/clusters/cluster001/nodes/controller/leader",
-		"flags": 0,
-		"value": ""
-	},
-	{
-		"key": "viyadb/clusters/cluster001/nodes/workers/gibraltar:5000",
-		"flags": 0,
-		"value": "eyJjcHVfbGlzdCI6WzAsMSwyLDNdLCJob3N0bmFtZSI6ImdpYnJhbHRhciIsImh0dHBfcG9ydCI6NTAwMH0="
-	},
-	{
-		"key": "viyadb/clusters/cluster001/nodes/workers/gibraltar:5001",
-		"flags": 0,
-		"value": "eyJjcHVfbGlzdCI6WzQsNSw2LDddLCJob3N0bmFtZSI6ImdpYnJhbHRhciIsImh0dHBfcG9ydCI6NTAwMX0="
-	},
-	{
 		"key": "viyadb/indexers/main/config",
 		"flags": 0,
 		"value": "ewogICAidGFibGVzIjpbCiAgICAgICJldmVudHMiCiAgIF0sCiAgICJkZWVwU3RvcmVQYXRoIjoiL3RtcC92aXlhZGIvZGVlcHN0b3JlIiwKICAgInJlYWxUaW1lIjp7CiAgICAgICJ3aW5kb3dEdXJhdGlvbiI6IlBUMTVTIiwKICAgICAgImthZmthU291cmNlIjp7CiAgICAgICAgICJ0b3BpY3MiOlsKICAgICAgICAgICAgImV2ZW50cyIKICAgICAgICAgXSwKICAgICAgICAgImJyb2tlcnMiOlsKICAgICAgICAgICAgImxvY2FsaG9zdDo5MDkyIgogICAgICAgICBdCiAgICAgIH0sCiAgICAgICJwYXJzZVNwZWMiOnsKICAgICAgICAgImZvcm1hdCI6Impzb24iLAogICAgICAgICAidGltZUNvbHVtbiI6ewogICAgICAgICAgICAibmFtZSI6ImV2ZW50X3RpbWUiCiAgICAgICAgIH0KICAgICAgfSwKICAgICAgIm5vdGlmaWVyIjp7CiAgICAgICAgICJ0eXBlIjoia2Fma2EiLAogICAgICAgICAiY2hhbm5lbCI6ImxvY2FsaG9zdDo5MDkyIiwKICAgICAgICAgInF1ZXVlIjoicnQtbm90aWZpY2F0aW9ucyIKICAgICAgfQogICB9LAogICAiYmF0Y2giOnsKICAgICAgInBhcnRpdGlvbmluZyI6ewogICAgICAgICAiY29sdW1ucyI6WwogICAgICAgICAgICAiYXBwX2lkIgogICAgICAgICBdLAogICAgICAgICAicGFydGl0aW9ucyI6MgogICAgICB9LAogICAgICAibm90aWZpZXIiOnsKICAgICAgICAgInR5cGUiOiJrYWZrYSIsCiAgICAgICAgICJjaGFubmVsIjoibG9jYWxob3N0OjkwOTIiLAogICAgICAgICAicXVldWUiOiJiYXRjaC1ub3RpZmljYXRpb25zIgogICAgICB9CiAgIH0KfQ=="
