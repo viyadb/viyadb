@@ -19,12 +19,15 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <string>
 
 /* CRC-32 (Ethernet, ZIP, etc.) polynomial in reversed bit order. */
 #define POLY 0xedb88320
 
 /* This one is a Java compatible implementation */
-uint32_t crc32(uint32_t crc, const unsigned char *buf, size_t len) {
+inline uint32_t crc32(uint32_t crc, const std::string& str) {
+  const unsigned char* buf = reinterpret_cast<const unsigned char*>(str.c_str());
+  size_t len = str.size();
   int k;
   crc = ~crc;
   while (len--) {

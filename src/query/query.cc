@@ -43,7 +43,7 @@ DimOutputColumn::DimOutputColumn(const util::Config& config, const db::Dimension
 }
 
 AggregateQuery::AggregateQuery(const util::Config& config, db::Table& table)
-  :FilterBasedQuery(config.sub("filter"), table),
+  :FilterBasedQuery(config.sub("filter", true), table),
   skip_(config.num("skip", 0)),
   limit_(config.num("limit", 0)),
   header_(config.boolean("header", false)),
@@ -118,7 +118,7 @@ void AggregateQuery::Accept(QueryVisitor& visitor) {
 }
 
 SearchQuery::SearchQuery(const util::Config& config, db::Table& table)
-  :FilterBasedQuery(config.sub("filter"), table),
+  :FilterBasedQuery(config.sub("filter", true), table),
   dimension_(table.dimension(config.str("dimension"))),
   term_(config.str("term")),
   limit_(config.num("limit")){

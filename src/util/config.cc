@@ -184,7 +184,10 @@ void Config::set_strlist(const char* key, std::vector<std::string> value) {
   (*reinterpret_cast<json*>(conf_))[key] = value;
 }
 
-Config Config::sub(const char* key) const {
+Config Config::sub(const char* key, bool return_empty) const {
+  if (!return_empty) {
+    ValidateKey(key);
+  }
   try {
     return Config(new json((*reinterpret_cast<json*>(conf_))[key].get<json>()));
   } catch (std::exception& e) {

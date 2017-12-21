@@ -69,19 +69,21 @@ class RelOpFilter: public Filter {
 
 class InFilter: public Filter {
   public:
-    InFilter(const std::string& column, const std::vector<std::string>& values)
-      :Filter(4),column_(column),values_(values) {}
+    InFilter(const std::string& column, const std::vector<std::string>& values, bool equal = true)
+      :Filter(4),column_(column),values_(values),equal_(equal) {}
 
     InFilter(const InFilter& other) = delete;
 
     const std::string& column() const { return column_; }
     const std::vector<std::string>& values() const { return values_; }
+    bool equal() const { return equal_; }
 
     void Accept(FilterVisitor& visitor) const;
 
   private:
     const std::string column_;
     const std::vector<std::string> values_;
+    const bool equal_;
 };
 
 class CompositeFilter: public Filter {
@@ -109,23 +111,6 @@ class CompositeFilter: public Filter {
     const std::vector<Filter*> filters_;
 };
 
-class NotFilter: public Filter {
-  public:
-    NotFilter(Filter* filter):Filter(filter->precedence()),filter_(filter) {}
-    NotFilter(const NotFilter& other) = delete;
-
-    ~NotFilter() {
-      delete filter_;
-    }
-
-    Filter* filter() const { return filter_; }
-
-    void Accept(FilterVisitor& visitor) const;
-
-  private:
-    Filter* filter_;
-};
-
 class EmptyFilter: public Filter {
   public:
     EmptyFilter():Filter(0) {}
@@ -141,13 +126,12 @@ class FilterVisitor {
     virtual void Visit(const RelOpFilter* filter) = 0;
     virtual void Visit(const InFilter* filter) = 0;
     virtual void Visit(const CompositeFilter* filter) = 0;
-    virtual void Visit(const NotFilter* filter) = 0;
     virtual void Visit(const EmptyFilter* filter) = 0;
 };
 
 class FilterFactory {
   public:
-    Filter* Create(const util::Config& config);
+    Filter* Create(const util::Config& config, bool negate=false);
 };
 
 }}

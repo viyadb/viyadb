@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <stdexcept>
+#include <iostream>
 #include "util/config.h"
 #include "query/filter.h"
 
@@ -34,15 +35,11 @@ void CompositeFilter::Accept(FilterVisitor& visitor) const {
   visitor.Visit(this);
 }
 
-void NotFilter::Accept(FilterVisitor& visitor) const {
-  visitor.Visit(this);
-}
-
 void EmptyFilter::Accept(FilterVisitor& visitor) const {
   visitor.Visit(this);
 }
 
-Filter* FilterFactory::Create(const util::Config& config) {
+Filter* FilterFactory::Create(const util::Config& config, bool negate) {
   if (!config.exists("op")) {
     return new EmptyFilter();
   }
@@ -50,41 +47,63 @@ Filter* FilterFactory::Create(const util::Config& config) {
   if (op == "and" || op == "or") {
     std::vector<Filter*> filters;
     for (util::Config& filter_conf : config.sublist("filters")) {
-      filters.push_back(Create(filter_conf));
+      filters.push_back(Create(filter_conf, negate));
     }
     std::sort(filters.begin(), filters.end(), [] (const Filter* a, const Filter* b) -> bool { 
         return a->precedence() < b->precedence();
     });
+    if (negate) {
+      return new CompositeFilter(op == "and" ? CompositeFilter::Operator::OR
+                                 : CompositeFilter::Operator::AND, filters);
+    }
     return new CompositeFilter(op == "and" ? CompositeFilter::Operator::AND
-        : CompositeFilter::Operator::OR, filters);
+                               : CompositeFilter::Operator::OR, filters);
   }
   if (op == "not") {
-    return new NotFilter(Create(config.sub("filter")));
+    return Create(config.sub("filter"), !negate);
   }
 
   const auto column = config.str("column");
   if (op == "in") {
     auto values = config.strlist("values");
-    return new InFilter(column, values);
+    return new InFilter(column, values, !negate);
   }
 
   auto value = config.str("value");
   if (op == "eq") {
+    if (negate) {
+      return new RelOpFilter(RelOpFilter::Operator::NOT_EQUAL, column, value);
+    }
     return new RelOpFilter(RelOpFilter::Operator::EQUAL, column, value);
   }
   if (op == "ne") {
+    if (negate) {
+      return new RelOpFilter(RelOpFilter::Operator::EQUAL, column, value);
+    }
     return new RelOpFilter(RelOpFilter::Operator::NOT_EQUAL, column, value);
   }
   if (op == "lt") {
+    if (negate) {
+      return new RelOpFilter(RelOpFilter::Operator::GREATER_EQUAL, column, value);
+    }
     return new RelOpFilter(RelOpFilter::Operator::LESS, column, value);
   }
   if (op == "le") {
+    if (negate) {
+      return new RelOpFilter(RelOpFilter::Operator::GREATER, column, value);
+    }
     return new RelOpFilter(RelOpFilter::Operator::LESS_EQUAL, column, value);
   }
   if (op == "gt") {
+    if (negate) {
+      return new RelOpFilter(RelOpFilter::Operator::LESS_EQUAL, column, value);
+    }
     return new RelOpFilter(RelOpFilter::Operator::GREATER, column, value);
   }
   if (op == "ge") {
+    if (negate) {
+      return new RelOpFilter(RelOpFilter::Operator::LESS, column, value);
+    }
     return new RelOpFilter(RelOpFilter::Operator::GREATER_EQUAL, column, value);
   }
   throw std::invalid_argument("Unsupported filter operataor: " + op);

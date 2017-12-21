@@ -57,6 +57,7 @@ json Plan::ToJson() const {
 
 void Plan::AssignPartitionsToWorkers(const std::map<std::string, util::Config>& worker_configs) {
   workers_partitions_.clear();
+  partitions_workers_.resize(partitions_.size());
 
   std::vector<uint32_t> partitions;
   uint32_t partition = 0;
@@ -71,6 +72,7 @@ void Plan::AssignPartitionsToWorkers(const std::map<std::string, util::Config>& 
         return rep.hostname() == worker_conf.str("hostname") && rep.port() == worker_conf.num("http_port");
       }) != replicas.end()) {
         workers_partitions_.emplace(worker_id, partition);
+        partitions_workers_[partition].push_back(worker_id);
       }
     }
     ++partition;

@@ -57,6 +57,7 @@ class Plan {
 
     const Partitions& partitions() const { return partitions_; }
     const std::map<std::string, uint32_t>& workers_partitions() const { return workers_partitions_; }
+    const std::vector<std::vector<std::string>>& partitions_workers() const { return partitions_workers_; }
 
     bool operator==(const Plan& other) const {
       return partitions_ == other.partitions_;
@@ -70,6 +71,7 @@ class Plan {
   private:
     Partitions partitions_;
     std::map<std::string, uint32_t> workers_partitions_;
+    std::vector<std::vector<std::string>> partitions_workers_;
 };
 
 class PlanGenerator {

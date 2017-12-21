@@ -35,7 +35,6 @@ class FilterArgsPacker: public query::FilterVisitor {
     void Visit(const query::RelOpFilter* filter);
     void Visit(const query::InFilter* filter);
     void Visit(const query::CompositeFilter* filter);
-    void Visit(const query::NotFilter* filter);
     void Visit(const query::EmptyFilter* filter);
 
     const std::vector<db::AnyNum>& args() const { return args_; }

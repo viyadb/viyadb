@@ -36,7 +36,7 @@ class Config {
 
     bool exists(const char* key) const;
 
-    Config sub(const char* key) const;
+    Config sub(const char* key, bool return_empty = false) const;
     std::vector<Config> sublist(const char* key) const;
     void set_sub(const char* key, Config& sub);
 

@@ -18,26 +18,33 @@
 #define VIYA_CLUSTER_QUERY_H_
 
 #include <memory>
+#include <unordered_set>
 #include "util/config.h"
 
 namespace viya {
 namespace cluster {
 
 class Controller;
+class Partitioning;
+class Plan;
 
 namespace util = viya::util;
 
 class ClusterQuery {
   public:
-    ClusterQuery(const Controller& controller, const util::Config& query);
+    ClusterQuery(const util::Config& query, const Controller& controller);
+    ClusterQuery(const util::Config& query, const Partitioning& partitioning, const Plan& plan);
+
+    const std::unordered_set<std::string>& target_workers() const { return target_workers_; }
 
   private:
-    void BuildRemoteQueries();
+    void FindTargetWorkers();
 
   private:
-    const Controller& controller_;
     const util::Config& query_;
-    std::unordered_map<std::string, util::Config> remote_queries_;
+    const Partitioning& partitioning_;
+    const Plan& plan_;
+    std::unordered_set<std::string> target_workers_;
 };
 
 }}

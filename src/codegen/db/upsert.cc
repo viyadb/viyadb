@@ -345,7 +345,7 @@ Code UpsertGenerator::PartitionFilter() const {
       auto dim = table.dimension(key_col);
       code<<" {\n";
       code<<"  auto& value = values["<<tuple_idx_map[dim->index()]<<"];\n";
-      code<<"  hash = crc32(hash, reinterpret_cast<const unsigned char*>(value.c_str()), value.size());\n";
+      code<<"  hash = crc32(hash, value);\n";
       code<<" }\n";
     }
     code<<" if(!partition_values[hash % "<<std::to_string(part_filter.total_partitions())<<"]) return;\n";

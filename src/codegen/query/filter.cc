@@ -35,7 +35,6 @@ class ArgsUnpacker: public query::FilterVisitor {
     void Visit(const query::RelOpFilter* filter);
     void Visit(const query::InFilter* filter);
     void Visit(const query::CompositeFilter* filter);
-    void Visit(const query::NotFilter* filter);
     void Visit(const query::EmptyFilter* filter);
 
   private:
@@ -69,12 +68,11 @@ class ValueDecoder: public db::ColumnVisitor {
 class ComparisonBuilder: public query::FilterVisitor {
   public:
     ComparisonBuilder(const db::Table& table, Code& code, const std::string& var_prefix = "farg")
-      :table_(table),argidx_(0),code_(code),var_prefix_(var_prefix),in_not_(false) {}
+      :table_(table),argidx_(0),code_(code),var_prefix_(var_prefix) {}
 
     void Visit(const query::RelOpFilter* filter);
     void Visit(const query::InFilter* filter);
     void Visit(const query::CompositeFilter* filter);
-    void Visit(const query::NotFilter* filter);
     void Visit(const query::EmptyFilter* filter);
 
   protected:
@@ -82,7 +80,6 @@ class ComparisonBuilder: public query::FilterVisitor {
     size_t argidx_;
     Code& code_;
     const std::string var_prefix_;
-    bool in_not_;
 };
 
 class SegmentSkipBuilder: public ComparisonBuilder {
@@ -117,10 +114,6 @@ void FilterArgsPacker::Visit(const query::CompositeFilter* filter) {
   }
 }
 
-void FilterArgsPacker::Visit(const query::NotFilter* filter) {
-  filter->filter()->Accept(*this);
-}
-
 void FilterArgsPacker::Visit(const query::EmptyFilter* filter __attribute__((unused))) {
 }
 
@@ -146,10 +139,6 @@ void ArgsUnpacker::Visit(const query::CompositeFilter* filter) {
   for (auto f : filter->filters()) {
     f->Accept(*this);
   }
-}
-
-void ArgsUnpacker::Visit(const query::NotFilter* filter) {
-  filter->filter()->Accept(*this);
 }
 
 void ArgsUnpacker::Visit(const query::EmptyFilter* filter __attribute__((unused))) {
@@ -229,14 +218,14 @@ void ComparisonBuilder::Visit(const query::InFilter* filter) {
   auto struct_name = is_dim ? "tuple_dims" : "tuple_metrics";
   for(size_t i = 0; i < filter->values().size(); ++i) {
     if (i > 0) {
-      code_<<" | ";
+      code_<<(filter->equal() ? "|" : "&");
     }
     code_<<"("<<struct_name<<"._"<<dim_idx;
     if (!is_dim
         && static_cast<const db::Metric*>(column)->agg_type() == db::Metric::AggregationType::BITSET) {
       code_<<".cardinality()";
     }
-    code_<<"=="<<var_prefix_<<std::to_string(argidx_++)<<")";
+    code_<<(filter->equal() ? "==" : "!=")<<var_prefix_<<std::to_string(argidx_++)<<")";
   }
   code_<<")";
 }
@@ -253,13 +242,6 @@ void ComparisonBuilder::Visit(const query::CompositeFilter* filter) {
     filters[i]->Accept(*this);
   }
   code_<<")";
-}
-
-void ComparisonBuilder::Visit(const query::NotFilter* filter) {
-  code_<<"!";
-  in_not_ = true;
-  filter->filter()->Accept(*this);
-  in_not_ = false;
 }
 
 void ComparisonBuilder::Visit(const query::EmptyFilter* filter __attribute__((unused))) {
@@ -298,7 +280,7 @@ void SegmentSkipBuilder::Visit(const query::RelOpFilter* filter) {
     }
   }
   if (!applied) {
-    code_<<(in_not_ ? "0" : "1");
+    code_<<"1";
   }
 }
 
@@ -330,7 +312,7 @@ void SegmentSkipBuilder::Visit(const query::InFilter* filter) {
     for(size_t i = 0; i < filter->values().size(); ++i) {
       ++argidx_;
     }
-    code_<<(in_not_ ? "0" : "1");
+    code_<<"1";
   }
 }
 
