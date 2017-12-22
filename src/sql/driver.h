@@ -19,6 +19,7 @@
 
 #include <istream>
 #include <vector>
+#include "util/config.h"
 
 namespace viya { namespace db { class Database; }}
 namespace viya { namespace query { class RowOutput; }}
@@ -27,6 +28,7 @@ namespace viya {
 namespace sql {
 
 namespace query = viya::query;
+namespace util = viya::util;
 
 class Parser;
 class Scanner;
@@ -39,6 +41,7 @@ class Driver {
     ~Driver();
 
     void Run(std::istream& stream, query::RowOutput* output = nullptr, bool header = false);
+    std::vector<util::Config> ParseQueries(std::istream& stream);
     void Reset();
 
     const db::Database& db() const { return db_; }

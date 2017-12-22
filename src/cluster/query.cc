@@ -19,6 +19,7 @@
 #include <unordered_map>
 #include <algorithm>
 #include <boost/algorithm/string/join.hpp>
+#include <glog/logging.h>
 #include "query/filter.h"
 #include "util/crc32.h"
 #include "cluster/controller.h"
@@ -69,7 +70,6 @@ FilterAnalyzer::FilterAnalyzer(const query::Filter& filter, const Partitioning& 
 }
 
 std::vector<uint32_t> FilterAnalyzer::FindTargetPartitions() {
-  stack_.emplace(FilterAnalyzer::FilterValues {});
   filter_.Accept(*this);
 
   auto& filter_values = stack_.top();
@@ -103,7 +103,7 @@ std::vector<uint32_t> FilterAnalyzer::FindTargetPartitions() {
 }
 
 void FilterAnalyzer::Visit(const query::RelOpFilter* filter) {
-  stack_.emplace(FilterAnalyzer::FilterValues {});
+  stack_.emplace(FilterValues {});
 
   if (filter->op() == query::RelOpFilter::Operator::EQUAL && IsKeyColumn(filter->column())) {
     AddKeyValue(filter->column(), filter->value());
@@ -111,7 +111,7 @@ void FilterAnalyzer::Visit(const query::RelOpFilter* filter) {
 }
 
 void FilterAnalyzer::Visit(const query::InFilter* filter) {
-  stack_.emplace(FilterAnalyzer::FilterValues {});
+  stack_.emplace(FilterValues {});
 
   if (filter->equal() && IsKeyColumn(filter->column())) {
     for (auto& value : filter->values()) {
@@ -121,33 +121,36 @@ void FilterAnalyzer::Visit(const query::InFilter* filter) {
 }
 
 void FilterAnalyzer::Visit(const query::CompositeFilter* filter) {
-  stack_.emplace(FilterAnalyzer::FilterValues {});
+  stack_.emplace(FilterValues {});
+
   for (auto f : filter->filters()) {
     f->Accept(*this);
-  }
 
-  FilterAnalyzer::FilterValues lh = std::move(const_cast<FilterAnalyzer::FilterValues&>(stack_.top()));
-  stack_.pop();
+    FilterValues filter_values = std::move(const_cast<FilterValues&>(stack_.top()));
+    stack_.pop();
 
-  FilterAnalyzer::FilterValues rh = std::move(const_cast<FilterAnalyzer::FilterValues&>(stack_.top()));
-  stack_.pop();
-
-  // Merge `rh` into `lh`:
-  auto& curr_values = stack_.top();
-  if (filter->op() == query::CompositeFilter::Operator::AND) {
-    // Calculate all combinations:
-    for (auto& lh_vals : lh) {
-      for (auto& rh_vals : rh) {
-        curr_values.emplace_back(ColumnsValues {});
-        auto& col_vals = curr_values.back();
-        col_vals.insert(lh_vals.begin(), lh_vals.end());
-        col_vals.insert(rh_vals.begin(), rh_vals.end());
+    // Merge current filter's with all previous filters' values:
+    auto& curr_values = stack_.top();
+    if (curr_values.empty()) {
+      curr_values.swap(filter_values);
+    } else {
+      if (filter->op() == query::CompositeFilter::Operator::AND) {
+        // Calculate all combinations:
+        FilterValues combinations;
+        for (auto& cv : curr_values) {
+          for (auto& fv : filter_values) {
+            combinations.emplace_back(ColumnsValues {});
+            auto& last = combinations.back();
+            last.insert(cv.begin(), cv.end());
+            last.insert(fv.begin(), fv.end());
+          }
+        }
+        curr_values.swap(combinations);
+      } else { // OR
+        // Union values sets:
+        curr_values.insert(curr_values.end(), filter_values.begin(), filter_values.end());
       }
     }
-  } else { // OR
-    // Union values sets:
-    lh.insert(lh.end(), rh.begin(), rh.end());
-    curr_values.swap(lh);
   }
 }
 

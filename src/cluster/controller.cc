@@ -224,6 +224,12 @@ bool Controller::GeneratePlan() {
 
 void Controller::StartHttpServer() {
   http_service_ = std::make_unique<http::Service>(*this);
+  http_service_->Start();
+}
+
+std::string Controller::WorkerUrl(const std::string& worker_id) const {
+  auto& worker_config = workers_configs_.at(worker_id);
+  return "http://" + worker_config.str("hostname") + ":" + std::to_string(worker_config.num("http_port"));
 }
 
 }}

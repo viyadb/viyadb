@@ -69,8 +69,9 @@ void KafkaNotifier::Listen(MessageProcessor& processor) {
         auto& payload = msg.get_payload();
         LOG(INFO)<<"Received new message: "<<payload;
         auto message = MessageFactory::Create(payload, indexer_type_);
-        processor.ProcessMessage(indexer_id_, *message);
-        consumer_->commit(msg);
+        if (processor.ProcessMessage(indexer_id_, *message)) {
+          consumer_->commit(msg);
+        }
       }
     }
   });

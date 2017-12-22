@@ -17,7 +17,6 @@
 #include <sstream>
 #include "db/database.h"
 #include "query/output.h"
-#include "util/config.h"
 #include "sql/driver.h"
 #include "sql/parser.hh"
 #include "sql/scanner.h"
@@ -90,6 +89,15 @@ void Driver::Run(std::istream& stream, query::RowOutput* output, bool header) {
         throw std::runtime_error("Wrong query statement");
     }
   }
+}
+
+std::vector<util::Config> Driver::ParseQueries(std::istream& stream) {
+  Parse(stream);
+  std::vector<util::Config> queries;
+  for (auto stmt : stmts_) {
+    queries.emplace_back(new json(stmt->descriptor()));
+  }
+  return std::move(queries);
 }
 
 void Driver::AddStatement(Statement* stmt) {

@@ -157,10 +157,7 @@ void Loader::LoadFileToAll(const std::string& file, const std::string& table_nam
 }
 
 std::string Loader::GetLoadUrl(const std::string& worker_id) {
-  auto& worker_config = controller_.workers_configs().at(worker_id);
-
-  return "http://" + worker_config.str("hostname")
-         + ":" + std::to_string(worker_config.num("http_port")) + "/load";
+  return controller_.WorkerUrl(worker_id) + "/load";
 }
 
 void Loader::SendRequest(const std::string& worker_id, const json& request) {

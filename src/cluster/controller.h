@@ -47,6 +47,8 @@ class Controller {
     const std::map<std::string, Plan>& tables_plans() const { return tables_plans_; }
     const std::map<std::string, Partitioning>& tables_partitioning() const { return tables_partitioning_; }
 
+    std::string WorkerUrl(const std::string& worker_id) const;
+
   private:
     void ReadClusterConfig();
     bool ReadWorkersConfigs();
