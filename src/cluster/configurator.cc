@@ -37,22 +37,12 @@ void Configurator::ConfigureWorkers() {
   }
 }
 
-void Configurator::AdaptTableConfig(util::Config& table_config) {
-  json* raw_config = reinterpret_cast<json*>(table_config.json_ptr());
-  for (auto& metric : (*raw_config)["metrics"]) {
-    if (metric["type"] == "count") {
-      metric["type"] = "long_sum";
-    }
-  }
-}
-
 void Configurator::CreateTables(const util::Config& worker_config) {
   std::string url = "http://" + worker_config.str("hostname") + ":"
     + std::to_string(worker_config.num("http_port")) + "/tables";
 
   for (auto& it : controller_.tables_configs()) {
-    util::Config table_config(it.second);
-    AdaptTableConfig(table_config);
+    auto& table_config = it.second;
 
     auto r = cpr::Post(
       cpr::Url { url },

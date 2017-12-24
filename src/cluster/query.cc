@@ -174,6 +174,9 @@ void ClusterQuery::FindTargetWorkers() {
   target_workers_.clear();
 
   query::FilterFactory filter_factory;
+  if (!query_.exists("filter")) {
+    throw std::runtime_error("Query filter must be provided");
+  }
   std::unique_ptr<query::Filter> filter(filter_factory.Create(query_.sub("filter")));
 
   FilterAnalyzer filter_analyzer(*filter, partitioning_);

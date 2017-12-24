@@ -19,6 +19,7 @@
 
 #include <memory>
 #include <map>
+#include "db/database.h"
 #include "util/config.h"
 #include "util/schedule.h"
 #include "cluster/consul/consul.h"
@@ -40,6 +41,7 @@ class Controller {
 
     const consul::Consul& consul() const { return consul_; }
     const util::Config& cluster_config() const { return cluster_config_; }
+    db::Database& db() { return db_; }
     const std::map<std::string, util::Config>& tables_configs() const { return tables_configs_; }
     const std::map<std::string, util::Config>& workers_configs() const { return workers_configs_; }
     const std::map<std::string, util::Config>& indexers_configs() const { return indexers_configs_; }
@@ -65,6 +67,7 @@ class Controller {
     util::Config config_;
     const std::string cluster_id_;
     const consul::Consul consul_;
+    db::Database db_;
     util::Config cluster_config_;
     std::unique_ptr<consul::Session> session_;
     std::unique_ptr<consul::LeaderElector> le_;

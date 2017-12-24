@@ -34,7 +34,6 @@ class Configurator {
     void ConfigureWorkers();
 
   protected:
-    void AdaptTableConfig(util::Config& table_config);
     void CreateTables(const util::Config& worker_config);
 
   private:

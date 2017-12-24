@@ -27,7 +27,8 @@ namespace cluster {
 Controller::Controller(const util::Config& config):
   config_(config),
   cluster_id_(config.str("cluster_id")),
-  consul_(config) {
+  consul_(config),
+  db_(config) {
 
   ReadClusterConfig();
 
@@ -49,7 +50,18 @@ void Controller::ReadClusterConfig() {
 
   tables_configs_.clear();
   for (auto& table : cluster_config_.strlist("tables", {})) {
-    tables_configs_[table] = util::Config(consul_.GetKey("tables/" + table + "/config"));
+    auto& table_conf = tables_configs_.emplace(
+      table, consul_.GetKey("tables/" + table + "/config")).first->second;
+
+    // Adapt metrics:
+    json* raw_config = reinterpret_cast<json*>(table_conf.json_ptr());
+    for (auto& metric : (*raw_config)["metrics"]) {
+      if (metric["type"] == "count") {
+        metric["type"] = "long_sum";
+      }
+    }
+
+    db_.CreateTable(table_conf);
   }
   LOG(INFO)<<"Read "<<tables_configs_.size()<<" tables configurations";
 

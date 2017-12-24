@@ -20,10 +20,13 @@
 #include <server_http.hpp>
 
 namespace viya { namespace cluster { class Controller; }}
+namespace viya { namespace util { class Config; }}
 
 namespace viya {
 namespace cluster {
 namespace http {
+
+namespace util = viya::util;
 
 typedef SimpleWeb::Server<SimpleWeb::HTTP> HttpServer;
 typedef std::shared_ptr<HttpServer::Request> RequestPtr;
@@ -31,15 +34,16 @@ typedef std::shared_ptr<HttpServer::Response> ResponsePtr;
 
 class Service {
   public:
-    Service(const Controller& controller);
+    Service(Controller& controller);
 
     void Start();
 
   private:
     void SendError(ResponsePtr response, const std::string& error);
+    void ProcessQuery(const util::Config& query, ResponsePtr response, RequestPtr request);
 
   private:
-    const Controller& controller_;
+    Controller& controller_;
     HttpServer server_;
 };
 
