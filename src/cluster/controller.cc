@@ -28,7 +28,7 @@ Controller::Controller(const util::Config& config):
   config_(config),
   cluster_id_(config.str("cluster_id")),
   consul_(config),
-  db_(config) {
+  db_(config, 0, 0) {
 
   ReadClusterConfig();
 

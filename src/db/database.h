@@ -40,6 +40,7 @@ class Table;
 class Database {
   public:
     Database(const util::Config& config);
+    Database(const util::Config& config, size_t write_threads, size_t read_threads);
     Database(const Database& other) = delete;
     ~Database();
 

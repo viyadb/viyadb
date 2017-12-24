@@ -25,10 +25,14 @@
 namespace viya {
 namespace db {
 
-Database::Database(const util::Config& config)
-  :compiler_(config),
-  write_pool_(1),
-  read_pool_(config.num("query_threads", 1)),
+Database::Database(const util::Config& config):
+  Database(config, 1, config.num("query_threads", 1)) {
+}
+
+Database::Database(const util::Config& config, size_t write_threads, size_t read_threads):
+  compiler_(config),
+  write_pool_(write_threads),
+  read_pool_(read_threads),
   watcher_(*this) {
 
   if (config.exists("tables")) {
