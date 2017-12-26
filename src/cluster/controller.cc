@@ -74,9 +74,9 @@ void Controller::ReadClusterConfig() {
 
 bool Controller::ReadWorkersConfigs() {
   auto active_workers = consul_.ListKeys("clusters/" + cluster_id_ + "/nodes/workers");
-  auto minimum_workers = (size_t)cluster_config_.num("minimum_workers", 0L);
-  if (minimum_workers > 0 && active_workers.size() < minimum_workers) {
-    LOG(INFO)<<"Number of active workers is less than the minimal number of workers ("<<minimum_workers<<")";
+  auto workers_num = (size_t)cluster_config_.num("workers", config_.num("workers"));
+  if (workers_num > 0 && active_workers.size() < workers_num) {
+    LOG(INFO)<<"Number of active workers is less than the expected number of workers ("<<workers_num<<")";
     return false;
   }
   LOG(INFO)<<"Found "<<active_workers.size()<<" active workers";

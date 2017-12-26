@@ -3,27 +3,28 @@ from ubuntu:zesty
 MAINTAINER Michael Spector <michael@viyadb.com>
 LABEL Description="ViyaDB is in-memory analytical data store"
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+ADD ubuntu-toolchain-r.list /etc/apt/sources.list.d/ubuntu-toolchain-r.list
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends --allow-unauthenticated \
     libssl1.0.0 \
-    software-properties-common \
     curl \
     bsdmainutils \
-  && add-apt-repository ppa:ubuntu-toolchain-r/test \
-  && apt-get update && apt-get install -y --no-install-recommends \
+    awscli \
     g++-7 \
   && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 60 --slave /usr/bin/g++ g++ /usr/bin/g++-7 \
   && apt-get purge -y \
     gcc-5-base \
     gcc-6-base \
     manpages-dev \
-    python3.5-minimal \
-    software-properties-common \
   && apt-get autoremove -y \
   && apt-get clean \
   && strip $(gcc -print-prog-name=cc1plus) \
   && strip $(gcc -print-prog-name=lto1) \
+  && find /usr/lib | grep -E "(__pycache__|\.pyc|\.pyo$)" | xargs rm -rf \
   && rm -rf \
-    /var/lib/apt/lists/* \
+    /var/lib/apt \
+    /var/lib/cache \
+    /var/lib/log \
     /var/tmp/* \
     /tmp/* \
     /usr/share/doc \
