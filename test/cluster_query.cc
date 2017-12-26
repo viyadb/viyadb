@@ -15,8 +15,8 @@
  */
 
 #include <map>
-#include <unordered_set>
 #include <gtest/gtest.h>
+#include <random>
 #include "cluster/plan.h"
 #include "cluster/partitioning.h"
 #include "cluster/query.h"
@@ -28,8 +28,8 @@ namespace util = viya::util;
 
 class ClusterQuery : public testing::Test {
   protected:
-    ClusterQuery():
-      cluster_config("{\"replication_factor\": 1}"),
+    ClusterQuery(int replicas = 1, int partitions = 8):
+      cluster_config("{\"replication_factor\": " + std::to_string(replicas) + "}"),
       worker_configs {
         {"worker1", util::Config("{\"hostname\": \"host1\", \"rack_id\": \"1\", \"http_port\": 5000}")},
         {"worker2", util::Config("{\"hostname\": \"host1\", \"rack_id\": \"1\", \"http_port\": 5001}")},
@@ -40,9 +40,13 @@ class ClusterQuery : public testing::Test {
         {"worker7", util::Config("{\"hostname\": \"host4\", \"rack_id\": \"2\", \"http_port\": 5000}")},
         {"worker8", util::Config("{\"hostname\": \"host4\", \"rack_id\": \"2\", \"http_port\": 5001}")}
       },
-      partitions_num(8),
+      partitions_num(partitions),
+      partition_mapping(partitions),
       plan(cluster::PlanGenerator(cluster_config).Generate(partitions_num, worker_configs))
     {
+      for (int i = 0; i < partitions_num; ++i) {
+        partition_mapping[i] = i;
+      }
     }
 
     uint32_t CalculateCode(const std::vector<std::string>& values) {
@@ -53,19 +57,22 @@ class ClusterQuery : public testing::Test {
       return code % partitions_num;
     }
 
+    std::vector<uint32_t> partition_mapping;
     util::Config cluster_config;
     std::map<std::string, util::Config> worker_configs;
     size_t partitions_num;
     cluster::Plan plan;
 };
 
+class ClusterQuery2Replicas : public ClusterQuery {
+  protected:
+    ClusterQuery2Replicas():ClusterQuery(2, 4) {}
+};
+
 TEST_F(ClusterQuery, SimpleCondition)
 {
-  std::vector<uint32_t> mapping(partitions_num);
-  for (int i = 0; i < partitions_num; ++i) {
-    mapping[i] = i;
-  }
-  cluster::Partitioning partitioning(mapping, partitions_num, std::vector<std::string> {"user"});
+  cluster::Partitioning partitioning(
+    partition_mapping, partitions_num, std::vector<std::string> {"user"});
 
   std::string value("123456");
   util::Config query(
@@ -79,8 +86,7 @@ TEST_F(ClusterQuery, SimpleCondition)
   auto actual = cluster_query.target_workers();
 
   auto code = CalculateCode(std::vector<std::string> { value });
-  auto workers = plan.partitions_workers()[partitioning.mapping()[code]];
-  std::unordered_set<std::string> expected(workers.begin(), workers.end());
+  auto& expected = plan.partitions_workers()[partitioning.mapping()[code]];
 
   EXPECT_EQ(actual.size(), 1);
   EXPECT_EQ(expected, actual);
@@ -88,11 +94,8 @@ TEST_F(ClusterQuery, SimpleCondition)
 
 TEST_F(ClusterQuery, MultipleColumns)
 {
-  std::vector<uint32_t> mapping(partitions_num);
-  for (int i = 0; i < partitions_num; ++i) {
-    mapping[i] = i;
-  }
-  cluster::Partitioning partitioning(mapping, partitions_num, std::vector<std::string> {"user", "date"});
+  cluster::Partitioning partitioning(
+    partition_mapping, partitions_num, std::vector<std::string> {"user", "date"});
 
   util::Config query(
         "{\"type\": \"aggregate\","
@@ -110,24 +113,14 @@ TEST_F(ClusterQuery, MultipleColumns)
   cluster::ClusterQuery cluster_query(query, partitioning, plan);
   auto actual = cluster_query.target_workers();
 
-  std::unordered_set<std::string> expected;
-  for (auto& v : std::vector<std::vector<std::string>> {{"a", "1"}, {"b", "2"}}) {
-    auto code = CalculateCode(v);
-    auto workers = plan.partitions_workers()[partitioning.mapping()[code]];
-    expected.insert(workers.begin(), workers.end());
-  }
-
-  ASSERT_TRUE(actual.size() > 0);
+  std::vector<std::string> expected { "worker2", "worker6" };
   EXPECT_EQ(expected, actual);
 }
 
 TEST_F(ClusterQuery, ValuesCombinations)
 {
-  std::vector<uint32_t> mapping(partitions_num);
-  for (int i = 0; i < partitions_num; ++i) {
-    mapping[i] = i;
-  }
-  cluster::Partitioning partitioning(mapping, partitions_num, std::vector<std::string> {"user", "date"});
+  cluster::Partitioning partitioning(
+    partition_mapping, partitions_num, std::vector<std::string> {"user", "date"});
 
   util::Config query(
         "{\"type\": \"aggregate\","
@@ -141,13 +134,60 @@ TEST_F(ClusterQuery, ValuesCombinations)
   cluster::ClusterQuery cluster_query(query, partitioning, plan);
   auto actual = cluster_query.target_workers();
 
-  std::unordered_set<std::string> expected;
-  for (auto& v : std::vector<std::vector<std::string>> {{"a", "1"}, {"a", "2"}, {"b", "1"}, {"b", "2"}}) {
-    auto code = CalculateCode(v);
-    auto workers = plan.partitions_workers()[partitioning.mapping()[code]];
-    expected.insert(workers.begin(), workers.end());
-  }
-
-  ASSERT_TRUE(actual.size() > 0);
+  std::vector<std::string> expected { "worker2", "worker1", "worker6", "worker5" };
   EXPECT_EQ(expected, actual);
+}
+
+TEST_F(ClusterQuery2Replicas, SimpleCondition)
+{
+  cluster::Partitioning partitioning(
+    partition_mapping, partitions_num, std::vector<std::string> {"user"});
+
+  std::string value("123456");
+  util::Config query(
+        "{\"type\": \"aggregate\","
+        " \"table\": \"events\","
+        " \"dimensions\": [\"user\", \"country\"],"
+        " \"metrics\": [\"revenue\"],"
+        " \"filter\": {\"op\": \"eq\", \"column\": \"user\", \"value\": \"" + value + "\"}}");
+
+  cluster::ClusterQuery cluster_query(query, partitioning, plan);
+  auto actual = cluster_query.target_workers();
+
+  auto code = CalculateCode(std::vector<std::string> { value });
+
+  auto& workers = plan.partitions_workers()[partitioning.mapping()[code]];
+  EXPECT_EQ(workers.size(), 2);
+
+  EXPECT_EQ(actual.size(), 1);
+  EXPECT_TRUE(std::find(workers.begin(), workers.end(), actual[0]) != workers.end());
+}
+
+TEST_F(ClusterQuery2Replicas, MultipleColumns)
+{
+  std::srand(std::time(0));
+  cluster::Partitioning partitioning(
+    partition_mapping, partitions_num, std::vector<std::string> {"user", "date"});
+
+  util::Config query(
+        "{\"type\": \"aggregate\","
+        " \"table\": \"events\","
+        " \"dimensions\": [\"user\", \"country\"],"
+        " \"metrics\": [\"revenue\"],"
+        " \"filter\": {\"op\": \"or\", \"filters\": ["
+        "              {\"op\": \"and\", \"filters\": ["
+        "               {\"op\": \"eq\", \"column\": \"user\", \"value\": \"a\"},"
+        "               {\"op\": \"eq\", \"column\": \"date\", \"value\": \"1\"}]},"
+        "              {\"op\": \"and\", \"filters\": ["
+        "               {\"op\": \"eq\", \"column\": \"user\", \"value\": \"b\"},"
+        "               {\"op\": \"eq\", \"column\": \"date\", \"value\": \"2\"}]}]}}");
+
+  cluster::ClusterQuery cluster_query(query, partitioning, plan);
+  auto actual = cluster_query.target_workers();
+
+  std::vector<std::string> part1_workers {"worker2", "worker4"};
+  std::vector<std::string> part2_workers {"worker6", "worker8"};
+
+  EXPECT_TRUE(std::find(part1_workers.begin(), part1_workers.end(), actual[0]) != part1_workers.end());
+  EXPECT_TRUE(std::find(part2_workers.begin(), part2_workers.end(), actual[1]) != part2_workers.end());
 }

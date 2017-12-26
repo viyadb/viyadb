@@ -18,7 +18,7 @@
 #define VIYA_CLUSTER_QUERY_H_
 
 #include <memory>
-#include <unordered_set>
+#include <vector>
 #include "util/config.h"
 
 namespace viya {
@@ -35,7 +35,7 @@ class ClusterQuery {
     ClusterQuery(const util::Config& query, const Controller& controller);
     ClusterQuery(const util::Config& query, const Partitioning& partitioning, const Plan& plan);
 
-    const std::unordered_set<std::string>& target_workers() const { return target_workers_; }
+    const std::vector<std::string>& target_workers() const { return target_workers_; }
 
   private:
     void FindTargetWorkers();
@@ -44,7 +44,7 @@ class ClusterQuery {
     const util::Config& query_;
     const Partitioning& partitioning_;
     const Plan& plan_;
-    std::unordered_set<std::string> target_workers_;
+    std::vector<std::string> target_workers_;
 };
 
 }}

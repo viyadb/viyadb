@@ -15,10 +15,12 @@
  */
 
 #include <stack>
-#include <set>
+#include <unordered_set>
 #include <unordered_map>
 #include <algorithm>
+#include <random>
 #include <boost/algorithm/string/join.hpp>
+#include <boost/functional/hash.hpp>
 #include <glog/logging.h>
 #include "query/filter.h"
 #include "util/crc32.h"
@@ -179,11 +181,21 @@ void ClusterQuery::FindTargetWorkers() {
   }
   std::unique_ptr<query::Filter> filter(filter_factory.Create(query_.sub("filter")));
 
+  std::vector<std::string> some_strings;
+
+  struct Hash {
+    size_t operator() (const std::vector<std::string>& v) const {
+      return boost::hash_range(v.begin(), v.end());
+    }
+  };
+  std::unordered_set<std::vector<std::string>, Hash> workers;
+
   FilterAnalyzer filter_analyzer(*filter, partitioning_);
   for (auto& partition : filter_analyzer.FindTargetPartitions()) {
-    for (auto& worker_id : plan_.partitions_workers()[partition]) {
-      target_workers_.insert(worker_id);
-    }
+    workers.insert(plan_.partitions_workers()[partition]);
+  }
+  for (auto& partition_workers : workers) {
+    target_workers_.push_back(partition_workers[std::rand() % partition_workers.size()]);
   }
 }
 
