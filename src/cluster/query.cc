@@ -139,12 +139,16 @@ void FilterAnalyzer::Visit(const query::CompositeFilter* filter) {
       if (filter->op() == query::CompositeFilter::Operator::AND) {
         // Calculate all combinations:
         FilterValues combinations;
-        for (auto& cv : curr_values) {
-          for (auto& fv : filter_values) {
-            combinations.emplace_back(ColumnsValues {});
-            auto& last = combinations.back();
-            last.insert(cv.begin(), cv.end());
-            last.insert(fv.begin(), fv.end());
+        if (filter_values.empty()) {
+          combinations.swap(curr_values);
+        } else {
+          for (auto& cv : curr_values) {
+            for (auto& fv : filter_values) {
+              combinations.emplace_back(ColumnsValues {});
+              auto& last = combinations.back();
+              last.insert(cv.begin(), cv.end());
+              last.insert(fv.begin(), fv.end());
+            }
           }
         }
         curr_values.swap(combinations);

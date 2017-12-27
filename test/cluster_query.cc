@@ -92,6 +92,31 @@ TEST_F(ClusterQuery, SimpleCondition)
   EXPECT_EQ(expected, actual);
 }
 
+TEST_F(ClusterQuery, NonKeyFieldCondition)
+{
+  cluster::Partitioning partitioning(
+    partition_mapping, partitions_num, std::vector<std::string> {"user"});
+
+  std::string value("123456");
+  util::Config query(
+        "{\"type\": \"aggregate\","
+        " \"table\": \"events\","
+        " \"dimensions\": [\"user\", \"country\"],"
+        " \"metrics\": [\"revenue\"],"
+        " \"filter\": {\"op\": \"and\", \"filters\": ["
+        "               {\"op\": \"eq\", \"column\": \"user\", \"value\": \"" + value + "\"},"
+        "               {\"op\": \"ne\", \"column\": \"country\", \"value\": \"\"}]}}");
+
+  cluster::ClusterQuery cluster_query(query, partitioning, plan);
+  auto actual = cluster_query.target_workers();
+
+  auto code = CalculateCode(std::vector<std::string> { value });
+  auto& expected = plan.partitions_workers()[partitioning.mapping()[code]];
+
+  EXPECT_EQ(actual.size(), 1);
+  EXPECT_EQ(expected, actual);
+}
+
 TEST_F(ClusterQuery, MultipleColumns)
 {
   cluster::Partitioning partitioning(
