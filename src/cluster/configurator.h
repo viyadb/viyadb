@@ -34,7 +34,7 @@ class Configurator {
     void ConfigureWorkers();
 
   protected:
-    void CreateTables(const util::Config& worker_config);
+    void CreateTable(const util::Config& table_config, const std::string& hostname, uint16_t port);
 
   private:
     const Controller& controller_;

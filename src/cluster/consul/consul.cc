@@ -45,8 +45,8 @@ std::unique_ptr<LeaderElector> Consul::ElectLeader(const Session& session, const
   return std::make_unique<LeaderElector>(*this, session, key);
 }
 
-std::unique_ptr<Watch> Consul::WatchKey(const std::string& key) const {
-  return std::make_unique<Watch>(*this, key);
+std::unique_ptr<Watch> Consul::WatchKey(const std::string& key, bool recurse) const {
+  return std::make_unique<Watch>(*this, key, recurse);
 }
 
 std::vector<std::string> Consul::ListKeys(const std::string& key) const {

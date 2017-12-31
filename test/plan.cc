@@ -46,9 +46,9 @@ TEST(PlanGenerator, NotEnoughWorkers)
   );
 
   std::map<std::string, util::Config> worker_configs {
-    {"worker1", util::Config("{\"hostname\": \"host1\", \"rack_id\": \"1\", \"http_port\": 5000}")},
-    {"worker2", util::Config("{\"hostname\": \"host2\", \"rack_id\": \"1\", \"http_port\": 5001}")},
-    {"worker3", util::Config("{\"hostname\": \"host3\", \"rack_id\": \"1\", \"http_port\": 5002}")}
+    {"host1:5000", util::Config("{\"hostname\": \"host1\", \"rack_id\": \"1\", \"http_port\": 5000}")},
+    {"host1:5001", util::Config("{\"hostname\": \"host2\", \"rack_id\": \"1\", \"http_port\": 5001}")},
+    {"host2:5000", util::Config("{\"hostname\": \"host3\", \"rack_id\": \"1\", \"http_port\": 5002}")}
   };
 
   cluster::PlanGenerator plan_generator(cluster_config);
@@ -67,9 +67,9 @@ TEST(PlanGenerator, LessReplicasThanRacks)
   );
 
   std::map<std::string, util::Config> worker_configs {
-    {"worker1", util::Config("{\"hostname\": \"host1\", \"rack_id\": \"1\", \"http_port\": 5000}")},
-    {"worker2", util::Config("{\"hostname\": \"host2\", \"rack_id\": \"1\", \"http_port\": 5001}")},
-    {"worker3", util::Config("{\"hostname\": \"host3\", \"rack_id\": \"1\", \"http_port\": 5002}")}
+    {"host1:5000", util::Config("{\"hostname\": \"host1\", \"rack_id\": \"1\", \"http_port\": 5000}")},
+    {"host1:5001", util::Config("{\"hostname\": \"host2\", \"rack_id\": \"1\", \"http_port\": 5001}")},
+    {"host2:5000", util::Config("{\"hostname\": \"host3\", \"rack_id\": \"1\", \"http_port\": 5002}")}
   };
 
   cluster::PlanGenerator plan_generator(cluster_config);
@@ -88,14 +88,14 @@ TEST(PlanGenerator, Placement1)
   );
 
   std::map<std::string, util::Config> worker_configs {
-    {"worker1", util::Config("{\"hostname\": \"host1\", \"rack_id\": \"1\", \"http_port\": 5000}")},
-    {"worker2", util::Config("{\"hostname\": \"host1\", \"rack_id\": \"1\", \"http_port\": 5001}")},
-    {"worker3", util::Config("{\"hostname\": \"host2\", \"rack_id\": \"2\", \"http_port\": 5000}")},
-    {"worker4", util::Config("{\"hostname\": \"host2\", \"rack_id\": \"2\", \"http_port\": 5001}")},
-    {"worker5", util::Config("{\"hostname\": \"host3\", \"rack_id\": \"1\", \"http_port\": 5000}")},
-    {"worker6", util::Config("{\"hostname\": \"host3\", \"rack_id\": \"1\", \"http_port\": 5001}")},
-    {"worker7", util::Config("{\"hostname\": \"host4\", \"rack_id\": \"2\", \"http_port\": 5000}")},
-    {"worker8", util::Config("{\"hostname\": \"host4\", \"rack_id\": \"2\", \"http_port\": 5001}")}
+    {"host1:5000", util::Config("{\"hostname\": \"host1\", \"rack_id\": \"1\", \"http_port\": 5000}")},
+    {"host1:5001", util::Config("{\"hostname\": \"host1\", \"rack_id\": \"1\", \"http_port\": 5001}")},
+    {"host2:5000", util::Config("{\"hostname\": \"host2\", \"rack_id\": \"2\", \"http_port\": 5000}")},
+    {"host2:5001", util::Config("{\"hostname\": \"host2\", \"rack_id\": \"2\", \"http_port\": 5001}")},
+    {"host3:5000", util::Config("{\"hostname\": \"host3\", \"rack_id\": \"1\", \"http_port\": 5000}")},
+    {"host3:5001", util::Config("{\"hostname\": \"host3\", \"rack_id\": \"1\", \"http_port\": 5001}")},
+    {"host4:5000", util::Config("{\"hostname\": \"host4\", \"rack_id\": \"2\", \"http_port\": 5000}")},
+    {"host4:5001", util::Config("{\"hostname\": \"host4\", \"rack_id\": \"2\", \"http_port\": 5001}")}
   };
 
   size_t partitions_num = 2;
@@ -107,7 +107,7 @@ TEST(PlanGenerator, Placement1)
   partitions[0].emplace_back("host2", 5000);
   partitions[1].emplace_back("host3", 5000);
   partitions[1].emplace_back("host4", 5000);
-  cluster::Plan expected(partitions, worker_configs);
+  cluster::Plan expected(partitions);
 
   EXPECT_EQ(expected.ToJson(), actual.ToJson());
 }

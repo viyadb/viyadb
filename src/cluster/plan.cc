@@ -21,13 +21,12 @@
 namespace viya {
 namespace cluster {
 
-Plan::Plan(const Partitions& partitions, const std::map<std::string, util::Config>& worker_configs):
+Plan::Plan(const Partitions& partitions):
   partitions_(partitions) {
-
-  AssignPartitionsToWorkers(worker_configs);
+  AssignPartitionsToWorkers();
 }
 
-Plan::Plan(const json& plan, const std::map<std::string, util::Config>& worker_configs) {
+Plan::Plan(const json& plan) {
   for (auto plan_it = plan.begin(); plan_it != plan.end(); ++plan_it) {
     Replicas replicas;
     for (auto placement_it = plan_it->begin(); placement_it != plan_it->end(); ++placement_it) {
@@ -38,7 +37,7 @@ Plan::Plan(const json& plan, const std::map<std::string, util::Config>& worker_c
     partitions_.emplace_back(std::move(replicas));
   }
 
-  AssignPartitionsToWorkers(worker_configs);
+  AssignPartitionsToWorkers();
 }
 
 json Plan::ToJson() const {
@@ -55,25 +54,17 @@ json Plan::ToJson() const {
   return plan;
 }
 
-void Plan::AssignPartitionsToWorkers(const std::map<std::string, util::Config>& worker_configs) {
+void Plan::AssignPartitionsToWorkers() {
   workers_partitions_.clear();
   partitions_workers_.resize(partitions_.size());
 
   std::vector<uint32_t> partitions;
   uint32_t partition = 0;
-
   for (auto& replicas : partitions_) {
-    for (auto& worker_it : worker_configs) {
-
-      auto& worker_id = worker_it.first;
-      auto& worker_conf = worker_it.second;
-
-      if (std::find_if(replicas.begin(), replicas.end(), [&worker_conf](auto& rep) {
-        return rep.hostname() == worker_conf.str("hostname") && rep.port() == worker_conf.num("http_port");
-      }) != replicas.end()) {
-        workers_partitions_.emplace(worker_id, partition);
-        partitions_workers_[partition].push_back(worker_id);
-      }
+    for (auto& replica : replicas) {
+      std::string worker_id = replica.hostname() + ":" + std::to_string(replica.port());
+      workers_partitions_.emplace(worker_id, partition);
+      partitions_workers_[partition].push_back(worker_id);
     }
     ++partition;
   }
@@ -173,7 +164,7 @@ Plan PlanGenerator::Generate(size_t partitions_num,
     ++partition;
   }
 
-  return { partitions, workers_configs };
+  return { partitions };
 }
 
 }}

@@ -50,8 +50,8 @@ using Partitions = std::vector<Replicas>;
 
 class Plan {
   public:
-    Plan(const json& plan, const std::map<std::string, util::Config>& worker_configs);
-    Plan(const Partitions& partitions, const std::map<std::string, util::Config>& worker_configs);
+    Plan(const json& plan);
+    Plan(const Partitions& partitions);
     Plan(const Plan& other) = delete;
     Plan(Plan&& other) = default;
 
@@ -66,7 +66,7 @@ class Plan {
     json ToJson() const;
 
   private:
-    void AssignPartitionsToWorkers(const std::map<std::string, util::Config>& worker_configs);
+    void AssignPartitionsToWorkers();
 
   private:
     Partitions partitions_;

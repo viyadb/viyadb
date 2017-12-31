@@ -31,31 +31,31 @@ Configurator::Configurator(const Controller& controller, const std::string& load
 }
 
 void Configurator::ConfigureWorkers() {
-  for (auto& it : controller_.workers_configs()) {
-    auto& worker_config = it.second;
-    CreateTables(worker_config);
+  for (auto& plans_it : controller_.tables_plans()) {
+    auto& table_name = plans_it.first;
+    auto& plan = plans_it.second;
+    for (auto& replicas : plan.partitions()) {
+      for (auto& placement : replicas) {
+        CreateTable(
+          controller_.tables_configs().at(table_name), placement.hostname(), placement.port());
+      }
+    }
   }
 }
 
-void Configurator::CreateTables(const util::Config& worker_config) {
-  std::string url = "http://" + worker_config.str("hostname") + ":"
-    + std::to_string(worker_config.num("http_port")) + "/tables";
-
-  for (auto& it : controller_.tables_configs()) {
-    auto& table_config = it.second;
-
-    auto r = cpr::Post(
-      cpr::Url { url },
-      cpr::Body { table_config.dump() },
-      cpr::Header {{ "Content-Type", "application/json" }},
-      cpr::Timeout { 3000L }
+void Configurator::CreateTable(const util::Config& table_config, const std::string& hostname, uint16_t port) {
+  std::string url = "http://" + hostname + ":" + std::to_string(port) + "/tables";
+  auto r = cpr::Post(
+    cpr::Url { url },
+    cpr::Body { table_config.dump() },
+    cpr::Header {{ "Content-Type", "application/json" }},
+    cpr::Timeout { 3000L }
     );
-    if (r.status_code != 201) {
-      if (r.status_code == 0) {
-        throw std::runtime_error("Can't contact worker at: " + url + " (host is unreachable)");
-      }
-      throw std::runtime_error("Can't create table in worker (" + r.text + ")");
+  if (r.status_code != 201) {
+    if (r.status_code == 0) {
+      throw std::runtime_error("Can't contact worker at: " + url + " (host is unreachable)");
     }
+    throw std::runtime_error("Can't create table in worker (" + r.text + ")");
   }
 }
 

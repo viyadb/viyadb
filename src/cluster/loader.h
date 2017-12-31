@@ -45,15 +45,13 @@ class Loader {
                         const TableInfo& table_info);
 
   private:
-    void InitPartitionFilters();
+    json GetPartitionFilter(const std::string& table_name, const std::string& worker_id);
 
     void LoadFile(const std::string& file, const std::string& table_name,
                   const TableInfo& table_info, const std::string& worker_id);
 
     void LoadFileToAll(const std::string& file, const std::string& table_name,
                        const TableInfo& table_info);
-
-    std::string GetLoadUrl(const std::string& worker_id);
 
     void SendRequest(const std::string& url, const json& request);
 
@@ -66,7 +64,6 @@ class Loader {
     const Controller& controller_;
     const std::string load_prefix_;
     ThreadPool load_pool_;
-    std::unordered_map<std::string, std::unordered_map<std::string, json>> partition_filters_;
 };
 
 }}

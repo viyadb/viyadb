@@ -41,35 +41,25 @@ Loader::Loader(const Controller& controller, const std::string& load_prefix):
   controller_(controller),
   load_prefix_(load_prefix),
   load_pool_(4) {
-
-  InitPartitionFilters();
 }
 
-void Loader::InitPartitionFilters() {
-  for (auto& part_it : controller_.tables_partitioning()) {
-    auto& table_name = part_it.first;
-    auto& partitioning = part_it.second;
-    auto& table_filters = partition_filters_.emplace(
-      table_name, std::unordered_map<std::string, json> {}).first->second;
+json Loader::GetPartitionFilter(const std::string& table_name, const std::string& worker_id) {
+  auto& partitioning = controller_.tables_partitioning().at(table_name);
+  auto& table_plan = controller_.tables_plans().at(table_name);
+  auto worker_partition = table_plan.workers_partitions().at(worker_id);
 
-    auto& table_plan = controller_.tables_plans().at(table_name);
-    for (auto& plan_it : table_plan.workers_partitions()) {
-      auto& worker_id = plan_it.first;
-      auto& worker_partition = plan_it.second;
-
-      std::vector<uint32_t> values;
-      auto& value_to_partition = partitioning.mapping();
-      for (uint32_t value = 0; value < value_to_partition.size(); ++value) {
-        if (value_to_partition[value] == worker_partition) {
-          values.push_back(value);
-        }
-      }
-      auto& partition_filter = table_filters.emplace(worker_id, json {}).first->second;
-      partition_filter["total_partitions"] = partitioning.total();
-      partition_filter["columns"] = partitioning.columns();
-      partition_filter["values"] = values;
+  std::vector<uint32_t> values;
+  auto& value_to_partition = partitioning.mapping();
+  for (uint32_t value = 0; value < value_to_partition.size(); ++value) {
+    if (value_to_partition[value] == worker_partition) {
+      values.push_back(value);
     }
   }
+  return std::move(json {
+    { "total_partitions", partitioning.total() },
+    { "columns", partitioning.columns() },
+    { "values", values }
+  });
 }
 
 void Loader::LoadFiles(const std::string& path, const std::string& table_name,
@@ -133,18 +123,18 @@ void Loader::LoadFileToAll(const std::string& file, const std::string& table_nam
     LOG(WARNING)<<"Can't madvise() on file: "<<file;
   }
 
-  auto& workers_configs = controller_.workers_configs();
-  util::CountDownLatch latch(workers_configs.size());
+  auto& workers_parts = controller_.tables_plans().at(table_name).workers_partitions();
+  util::CountDownLatch latch(workers_parts.size());
 
-  for (auto& worker_it : controller_.workers_configs()) {
-    auto& worker_id = worker_it.first;
+  for (auto& it : workers_parts) {
+    auto& worker_id = it.first;
     json request {
       { "table", table_name },
       { "columns", table_info.columns() },
       { "format", "tsv" },
       { "type", "file" },
       { "file", file },
-      { "partition_filter", partition_filters_.at(table_name).at(worker_id) }
+      { "partition_filter", GetPartitionFilter(table_name, worker_id) }
     };
     load_pool_.enqueue([&, request] {
       SendRequest(worker_id, request);
@@ -156,12 +146,8 @@ void Loader::LoadFileToAll(const std::string& file, const std::string& table_nam
   latch.Wait();
 }
 
-std::string Loader::GetLoadUrl(const std::string& worker_id) {
-  return controller_.WorkerUrl(worker_id) + "/load";
-}
-
 void Loader::SendRequest(const std::string& worker_id, const json& request) {
-  std::string url = GetLoadUrl(worker_id);
+  std::string url = "http://" + worker_id + "/load";
   auto r = cpr::Post(
     cpr::Url { url },
     cpr::Body { request.dump() },

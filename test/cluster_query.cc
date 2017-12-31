@@ -31,14 +31,14 @@ class ClusterQuery : public testing::Test {
     ClusterQuery(int replicas = 1, int partitions = 8):
       cluster_config("{\"replication_factor\": " + std::to_string(replicas) + "}"),
       worker_configs {
-        {"worker1", util::Config("{\"hostname\": \"host1\", \"rack_id\": \"1\", \"http_port\": 5000}")},
-        {"worker2", util::Config("{\"hostname\": \"host1\", \"rack_id\": \"1\", \"http_port\": 5001}")},
-        {"worker3", util::Config("{\"hostname\": \"host2\", \"rack_id\": \"2\", \"http_port\": 5000}")},
-        {"worker4", util::Config("{\"hostname\": \"host2\", \"rack_id\": \"2\", \"http_port\": 5001}")},
-        {"worker5", util::Config("{\"hostname\": \"host3\", \"rack_id\": \"1\", \"http_port\": 5000}")},
-        {"worker6", util::Config("{\"hostname\": \"host3\", \"rack_id\": \"1\", \"http_port\": 5001}")},
-        {"worker7", util::Config("{\"hostname\": \"host4\", \"rack_id\": \"2\", \"http_port\": 5000}")},
-        {"worker8", util::Config("{\"hostname\": \"host4\", \"rack_id\": \"2\", \"http_port\": 5001}")}
+        {"host1:5000", util::Config("{\"hostname\": \"host1\", \"rack_id\": \"1\", \"http_port\": 5000}")},
+        {"host1:5001", util::Config("{\"hostname\": \"host1\", \"rack_id\": \"1\", \"http_port\": 5001}")},
+        {"host2:5000", util::Config("{\"hostname\": \"host2\", \"rack_id\": \"2\", \"http_port\": 5000}")},
+        {"host2:5001", util::Config("{\"hostname\": \"host2\", \"rack_id\": \"2\", \"http_port\": 5001}")},
+        {"host3:5000", util::Config("{\"hostname\": \"host3\", \"rack_id\": \"1\", \"http_port\": 5000}")},
+        {"host3:5001", util::Config("{\"hostname\": \"host3\", \"rack_id\": \"1\", \"http_port\": 5001}")},
+        {"host4:5000", util::Config("{\"hostname\": \"host4\", \"rack_id\": \"2\", \"http_port\": 5000}")},
+        {"host4:5001", util::Config("{\"hostname\": \"host4\", \"rack_id\": \"2\", \"http_port\": 5001}")}
       },
       partitions_num(partitions),
       partition_mapping(partitions),
@@ -138,7 +138,7 @@ TEST_F(ClusterQuery, MultipleColumns)
   cluster::ClusterQuery cluster_query(query, partitioning, plan);
   auto actual = cluster_query.target_workers();
 
-  std::vector<std::string> expected { "worker2", "worker6" };
+  std::vector<std::string> expected { "host1:5001", "host3:5001" };
   EXPECT_EQ(expected, actual);
 }
 
@@ -159,7 +159,7 @@ TEST_F(ClusterQuery, ValuesCombinations)
   cluster::ClusterQuery cluster_query(query, partitioning, plan);
   auto actual = cluster_query.target_workers();
 
-  std::vector<std::string> expected { "worker2", "worker1", "worker6", "worker5" };
+  std::vector<std::string> expected { "host1:5001", "host1:5000", "host3:5001", "host3:5000" };
   EXPECT_EQ(expected, actual);
 }
 
@@ -210,8 +210,8 @@ TEST_F(ClusterQuery2Replicas, MultipleColumns)
   cluster::ClusterQuery cluster_query(query, partitioning, plan);
   auto actual = cluster_query.target_workers();
 
-  std::vector<std::string> part1_workers {"worker2", "worker4"};
-  std::vector<std::string> part2_workers {"worker6", "worker8"};
+  std::vector<std::string> part1_workers {"host1:5001", "host2:5001"};
+  std::vector<std::string> part2_workers {"host3:5001", "host4:5001"};
 
   EXPECT_TRUE(std::find(part1_workers.begin(), part1_workers.end(), actual[0]) != part1_workers.end());
   EXPECT_TRUE(std::find(part2_workers.begin(), part2_workers.end(), actual[1]) != part2_workers.end());

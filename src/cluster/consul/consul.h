@@ -43,7 +43,7 @@ class Consul {
 
     std::unique_ptr<LeaderElector> ElectLeader(const Session& session, const std::string& key) const;
 
-    std::unique_ptr<Watch> WatchKey(const std::string& key) const;
+    std::unique_ptr<Watch> WatchKey(const std::string& key, bool recurse = false) const;
     std::vector<std::string> ListKeys(const std::string& key) const;
 
     std::string GetKey(const std::string& key, bool throw_if_not_exists = true,

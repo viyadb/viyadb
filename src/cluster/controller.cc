@@ -72,21 +72,23 @@ void Controller::ReadClusterConfig() {
   LOG(INFO)<<"Read "<<indexers_configs_.size()<<" indexers configurations";
 }
 
-bool Controller::ReadWorkersConfigs() {
+bool Controller::ReadWorkersConfigs(std::map<std::string, util::Config>& configs) {
+  configs.clear();
+
   auto active_workers = consul_.ListKeys("clusters/" + cluster_id_ + "/nodes/workers");
   auto workers_num = (size_t)cluster_config_.num("workers", config_.num("workers"));
+
   if (workers_num > 0 && active_workers.size() < workers_num) {
     LOG(INFO)<<"Number of active workers is less than the expected number of workers ("<<workers_num<<")";
     return false;
   }
-  LOG(INFO)<<"Found "<<active_workers.size()<<" active workers";
 
-  workers_configs_.clear();
+  LOG(INFO)<<"Found "<<active_workers.size()<<" active workers";
   for (auto& worker_id : active_workers) {
-    workers_configs_.emplace(worker_id, consul_.GetKey(
+    configs.emplace(worker_id, consul_.GetKey(
         "clusters/" + cluster_id_ + "/nodes/workers/" + worker_id, false, "{}"));
   }
-  LOG(INFO)<<"Read "<<workers_configs_.size()<<" workers configurations";
+  LOG(INFO)<<"Read "<<configs.size()<<" workers configurations";
   return true;
 }
 
@@ -206,14 +208,14 @@ bool Controller::ReadPlan() {
 
   json tables_plans = existing_plan["plan"];
   for (auto it = tables_plans.begin(); it != tables_plans.end(); ++it) {
-    tables_plans_.emplace(std::piecewise_construct, std::forward_as_tuple(it.key()),
-                          std::forward_as_tuple(it.value(), workers_configs_));
+    tables_plans_.emplace(it.key(), it.value());
   }
   return true;
 }
 
 bool Controller::GeneratePlan() {
-  while (!ReadWorkersConfigs()) {
+  std::map<std::string, util::Config> configs;
+  while (!ReadWorkersConfigs(configs)) {
     std::this_thread::sleep_for(std::chrono::seconds(10));
   }
 
@@ -223,7 +225,7 @@ bool Controller::GeneratePlan() {
 
   for (auto& it : tables_partitioning_) {
     tables_plans_.emplace(it.first, std::move(
-        plan_generator.Generate(it.second.total(), workers_configs_)));
+        plan_generator.Generate(it.second.total(), configs)));
   }
 
   LOG(INFO)<<"Storing partitioning plan to Consul";
@@ -237,11 +239,6 @@ bool Controller::GeneratePlan() {
 void Controller::StartHttpServer() {
   http_service_ = std::make_unique<http::Service>(*this);
   http_service_->Start();
-}
-
-std::string Controller::WorkerUrl(const std::string& worker_id) const {
-  auto& worker_config = workers_configs_.at(worker_id);
-  return "http://" + worker_config.str("hostname") + ":" + std::to_string(worker_config.num("http_port"));
 }
 
 }}

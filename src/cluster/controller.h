@@ -41,19 +41,18 @@ class Controller {
 
     const consul::Consul& consul() const { return consul_; }
     const util::Config& cluster_config() const { return cluster_config_; }
+    const std::string& cluster_id() const { return cluster_id_; }
     db::Database& db() { return db_; }
     const std::map<std::string, util::Config>& tables_configs() const { return tables_configs_; }
-    const std::map<std::string, util::Config>& workers_configs() const { return workers_configs_; }
     const std::map<std::string, util::Config>& indexers_configs() const { return indexers_configs_; }
     const std::map<std::string, std::unique_ptr<BatchInfo>>& indexers_batches() const { return indexers_batches_; }
     const std::map<std::string, Plan>& tables_plans() const { return tables_plans_; }
     const std::map<std::string, Partitioning>& tables_partitioning() const { return tables_partitioning_; }
-
-    std::string WorkerUrl(const std::string& worker_id) const;
+    bool leader() const { return le_->Leader(); }
 
   private:
     void ReadClusterConfig();
-    bool ReadWorkersConfigs();
+    bool ReadWorkersConfigs(std::map<std::string, util::Config>& configs);
     void FetchLatestBatchInfo();
     void Initialize();
     void InitializePartitioning();
@@ -74,7 +73,6 @@ class Controller {
     std::unique_ptr<util::Later> initializer_;
     std::unique_ptr<http::Service> http_service_;
     std::map<std::string, util::Config> tables_configs_;
-    std::map<std::string, util::Config> workers_configs_;
     std::map<std::string, util::Config> indexers_configs_;
     std::map<std::string, std::unique_ptr<BatchInfo>> indexers_batches_;
     std::map<std::string, Plan> tables_plans_;

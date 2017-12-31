@@ -46,10 +46,13 @@ void Service::ProcessQuery(const util::Config& query, ResponsePtr response, Requ
   if (target_workers.empty()) {
     *response<<"HTTP/1.1 201 OK\r\nContent-Length: 0\r\n\r\n";
   } else {
-    std::string worker_url = controller_.WorkerUrl(*target_workers.begin())
-      + request->path + (request->query_string.empty() ? "" : "?" + request->query_string);
+    std::ostringstream worker_url;
+    worker_url<<"http://"<<*target_workers.begin()<<request->path;
+    if (!request->query_string.empty()) {
+      worker_url<<"?"<<request->query_string;
+    }
     *response<<"HTTP/1.1 307 Temporary Redirect\r\n"
-      <<"Content-Length: 0\r\nLocation: "<<worker_url<<"\r\n\r\n";
+      <<"Content-Length: 0\r\nLocation: "<<worker_url.str()<<"\r\n\r\n";
   }
 }
 

@@ -23,29 +23,41 @@ namespace viya {
 namespace cluster {
 namespace consul {
 
-Watch::Watch(const Consul& consul, const std::string& key)
-  :consul_(consul),key_(consul.prefix() + "/" + key)
-   ,url_(consul_.url() + "/v1/kv/" + key_),index_(1) {
+Watch::Watch(const Consul& consul, const std::string& key, bool recurse):
+  consul_(consul),
+  key_(consul.prefix() + "/" + key),
+  recurse_(recurse),
+  url_(consul_.url() + "/v1/kv/" + key_),
+  index_(1) {
 }
 
-json Watch::LastChanges() {
+std::unique_ptr<json> Watch::LastChanges(int32_t timeout) {
   DLOG(INFO)<<"Opening blocking connection to URL: "<<url_;
+  cpr::Parameters params {{ "index", std::to_string(index_) }};
+  if (recurse_) {
+    params.AddParameter({ "recurse", "true" });
+  }
   auto r = cpr::Get(
     cpr::Url { url_ },
-    cpr::Parameters {{ "index", std::to_string(index_) }}
+    params,
+    cpr::Timeout { timeout }
   );
-  switch (r.status_code) {
-    case 200: break;
-    case 0:
-      throw std::runtime_error("Can't contact Consul (host is unreachable)");
-    case 404:
-      throw std::runtime_error("Key doesn't exist: " + key_);
-    default:
-      throw std::runtime_error("Can't watch key (" + r.text + ")");
+  std::unique_ptr<json> response {};
+  if (r.error.code != cpr::ErrorCode::OPERATION_TIMEDOUT) {
+    switch (r.status_code) {
+      case 200:
+        break;
+      case 0:
+        throw std::runtime_error("Can't contact Consul (host is unreachable)");
+      case 404:
+        throw std::runtime_error("Key doesn't exist: " + key_);
+      default:
+        throw std::runtime_error("Can't watch key (" + r.text + ")");
+    }
+    response = std::make_unique<json>(json::parse(r.text)[0].get<json>());
+    index_ = (*response)["ModifyIndex"].get<long>();
   }
-  json response = json::parse(r.text)[0].get<json>();
-  index_ = response["ModifyIndex"].get<long>();
-  return response;
+  return std::move(response);
 }
 
 }}}

@@ -18,6 +18,7 @@
 #define VIYA_CLUSTER_CONSUL_WATCH_H_
 
 #include <json.hpp>
+#include <memory>
 
 namespace viya {
 namespace cluster {
@@ -29,14 +30,15 @@ class Consul;
 
 class Watch {
   public:
-    Watch(const Consul& consul, const std::string& key);
+    Watch(const Consul& consul, const std::string& key, bool recurse = false);
     Watch(const Watch& other) = delete;
 
-    json LastChanges();
+    std::unique_ptr<json> LastChanges(int32_t timeout = 86400000L);
 
   private:
     const Consul& consul_;
     const std::string key_;
+    bool recurse_;
     const std::string url_;
     long index_;
 };
