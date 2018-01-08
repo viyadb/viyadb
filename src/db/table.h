@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 ViyaDB Group
+ * Copyright (c) 2017-present ViyaDB Group
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,6 @@
 
 namespace viya {
 namespace db {
-
-namespace util = viya::util;
 
 class Column;
 class Table;
@@ -68,6 +66,8 @@ class Table {
     SegmentStore* store() { return store_; }
     size_t segment_size() const { return segment_size_; }
     const std::vector<CardinalityGuard>& cardinality_guards() const { return cardinality_guards_; } 
+    void set_upsert_ctx(void* upsert_ctx) { upsert_ctx_ = upsert_ctx; }
+    void* upsert_ctx() { return upsert_ctx_; }
 
     void PrintMetadata(std::string&);
 
@@ -79,6 +79,7 @@ class Table {
     SegmentStore* store_;
     size_t segment_size_;
     std::vector<CardinalityGuard> cardinality_guards_;
+    void* upsert_ctx_;
 };
 
 }}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 ViyaDB Group
+ * Copyright (c) 2017-present ViyaDB Group
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,9 @@
 namespace viya {
 namespace input {
 
-Loader::Loader(const util::Config& config, const db::Table& table):
+Loader::Loader(const util::Config& config, db::Table& table):
   desc_(config, table),
+  table_(table),
   stats_(table.database().statsd(), table.name()) {
 
   cg::UpsertGenerator upsert_gen(desc_);
@@ -30,15 +31,17 @@ Loader::Loader(const util::Config& config, const db::Table& table):
   before_upsert_ = upsert_gen.BeforeFunction();
   after_upsert_ = upsert_gen.AfterFunction();
   upsert_ = upsert_gen.Function();
-  upsert_gen.SetupFunction()(desc_);
+
+  void* upsert_ctx = upsert_gen.SetupFunction()(desc_);
+  table.set_upsert_ctx(upsert_ctx);
 }
 
 void Loader::BeforeLoad() {
-  before_upsert_();
+  before_upsert_(table_.upsert_ctx());
 }
 
 db::UpsertStats Loader::AfterLoad() {
-  return after_upsert_();
+  return after_upsert_(table_.upsert_ctx());
 }
 
 }}

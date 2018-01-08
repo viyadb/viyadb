@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 ViyaDB Group
+ * Copyright (c) 2017-present ViyaDB Group
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ class Config {
     ~Config();
 
     bool exists(const char* key) const;
+    void erase(const char* key);
 
     Config sub(const char* key, bool return_empty = false) const;
     std::vector<Config> sublist(const char* key) const;

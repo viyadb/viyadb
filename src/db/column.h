@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 ViyaDB Group
+ * Copyright (c) 2017-present ViyaDB Group
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,10 +123,10 @@ class Column {
     virtual SortType sort_type() const = 0;
 
   private:
-    std::string name_;
-    std::string input_field_;
     Type type_;
     size_t index_;
+    std::string name_;
+    std::string input_field_;
 };
 
 class Dimension: public Column {

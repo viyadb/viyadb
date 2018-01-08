@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 ViyaDB Group
+ * Copyright (c) 2017-present ViyaDB Group
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,10 @@ namespace db = viya::db;
 Code RollupDefs::GenerateCode() const {
   Code code;
   code.AddHeaders({"util/time.h"});
-  code<<" namespace util = viya::util;\n";
   for (auto dimension : dimensions_) {
     if (dimension->dim_type() == db::Dimension::DimType::TIME) {
       auto dim_idx = std::to_string(dimension->index());
-      code<<" util::Time"<<std::to_string(dimension->num_type().size() * 8)<<" time"<<dim_idx<<";\n";
+      code<<" viya::util::Time"<<std::to_string(dimension->num_type().size() * 8)<<" time"<<dim_idx<<";\n";
       auto& rollup_rules = static_cast<const db::TimeDimension*>(dimension)->rollup_rules();
       for (size_t rule_idx = 0; rule_idx < rollup_rules.size(); ++rule_idx) {
         code<<dimension->num_type().cpp_type()<<" rollup_b"<<dim_idx<<"_"<<std::to_string(rule_idx)<<";\n";
@@ -55,8 +54,8 @@ Code RollupReset::GenerateCode() const {
         auto& rollup_rule = rollup_rules[rule_idx];
         auto after = rollup_rule.after();
 
-        code<<" rollup_b"<<dim_idx<<"_"<<std::to_string(rule_idx)
-          <<" = util::Duration(static_cast<util::TimeUnit>("
+        code<<prefix_<<"rollup_b"<<dim_idx<<"_"<<std::to_string(rule_idx)
+          <<" = viya::util::Duration(static_cast<viya::util::TimeUnit>("
           <<std::to_string(static_cast<int>(after.time_unit()))<<"), "
           <<std::to_string(after.count())<<").add_to((uint32_t) "<<ts_value<<", -1)";
 
@@ -79,8 +78,8 @@ Code TimestampRollup::GenerateCode() const {
     if (rule_idx > 0) {
       code<<" else ";
     }
-    code<<" if ("<<var_name_<<" < rollup_b"<<dim_idx<<"_"<<rule_idx<<") {\n";
-    code<<"  time"<<dim_idx<<".trunc<static_cast<util::TimeUnit>("
+    code<<" if ("<<var_name_<<" < "<<prefix_<<"rollup_b"<<dim_idx<<"_"<<rule_idx<<") {\n";
+    code<<"  "<<prefix_<<"time"<<dim_idx<<".trunc<static_cast<viya::util::TimeUnit>("
       <<static_cast<int>(rollup_rule.granularity().time_unit())<<")>();\n";
     code<<" }\n";
   }

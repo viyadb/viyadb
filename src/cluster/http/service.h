@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 ViyaDB Group
+ * Copyright (c) 2017-present ViyaDB Group
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 #define VIYA_CLUSTER_HTTP_SERVICE_H_
 
 #include <server_http.hpp>
+#include "cluster/query/aggregator.h"
 
 namespace viya { namespace cluster { class Controller; }}
 namespace viya { namespace util { class Config; }}
@@ -27,6 +28,7 @@ namespace cluster {
 namespace http {
 
 namespace util = viya::util;
+namespace query = viya::cluster::query;
 
 typedef SimpleWeb::Server<SimpleWeb::HTTP> HttpServer;
 typedef std::shared_ptr<HttpServer::Request> RequestPtr;
@@ -44,6 +46,7 @@ class Service {
 
   private:
     Controller& controller_;
+    query::Aggregator aggregator_;
     HttpServer server_;
 };
 

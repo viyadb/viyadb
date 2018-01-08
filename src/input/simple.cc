@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 ViyaDB Group
+ * Copyright (c) 2017-present ViyaDB Group
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,11 @@
 namespace viya {
 namespace input {
 
-SimpleLoader::SimpleLoader(const db::Table& table):
+SimpleLoader::SimpleLoader(db::Table& table):
   Loader(util::Config {}, table) {
 }
 
-SimpleLoader::SimpleLoader(const util::Config& config, const db::Table& table):
+SimpleLoader::SimpleLoader(const util::Config& config, db::Table& table):
   Loader(config, table) {
 }
 

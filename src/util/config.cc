@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 ViyaDB Group
+ * Copyright (c) 2017-present ViyaDB Group
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ namespace util {
 
 using json = nlohmann::json;
 
-Config::Config():conf_(new json()) {}
+Config::Config():conf_(new json({})) {}
 
 Config::Config(void* conf):conf_(conf) {}
 
@@ -33,7 +33,7 @@ Config::Config(const std::string& content) {
 }
 
 Config::Config(const Config& other):conf_(new json()) {
-  *reinterpret_cast<json*>(conf_) = *reinterpret_cast<json*>(other.conf_);
+  *static_cast<json*>(conf_) = *static_cast<json*>(other.conf_);
 }  
 
 Config::Config(Config&& other) {
@@ -42,7 +42,7 @@ Config::Config(Config&& other) {
 }  
 
 Config& Config::operator=(const Config& other) {
-  *reinterpret_cast<json*>(conf_) = *reinterpret_cast<json*>(other.conf_);
+  *static_cast<json*>(conf_) = *static_cast<json*>(other.conf_);
   return *this;
 }
 Config& Config::operator=(Config&& other) {
@@ -52,12 +52,17 @@ Config& Config::operator=(Config&& other) {
 }
 
 Config::~Config() {
-  delete reinterpret_cast<json*>(conf_);
+  delete static_cast<json*>(conf_);
 }
 
 bool Config::exists(const char* key) const {
-  json* j = reinterpret_cast<json*>(conf_);
+  json* j = static_cast<json*>(conf_);
   return !(j->find(key) == j->end());
+}
+
+void Config::erase(const char* key) {
+  json* j = static_cast<json*>(conf_);
+  j->erase(key);
 }
 
 void Config::ValidateKey(const char* key) const {
@@ -69,7 +74,7 @@ void Config::ValidateKey(const char* key) const {
 bool Config::boolean(const char* key) const {
   ValidateKey(key);
   try {
-    return (*reinterpret_cast<json*>(conf_))[key].get<bool>();
+    return (*static_cast<json*>(conf_))[key].get<bool>();
   } catch (std::exception& e) {
     throw std::invalid_argument(std::string(key) + ": " + e.what());
   }
@@ -80,20 +85,20 @@ bool Config::boolean(const char* key, bool default_value) const {
     return default_value;
   }
   try {
-    return (*reinterpret_cast<json*>(conf_))[key].get<bool>();
+    return (*static_cast<json*>(conf_))[key].get<bool>();
   } catch (std::exception& e) {
     throw std::invalid_argument(std::string(key) + ": " + e.what());
   }
 }
 
 void Config::set_boolean(const char* key, bool value) {
-  (*reinterpret_cast<json*>(conf_))[key] = value;
+  (*static_cast<json*>(conf_))[key] = value;
 }
 
 long Config::num(const char* key) const {
   ValidateKey(key);
   try {
-    return (*reinterpret_cast<json*>(conf_))[key].get<long>();
+    return (*static_cast<json*>(conf_))[key].get<long>();
   } catch (std::exception& e) {
     throw std::invalid_argument(std::string(key) + ": " + e.what());
   }
@@ -104,7 +109,7 @@ long Config::num(const char* key, long default_value) const {
     return default_value;
   }
   try {
-    return (*reinterpret_cast<json*>(conf_))[key].get<long>();
+    return (*static_cast<json*>(conf_))[key].get<long>();
   } catch (std::exception& e) {
     throw std::invalid_argument(std::string(key) + ": " + e.what());
   }
@@ -113,7 +118,7 @@ long Config::num(const char* key, long default_value) const {
 std::vector<long> Config::numlist(const char* key) const {
   ValidateKey(key);
   try {
-    return (*reinterpret_cast<json*>(conf_))[key].get<std::vector<long>>();
+    return (*static_cast<json*>(conf_))[key].get<std::vector<long>>();
   } catch (std::exception& e) {
     throw std::invalid_argument(std::string(key) + ": " + e.what());
   }
@@ -122,24 +127,24 @@ std::vector<long> Config::numlist(const char* key) const {
 std::vector<uint32_t> Config::numlist_uint32(const char* key) const {
   ValidateKey(key);
   try {
-    return (*reinterpret_cast<json*>(conf_))[key].get<std::vector<uint32_t>>();
+    return (*static_cast<json*>(conf_))[key].get<std::vector<uint32_t>>();
   } catch (std::exception& e) {
     throw std::invalid_argument(std::string(key) + ": " + e.what());
   }
 }
 
 void Config::set_num(const char* key, long value) {
-  (*reinterpret_cast<json*>(conf_))[key] = value;
+  (*static_cast<json*>(conf_))[key] = value;
 }
 
 void Config::set_numlist(const char* key, std::vector<long> value) {
-  (*reinterpret_cast<json*>(conf_))[key] = value;
+  (*static_cast<json*>(conf_))[key] = value;
 }
 
 std::string Config::str(const char* key) const {
   ValidateKey(key);
   try {
-    return (*reinterpret_cast<json*>(conf_))[key].get<std::string>();
+    return (*static_cast<json*>(conf_))[key].get<std::string>();
   } catch (std::exception& e) {
     throw std::invalid_argument(std::string(key) + ": " + e.what());
   }
@@ -150,7 +155,7 @@ std::string Config::str(const char* key, const char* default_value) const {
     return default_value;
   }
   try {
-    return (*reinterpret_cast<json*>(conf_))[key].get<std::string>();
+    return (*static_cast<json*>(conf_))[key].get<std::string>();
   } catch (std::exception& e) {
     throw std::invalid_argument(std::string(key) + ": " + e.what());
   }
@@ -159,7 +164,7 @@ std::string Config::str(const char* key, const char* default_value) const {
 std::vector<std::string> Config::strlist(const char* key) const {
   ValidateKey(key);
   try {
-    return (*reinterpret_cast<json*>(conf_))[key].get<std::vector<std::string>>();
+    return (*static_cast<json*>(conf_))[key].get<std::vector<std::string>>();
   } catch (std::exception& e) {
     throw std::invalid_argument(std::string(key) + ": " + e.what());
   }
@@ -170,18 +175,18 @@ std::vector<std::string> Config::strlist(const char* key, std::vector<std::strin
     return default_value;
   }
   try {
-    return (*reinterpret_cast<json*>(conf_))[key].get<std::vector<std::string>>();
+    return (*static_cast<json*>(conf_))[key].get<std::vector<std::string>>();
   } catch (std::exception& e) {
     throw std::invalid_argument(std::string(key) + ": " + e.what());
   }
 }
 
 void Config::set_str(const char* key, const char* value) {
-  (*reinterpret_cast<json*>(conf_))[key] = value;
+  (*static_cast<json*>(conf_))[key] = value;
 }
 
 void Config::set_strlist(const char* key, std::vector<std::string> value) {
-  (*reinterpret_cast<json*>(conf_))[key] = value;
+  (*static_cast<json*>(conf_))[key] = value;
 }
 
 Config Config::sub(const char* key, bool return_empty) const {
@@ -189,21 +194,21 @@ Config Config::sub(const char* key, bool return_empty) const {
     ValidateKey(key);
   }
   try {
-    return Config(new json((*reinterpret_cast<json*>(conf_))[key].get<json>()));
+    return Config(new json((*static_cast<json*>(conf_))[key].get<json>()));
   } catch (std::exception& e) {
     throw std::invalid_argument(std::string(key) + ": " + e.what());
   }
 }
 
 void Config::set_sub(const char* key, Config& sub) {
-  (*reinterpret_cast<json*>(conf_))[key] = *reinterpret_cast<json*>(sub.conf_);
+  (*static_cast<json*>(conf_))[key] = *static_cast<json*>(sub.conf_);
 }
 
 std::vector<Config> Config::sublist(const char* key) const {
   ValidateKey(key);
   try {
     std::vector<Config> result;
-    json* j = reinterpret_cast<json*>(conf_);
+    json* j = static_cast<json*>(conf_);
     if (j->find(key) != j->end()) {
       for (auto conf : (*j)[key]) {
         result.push_back(Config(new json(conf)));
@@ -216,7 +221,7 @@ std::vector<Config> Config::sublist(const char* key) const {
 }
 
 std::string Config::dump() const {
-  return reinterpret_cast<json*>(conf_)->dump(2);
+  return static_cast<json*>(conf_)->dump(2);
 }
 
 void* Config::json_ptr() const {
@@ -224,8 +229,8 @@ void* Config::json_ptr() const {
 }
 
 void Config::MergeFrom(const Config& other) {
-  auto this_json = reinterpret_cast<nlohmann::json*>(conf_);
-  auto other_json = reinterpret_cast<nlohmann::json*>(other.conf_);
+  auto this_json = static_cast<nlohmann::json*>(conf_);
+  auto other_json = static_cast<nlohmann::json*>(other.conf_);
   for (auto it = other_json->begin(); it != other_json->end(); ++it) {
     (*this_json)[it.key()] = it.value();
   }

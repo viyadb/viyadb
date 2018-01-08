@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 ViyaDB Group
+ * Copyright (c) 2017-present ViyaDB Group
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,10 +48,10 @@ class ValueParser: public db::ColumnVisitor {
     size_t& value_idx_;
 };
 
-using UpsertSetupFn = void (*)(const input::LoaderDesc&);
-using BeforeUpsertFn = void (*)();
-using AfterUpsertFn = db::UpsertStats (*)();
-using UpsertFn = void (*)(std::vector<std::string>&);
+using UpsertSetupFn = void* (*)(const input::LoaderDesc&);
+using BeforeUpsertFn = void (*)(void*);
+using AfterUpsertFn = db::UpsertStats (*)(void*);
+using UpsertFn = void (*)(void*, std::vector<std::string>&);
 
 class UpsertGenerator: public FunctionGenerator {
   public:
@@ -66,10 +66,12 @@ class UpsertGenerator: public FunctionGenerator {
     UpsertFn Function();
 
   private:
+    Code UpsertContextCode() const;
     Code SetupFunctionCode() const;
     Code CardinalityProtection() const;
     Code PartitionFilter() const;
     bool AddOptimize() const;
+    bool HasTimeDimension() const;
     Code OptimizeFunctionCode() const;
 
   private:

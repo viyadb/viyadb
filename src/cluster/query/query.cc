@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 ViyaDB Group
+ * Copyright (c) 2017-present ViyaDB Group
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <algorithm>
-#include <random>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/functional/hash.hpp>
 #include <glog/logging.h>
@@ -27,10 +26,11 @@
 #include "cluster/controller.h"
 #include "cluster/partitioning.h"
 #include "cluster/plan.h"
-#include "cluster/query.h"
+#include "cluster/query/query.h"
  
 namespace viya {
 namespace cluster {
+namespace query {
 
 namespace query = viya::query;
 
@@ -181,7 +181,7 @@ void ClusterQuery::FindTargetWorkers() {
 
   query::FilterFactory filter_factory;
   if (!query_.exists("filter")) {
-    throw std::runtime_error("Query filter must be provided");
+    throw std::runtime_error("query filter must be provided");
   }
   std::unique_ptr<query::Filter> filter(filter_factory.Create(query_.sub("filter")));
 
@@ -198,10 +198,8 @@ void ClusterQuery::FindTargetWorkers() {
   for (auto& partition : filter_analyzer.FindTargetPartitions()) {
     workers.insert(plan_.partitions_workers()[partition]);
   }
-  for (auto& partition_workers : workers) {
-    target_workers_.push_back(partition_workers[std::rand() % partition_workers.size()]);
-  }
+  std::copy(workers.begin(), workers.end(), std::back_inserter(target_workers_));
 }
 
-}}
+}}}
 

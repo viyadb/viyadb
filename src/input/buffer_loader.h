@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 ViyaDB Group
+ * Copyright (c) 2017-present ViyaDB Group
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef VIYA_INPUT_FILE_H_
-#define VIYA_INPUT_FILE_H_
+#ifndef VIYA_INPUT_BUFFER_LOADER_H_
+#define VIYA_INPUT_BUFFER_LOADER_H_
 
 #include "input/stats.h"
 #include "input/loader_desc.h"
@@ -28,23 +28,25 @@ namespace input {
 
 namespace util = viya::util;
 
-class FileLoader: public Loader {
+class BufferLoader: public Loader {
   public:
-    FileLoader(const util::Config& config, const db::Table& table);
-    FileLoader(const FileLoader&) = delete;
-    ~FileLoader();
+    BufferLoader(const util::Config&, db::Table&, const char*, size_t);
+    BufferLoader(const BufferLoader&) = delete;
+    virtual ~BufferLoader() {}
 
     void LoadData();
 
   protected:
-    void LoadTsv();
+    BufferLoader(const util::Config&, db::Table&);
 
   private:
-    int fd_;
-    char* buf_;
+    void LoadTsv();
+
+  protected:
+    const char* buf_;
     size_t buf_size_;
 };
 
 }}
 
-#endif // VIYA_INPUT_FILE_H_
+#endif // VIYA_INPUT_BUFFER_LOADER_H_

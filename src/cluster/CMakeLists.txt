@@ -13,4 +13,5 @@ target_link_libraries(viya_cluster
   ${Boost_IOSTREAMS_LIBRARY_RELEASE}
   ${CPR_LIBRARIES}
   ${RDKAFKA_LIBRARY}
-  cppkafka)
+  cppkafka
+  event)

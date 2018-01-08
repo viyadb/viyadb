@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 ViyaDB Group
+ * Copyright (c) 2017-present ViyaDB Group
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 #include <stdexcept>
 #include "db/database.h"
 #include "input/loader_factory.h"
-#include "input/file.h"
+#include "input/file_loader.h"
 #include "util/config.h"
 
 namespace viya {

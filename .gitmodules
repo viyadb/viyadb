@@ -39,3 +39,6 @@
 [submodule "third_party/cppkafka"]
 	path = third_party/cppkafka
 	url = https://github.com/mfontanini/cppkafka.git
+[submodule "third_party/libevent"]
+	path = third_party/libevent
+	url = https://github.com/libevent/libevent.git

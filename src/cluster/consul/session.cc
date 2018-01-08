@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 ViyaDB Group
+ * Copyright (c) 2017-present ViyaDB Group
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,7 +79,7 @@ void Session::Create() {
 }
 
 void Session::Renew() {
-  DLOG(INFO)<<"Renewing session '"<<id_<<"'";
+  //DLOG(INFO)<<"Renewing session '"<<id_<<"'";
   auto r = cpr::Put(
     cpr::Url { consul_.url() + "/v1/session/renew/" + id_ },
     cpr::Timeout { 3000L }

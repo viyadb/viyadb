@@ -19,7 +19,7 @@
 #include <random>
 #include "cluster/plan.h"
 #include "cluster/partitioning.h"
-#include "cluster/query.h"
+#include "cluster/query/query.h"
 #include "util/config.h"
 #include "util/crc32.h"
 
@@ -82,14 +82,15 @@ TEST_F(ClusterQuery, SimpleCondition)
         " \"metrics\": [\"revenue\"],"
         " \"filter\": {\"op\": \"eq\", \"column\": \"user\", \"value\": \"" + value + "\"}}");
 
-  cluster::ClusterQuery cluster_query(query, partitioning, plan);
+  cluster::query::ClusterQuery cluster_query(query, partitioning, plan);
   auto actual = cluster_query.target_workers();
 
   auto code = CalculateCode(std::vector<std::string> { value });
   auto& expected = plan.partitions_workers()[partitioning.mapping()[code]];
 
   EXPECT_EQ(actual.size(), 1);
-  EXPECT_EQ(expected, actual);
+  EXPECT_EQ(actual[0].size(), 1);
+  EXPECT_EQ(expected, actual[0]);
 }
 
 TEST_F(ClusterQuery, NonKeyFieldCondition)
@@ -107,14 +108,15 @@ TEST_F(ClusterQuery, NonKeyFieldCondition)
         "               {\"op\": \"eq\", \"column\": \"user\", \"value\": \"" + value + "\"},"
         "               {\"op\": \"ne\", \"column\": \"country\", \"value\": \"\"}]}}");
 
-  cluster::ClusterQuery cluster_query(query, partitioning, plan);
+  cluster::query::ClusterQuery cluster_query(query, partitioning, plan);
   auto actual = cluster_query.target_workers();
 
   auto code = CalculateCode(std::vector<std::string> { value });
   auto& expected = plan.partitions_workers()[partitioning.mapping()[code]];
 
   EXPECT_EQ(actual.size(), 1);
-  EXPECT_EQ(expected, actual);
+  EXPECT_EQ(actual[0].size(), 1);
+  EXPECT_EQ(expected, actual[0]);
 }
 
 TEST_F(ClusterQuery, MultipleColumns)
@@ -135,10 +137,10 @@ TEST_F(ClusterQuery, MultipleColumns)
         "               {\"op\": \"eq\", \"column\": \"user\", \"value\": \"b\"},"
         "               {\"op\": \"eq\", \"column\": \"date\", \"value\": \"2\"}]}]}}");
 
-  cluster::ClusterQuery cluster_query(query, partitioning, plan);
+  cluster::query::ClusterQuery cluster_query(query, partitioning, plan);
   auto actual = cluster_query.target_workers();
 
-  std::vector<std::string> expected { "host1:5001", "host3:5001" };
+  std::vector<std::vector<std::string>> expected {{"host1:5001"}, {"host3:5001"}};
   EXPECT_EQ(expected, actual);
 }
 
@@ -156,10 +158,10 @@ TEST_F(ClusterQuery, ValuesCombinations)
         "              {\"op\": \"in\", \"column\": \"user\", \"values\": [\"a\", \"b\"]},"
         "              {\"op\": \"in\", \"column\": \"date\", \"values\": [\"1\", \"2\"]}]}}");
 
-  cluster::ClusterQuery cluster_query(query, partitioning, plan);
+  cluster::query::ClusterQuery cluster_query(query, partitioning, plan);
   auto actual = cluster_query.target_workers();
 
-  std::vector<std::string> expected { "host1:5001", "host1:5000", "host3:5001", "host3:5000" };
+  std::vector<std::vector<std::string>> expected {{"host1:5001"}, {"host1:5000"}, {"host3:5001"}, {"host3:5000"}};
   EXPECT_EQ(expected, actual);
 }
 
@@ -176,16 +178,14 @@ TEST_F(ClusterQuery2Replicas, SimpleCondition)
         " \"metrics\": [\"revenue\"],"
         " \"filter\": {\"op\": \"eq\", \"column\": \"user\", \"value\": \"" + value + "\"}}");
 
-  cluster::ClusterQuery cluster_query(query, partitioning, plan);
+  cluster::query::ClusterQuery cluster_query(query, partitioning, plan);
   auto actual = cluster_query.target_workers();
 
   auto code = CalculateCode(std::vector<std::string> { value });
-
-  auto& workers = plan.partitions_workers()[partitioning.mapping()[code]];
-  EXPECT_EQ(workers.size(), 2);
+  auto& expected = plan.partitions_workers()[partitioning.mapping()[code]];
 
   EXPECT_EQ(actual.size(), 1);
-  EXPECT_TRUE(std::find(workers.begin(), workers.end(), actual[0]) != workers.end());
+  EXPECT_EQ(expected, actual[0]);
 }
 
 TEST_F(ClusterQuery2Replicas, MultipleColumns)
@@ -207,12 +207,12 @@ TEST_F(ClusterQuery2Replicas, MultipleColumns)
         "               {\"op\": \"eq\", \"column\": \"user\", \"value\": \"b\"},"
         "               {\"op\": \"eq\", \"column\": \"date\", \"value\": \"2\"}]}]}}");
 
-  cluster::ClusterQuery cluster_query(query, partitioning, plan);
+  cluster::query::ClusterQuery cluster_query(query, partitioning, plan);
   auto actual = cluster_query.target_workers();
 
-  std::vector<std::string> part1_workers {"host1:5001", "host2:5001"};
-  std::vector<std::string> part2_workers {"host3:5001", "host4:5001"};
-
-  EXPECT_TRUE(std::find(part1_workers.begin(), part1_workers.end(), actual[0]) != part1_workers.end());
-  EXPECT_TRUE(std::find(part2_workers.begin(), part2_workers.end(), actual[1]) != part2_workers.end());
+  std::vector<std::vector<std::string>> expected {
+    {"host1:5001", "host2:5001"},
+    {"host3:5001", "host4:5001"}
+  };
+  EXPECT_EQ(expected, actual);
 }

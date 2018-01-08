@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 ViyaDB Group
+ * Copyright (c) 2017-present ViyaDB Group
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,8 +48,8 @@ class RollupDefs: public CodeGenerator {
 
 class RollupReset: public CodeGenerator {
   public:
-    RollupReset(const std::vector<const db::Dimension*>& dimensions):
-      dimensions_(dimensions) {}
+    RollupReset(const std::vector<const db::Dimension*>& dimensions, const std::string& prefix = ""):
+      dimensions_(dimensions),prefix_(prefix) {}
 
     RollupReset(const RollupReset& other) = delete;
 
@@ -57,12 +57,13 @@ class RollupReset: public CodeGenerator {
 
   private:
     const std::vector<const db::Dimension*>& dimensions_;
+    const std::string prefix_;
 };
 
 class TimestampRollup: public CodeGenerator {
   public:
-    TimestampRollup(const db::TimeDimension* dimension, const std::string& var_name)
-      :dimension_(dimension),var_name_(var_name) {}
+    TimestampRollup(const db::TimeDimension* dimension, const std::string& var_name, const std::string& prefix = "")
+      :dimension_(dimension),var_name_(var_name),prefix_(prefix) {}
 
     TimestampRollup(const TimestampRollup& other) = delete;
 
@@ -71,6 +72,7 @@ class TimestampRollup: public CodeGenerator {
   private:
     const db::TimeDimension* dimension_;
     std::string var_name_;
+    const std::string prefix_;
 };
 
 }}

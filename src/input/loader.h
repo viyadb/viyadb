@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 ViyaDB Group
+ * Copyright (c) 2017-present ViyaDB Group
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 #ifndef VIYA_INPUT_LOADER_H_
 #define VIYA_INPUT_LOADER_H_
 
+#include "db/table.h"
 #include "input/loader_desc.h"
 #include "input/stats.h"
 #include "codegen/db/upsert.h"
@@ -28,7 +29,7 @@ namespace cg = viya::codegen;
 
 class Loader {
   public:
-    Loader(const util::Config& config, const db::Table& table);
+    Loader(const util::Config& config, db::Table& table);
     Loader(const Loader& other) = delete;
     virtual ~Loader() = default;
 
@@ -37,11 +38,12 @@ class Loader {
 
   protected:
     void BeforeLoad();
-    void Load(std::vector<std::string>& values) { upsert_(values); }
+    void Load(std::vector<std::string>& values) { upsert_(table_.upsert_ctx(), values); }
     db::UpsertStats AfterLoad();
 
   protected:
     const LoaderDesc desc_;
+    db::Table& table_;
     LoaderStats stats_;
     cg::BeforeUpsertFn before_upsert_;
     cg::AfterUpsertFn after_upsert_;

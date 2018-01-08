@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 ViyaDB Group
+ * Copyright (c) 2017-present ViyaDB Group
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,65 +15,26 @@
  */
 
 #include <algorithm>
-#include <sys/mman.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <cstdio>
 #include <cassert>
 #include <cstring>
-#include <glog/logging.h>
 #include "db/table.h"
 #include "db/database.h"
-#include "input/file.h"
 #include "util/config.h"
+#include "input/buffer_loader.h"
 
 namespace viya {
 namespace input {
 
-FileLoader::FileLoader(const util::Config& config, const db::Table& table):
-  Loader(config, table),
-  fd_(-1),buf_(nullptr),buf_size_(0L) {
-
-  auto& fname = desc_.fname();
-  fd_ = open(fname.c_str(), O_RDONLY);
-  if (fd_ == -1) {
-    throw std::runtime_error("File not accessible: " + fname);
-  }
-
-  struct stat fs;
-  if (fstat(fd_, &fs) == -1) {
-    throw std::runtime_error("Can't get file status: " + fname);
-  }
-  buf_size_ = fs.st_size;
-
-  buf_ = static_cast<char*>(mmap(NULL, buf_size_, PROT_READ, MAP_SHARED, fd_, 0));
-  if (buf_ == MAP_FAILED) {
-    throw std::runtime_error("Can't mmap() on file: " + fname);
-  }
-
-  if (madvise(buf_, buf_size_, MADV_WILLNEED | MADV_SEQUENTIAL) == -1) {
-    LOG(WARNING)<<"Can't madvise() on file: "<<fname;
-  }
+BufferLoader::BufferLoader(const util::Config& config, db::Table& table):
+  Loader(config, table),buf_(nullptr),buf_size_(0L) {
 }
 
-FileLoader::~FileLoader() {
-  if (fd_ != -1) {
-    if (close(fd_) == -1) {
-      LOG(WARNING)<<"Can't close() input file: "<<desc_.fname();
-    }
-  }
-  if (buf_ != nullptr) {
-    if (munmap(buf_, buf_size_) == -1) {
-      LOG(WARNING)<<"Can't munmap() input file: "<<desc_.fname();
-    }
-  }
+BufferLoader::BufferLoader(const util::Config& config, db::Table& table,
+                           const char* buf, size_t buf_size):
+  Loader(config, table),buf_(buf),buf_size_(buf_size) {
 }
 
-void FileLoader::LoadTsv() {
-  LOG(INFO)<<"Loading "<<desc_.fname()<<" into table: "<<desc_.table().name();
-
+void BufferLoader::LoadTsv() {
   static const size_t MAX_TUPLE_SIZE = 1024000;
   static char line[MAX_TUPLE_SIZE];
 
@@ -86,11 +47,11 @@ void FileLoader::LoadTsv() {
   }
 
   size_t line_num = 1;
-  char* buf_end = buf_ + buf_size_;
+  const char* buf_end = buf_ + buf_size_;
 
   // Read lines:
-  for(char* lstart = buf_; lstart < buf_end; ) {
-    char* lend = (char*) memchr(lstart, '\n', buf_end - lstart);
+  for(const char* lstart = buf_; lstart < buf_end; ) {
+    const char* lend = (const char*) memchr(lstart, '\n', buf_end - lstart);
     if (lend == NULL) {
       lend = buf_end;
     }
@@ -125,22 +86,21 @@ void FileLoader::LoadTsv() {
       ++line_num;
     } catch (std::exception& e) {
       throw std::runtime_error(
-        "reading TSV file at line " + std::to_string(line_num) +
-        " (" + std::string(e.what()) + ")");
+        "at line " + std::to_string(line_num) + " (" + std::string(e.what()) + ")");
     }
     ++stats_.total_recs;
     lstart = lend + 1;
   }
 }
 
-void FileLoader::LoadData() {
+void BufferLoader::LoadData() {
   stats_.OnBegin();
   BeforeLoad();
 
   if (desc_.format() == LoaderDesc::Format::TSV) {
     LoadTsv();
   } else {
-    throw std::runtime_error("Unknown input file format");
+    throw std::runtime_error("unknown input format (supported formats: TSV)");
   }
 
   stats_.upsert_stats = AfterLoad();

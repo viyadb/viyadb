@@ -33,14 +33,19 @@ execute_process(COMMAND
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cmake)
 
 include_directories(
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/fmt
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/json/src
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/Simple-Web-Server
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/CRoaring/cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/CRoaring/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cppkafka/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/src)
+  ${PROJECT_SOURCE_DIR}/third_party
+  ${PROJECT_SOURCE_DIR}/third_party/fmt
+  ${PROJECT_SOURCE_DIR}/third_party/json/src
+  ${PROJECT_SOURCE_DIR}/third_party/Simple-Web-Server
+  ${PROJECT_SOURCE_DIR}/third_party/CRoaring/cpp
+  ${PROJECT_SOURCE_DIR}/third_party/CRoaring/include
+  ${PROJECT_SOURCE_DIR}/third_party/cppkafka/include
+  ${PROJECT_SOURCE_DIR}/third_party/libevent/include
+  ${PROJECT_BINARY_DIR}/third_party/libevent/include
+  ${PROJECT_SOURCE_DIR}/src)
+
+link_directories(
+  ${PROJECT_BINARY_DIR}/third_party/libevent/lib)
 
 add_subdirectory(third_party)
 add_subdirectory(src)

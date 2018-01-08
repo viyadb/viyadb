@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 ViyaDB Group
+ * Copyright (c) 2017-present ViyaDB Group
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,20 @@
 #include <algorithm>
 #include <glog/logging.h>
 #include "sql/driver.h"
+#include "server/http/output.h"
 #include "cluster/http/service.h"
 #include "cluster/controller.h"
-#include "cluster/query.h"
+#include "cluster/query/query.h"
 
 namespace viya {
 namespace cluster {
 namespace http {
 
 namespace sql = viya::sql;
+namespace server = viya::server;
+namespace query = viya::cluster::query;
 
-Service::Service(Controller& controller):controller_(controller) {
+Service::Service(Controller& controller):controller_(controller),aggregator_(controller) {
   server_.config.port = controller.cluster_config().num("http_port", 5555);
   server_.config.reuse_address = true;
 }
@@ -38,16 +41,17 @@ void Service::SendError(ResponsePtr response, const std::string& error) {
 }
 
 void Service::ProcessQuery(const util::Config& query, ResponsePtr response, RequestPtr request) {
-  ClusterQuery cluster_query(query, controller_);
+  query::ClusterQuery cluster_query(query, controller_);
   auto target_workers = cluster_query.target_workers();
   if (target_workers.size() > 1) {
-    throw std::runtime_error("aggregation of results is not supported at the moment");
-  }
-  if (target_workers.empty()) {
+    server::http::ChunkedTsvOutput output(*response);
+    aggregator_.RunQuery(cluster_query, output);
+  } else if (target_workers.empty()) {
     *response<<"HTTP/1.1 201 OK\r\nContent-Length: 0\r\n\r\n";
   } else {
+    auto replicas = *target_workers.begin();
     std::ostringstream worker_url;
-    worker_url<<"http://"<<*target_workers.begin()<<request->path;
+    worker_url<<"http://"<<replicas[std::rand() % replicas.size()]<<request->path;
     if (!request->query_string.empty()) {
       worker_url<<"?"<<request->query_string;
     }

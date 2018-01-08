@@ -1,6 +1,7 @@
 enable_testing()
 
-include_directories(${TEST_SOURCE_DIR}/src
+include_directories(
+  ${TEST_SOURCE_DIR}/src
   ${gtest_SOURCE_DIR}/include
   ${gtest_SOURCE_DIR}
   ${Boost_INCLUDE_DIRS}

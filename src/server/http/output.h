@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 ViyaDB Group
+ * Copyright (c) 2017-present ViyaDB Group
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 #ifndef VIYA_SERVER_HTTP_OUTPUT_H_
 #define VIYA_SERVER_HTTP_OUTPUT_H_
 
-#include <sstream>
+#include <ostream>
 #include "query/output.h"
 
 namespace viya {

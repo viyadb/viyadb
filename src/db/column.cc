@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 ViyaDB Group
+ * Copyright (c) 2017-present ViyaDB Group
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -178,8 +178,9 @@ NumericType parse_value_metric_type(const util::Config& config, Metric::Aggregat
   return NumericType(type.substr(0, type.find("_")));
 }
 
-Column::Column(const util::Config& config, Type type, size_t index):type_(type),index_(index) {
-  name_ = config.str("name");
+Column::Column(const util::Config& config, Type type, size_t index)
+  :type_(type),index_(index),name_(config.str("name")) {
+
   util::check_legal_string("Column name", name_);
   if (config.exists("field")) {
     input_field_ = config.str("field");

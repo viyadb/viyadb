@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 ViyaDB Group
+ * Copyright (c) 2017-present ViyaDB Group
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,11 @@
 #ifndef VIYA_DB_SEGMENT_H_
 #define VIYA_DB_SEGMENT_H_
 
-#include <cstdio>
+#if ENABLE_PERSISTENCE
+# include <ostream>
+# include <istream>
+#endif
+
 #include "util/rwlock.h"
 
 namespace viya {
@@ -42,8 +46,8 @@ class SegmentBase {
     size_t capacity() const  { return capacity_; }
 
 #if ENABLE_PERSISTENCE
-    virtual size_t save(FILE* fp) = 0;
-    virtual size_t load(FILE* fp) = 0;
+    virtual void save(std::ostream&) = 0;
+    virtual void load(std::istream&) = 0;
 #endif
 
   protected:

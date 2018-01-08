@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 ViyaDB Group
+ * Copyright (c) 2017-present ViyaDB Group
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,8 @@ namespace util = viya::util;
 
 class SimpleLoader : public Loader {
   public:
-    SimpleLoader(const db::Table& table);
-    SimpleLoader(const util::Config& config, const db::Table& table);
+    SimpleLoader(db::Table& table);
+    SimpleLoader(const util::Config& config, db::Table& table);
     SimpleLoader(const SimpleLoader& other) = delete;
 
     void Load(std::initializer_list<std::vector<std::string>> rows);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 ViyaDB Group
+ * Copyright (c) 2017-present ViyaDB Group
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ class Bitset {
   using NumType = typename std::conditional<SizeBytes == 8, uint64_t, uint32_t>::type;
 
   public:
+    Bitset(NumType num):cardinality_(1L) { roaring_.add(num); }
     Bitset():cardinality_(0L) {}
 
     /**

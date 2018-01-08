@@ -1,5 +1,5 @@
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-set(CMAKE_DEBUG_POSTFIX "" CACHE STRING "Generate debug library name without a postfix.")
+set(CMAKE_DEBUG_POSTFIX "" CACHE STRING "disable postfix in debug libraries")
 
 include(cityhash.cmake)
 
@@ -12,7 +12,7 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/CRoaring/cpp
 )
 
-set(BUILD_STATIC ON CACHE BOOL "enable static CRoaring library" FORCE)
+set(BUILD_STATIC ON CACHE BOOL "croaring: build static library" FORCE)
 add_subdirectory(CRoaring)
 
 install(FILES
@@ -28,22 +28,22 @@ install(DIRECTORY fmt/fmt
 add_subdirectory(Simple-Web-Server EXCLUDE_FROM_ALL)
 add_subdirectory(googletest EXCLUDE_FROM_ALL)
 
-set(BUILD_CPR_TESTS OFF CACHE BOOL "disable cpr tests" FORCE)
-set(BUILD_TESTING OFF CACHE BOOL "disable url tests" FORCE)
-set(INSECURE_CURL ON CACHE BOOL "use insecure curl" FORCE)
+set(BUILD_CPR_TESTS OFF CACHE BOOL "cpr: disable tests" FORCE)
+set(BUILD_TESTING OFF CACHE BOOL "cpr: disable tests build" FORCE)
+set(INSECURE_CURL ON CACHE BOOL "cpr: use insecure curl" FORCE)
 add_subdirectory(cpr)
-
-#set(BUILD_ONLY "s3" CACHE STRING "AWS SDK enable modules: s3" FORCE)
-#set(CPP_STANDARD "17" CACHE STRING "AWS SDK use C++ standard: 17" FORCE)
-#set(ENABLE_TESTING OFF CACHE BOOL "AWS SDK disable testing" FORCE)
-#set(AUTORUN_UNIT_TESTS OFF CACHE BOOL "AWS SDK disable autorun tests" FORCE)
-#set(MINIMIZE_SIZE OFF CACHE BOOL "AWS SDK minimize size" FORCE)
-#set(BUILD_SHARED_LIBS OFF CACHE BOOL "AWS SDK disable shared libraries build" FORCE)
-#list(APPEND AWS_COMPILER_WARNINGS "-Wno-noexcept-type")
-#add_subdirectory(aws-sdk-cpp)
 
 include(librdkafka.cmake)
 
-set(CPPKAFKA_BUILD_SHARED OFF CACHE BOOL "build static cppkafka" FORCE)
+set(CPPKAFKA_BUILD_SHARED OFF CACHE BOOL "cppkafka: build static library" FORCE)
 add_subdirectory(cppkafka)
+
+set(BUILD_TESTING OFF CACHE BOOL "libevent: disable tests build")
+set(EVENT__DISABLE_BENCHMARK ON CACHE BOOL "libevent: disable benchmark")
+set(EVENT__DISABLE_OPENSSL ON CACHE BOOL "libevent: disable openssl")
+set(EVENT__DISABLE_REGRESS ON CACHE BOOL "libevent: disable regression tests")
+set(EVENT__DISABLE_SAMPLES ON CACHE BOOL "libevent: disable samples")
+set(EVENT__DISABLE_TESTS ON CACHE BOOL "libevent: disable tests")
+set(EVENT__DISABLE_THREAD_SUPPORT ON CACHE BOOL "libevent: disable threads")
+add_subdirectory(libevent)
 

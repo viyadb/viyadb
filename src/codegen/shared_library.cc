@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 ViyaDB Group
+ * Copyright (c) 2017-present ViyaDB Group
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ namespace viya {
 namespace codegen {
 
 SharedLibrary::SharedLibrary(const std::string& path):path_(path) {
-
   DLOG(INFO)<<"Opening shared library: "<<path;
   handle_ = dlopen(path.c_str(), RTLD_LAZY);
   if (handle_ == nullptr) {
@@ -33,6 +32,7 @@ SharedLibrary::SharedLibrary(const std::string& path):path_(path) {
 }
 
 SharedLibrary::~SharedLibrary() {
+  DLOG(INFO)<<"Closing shared library: "<<path_;
   if (handle_ != nullptr && dlclose(handle_) != 0) {
     std::terminate();
   }

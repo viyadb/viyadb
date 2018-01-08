@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 ViyaDB Group
+ * Copyright (c) 2017-present ViyaDB Group
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,21 +52,19 @@ Code DimensionsStruct::GenerateCode() const {
 
 #if ENABLE_PERSISTENCE
   // Save function:
-  code<<" size_t Save(FILE* fp) const {\n";
-  code<<"  size_t bytes = 0;\n";
+  code<<" void save(std::ostream& os) const {\n";
   for (auto* dim : dimensions_) {
-    code<<"  bytes += fwrite(&_"<<std::to_string(dim->index())<<", "<<std::to_string(dim->num_type().size())<<", 1, fp);\n";
+    code<<"  os.write(reinterpret_cast<const char*>(&_"<<std::to_string(dim->index())<<"), "
+      <<std::to_string(dim->num_type().size())<<");\n";
   }
-  code<<"  return bytes;\n";
   code<<" }\n";
 
   // Load function:
-  code<<" size_t Load(FILE* fp) {\n";
-  code<<"  size_t bytes = 0;\n";
+  code<<" void load(std::istream& is) {\n";
   for (auto* dim : dimensions_) {
-    code<<"  bytes += fread(&_"<<std::to_string(dim->index())<<", "<<std::to_string(dim->num_type().size())<<", 1, fp);\n";
+    code<<"  is.read(reinterpret_cast<char*>(&_"<<std::to_string(dim->index())<<"), "
+      <<std::to_string(dim->num_type().size())<<");\n";
   }
-  code<<"  return bytes;\n";
   code<<" }\n";
 #endif
 
@@ -171,25 +169,41 @@ Code MetricsStruct::GenerateCode() const {
 
 #if ENABLE_PERSISTENCE
   // Save function:
-  code<<" size_t Save(FILE* fp) const {\n";
-  code<<"  size_t bytes = 0;\n";
+  code<<" void save(std::ostream& os, char** buf, size_t& buf_size) const {\n";
   for (auto* metric : metrics_) {
-    if (metric->agg_type() != db::Metric::AggregationType::BITSET) {
-      code<<"  bytes += fwrite(&_"<<std::to_string(metric->index())<<", "<<std::to_string(metric->num_type().size())<<", 1, fp);\n";
+    std::string field = "_" + std::to_string(metric->index());
+    if (metric->agg_type() == db::Metric::AggregationType::BITSET) {
+      code<<"  {\n";
+      code<<"   size_t s = "<<field<<".size();\n";
+      code<<"   if (s > buf_size) { *buf = static_cast<char*>(realloc(*buf, s)); buf_size = s; }\n";
+      code<<"   "<<field<<".write(*buf);\n";
+      code<<"   os.write(reinterpret_cast<const char*>(&s), sizeof(size_t));\n";
+      code<<"   os.write(*buf, s);\n";
+      code<<"  }\n";
+    } else {
+      code<<"  os.write(reinterpret_cast<const char*>(&"<<field
+        <<"), "<<std::to_string(metric->num_type().size())<<");\n";
     }
   }
-  code<<"  return bytes;\n";
   code<<" }\n";
 
   // Load function:
-  code<<" size_t Load(FILE* fp) {\n";
-  code<<"  size_t bytes = 0;\n";
+  code<<" void load(std::istream& is, char** buf, size_t& buf_size) {\n";
   for (auto* metric : metrics_) {
-    if (metric->agg_type() != db::Metric::AggregationType::BITSET) {
-      code<<"  bytes += fread(&_"<<std::to_string(metric->index())<<", "<<std::to_string(metric->num_type().size())<<", 1, fp);\n";
+    std::string field = "_" + std::to_string(metric->index());
+    if (metric->agg_type() == db::Metric::AggregationType::BITSET) {
+      code<<"  {\n";
+      code<<"   size_t s;\n";
+      code<<"   is.read(reinterpret_cast<char*>(&s), sizeof(size_t));\n";
+      code<<"   if (s > buf_size) { *buf = static_cast<char*>(realloc(*buf, s)); buf_size = s; }\n";
+      code<<"   is.read(*buf, s);\n";
+      code<<"   "<<field<<".read(*buf);\n";
+      code<<"  }\n";
+    } else {
+      code<<"  is.read(reinterpret_cast<char*>(&"<<field
+        <<"), "<<std::to_string(metric->num_type().size())<<");\n";
     }
   }
-  code<<"  return bytes;\n";
   code<<" }\n";
 #endif
 
@@ -266,18 +280,24 @@ Code StoreDefs::GenerateCode() const {
   code<<" }\n";
 
 #if ENABLE_PERSISTENCE
-  code<<" void save(FILE* fp) {\n";
+  code<<" void save(std::ostream& os) {\n";
+  code<<"  char* buf = nullptr;\n";
+  code<<"  size_t buf_size = 0L;\n";
   code<<"  for (size_t i = 0; i < size_; ++i) {\n";
-  code<<"   d[i].Save(fp);\n";
-  code<<"   m[i].Save(fp);\n";
+  code<<"   d[i].save(os);\n";
+  code<<"   m[i].save(os, &buf, buf_size);\n";
   code<<"  }\n";
+  code<<"  if (buf != nullptr) { free(buf); }\n";
   code<<" }\n";
 
-  code<<" void load(FILE* fp) {\n";
+  code<<" void load(std::istream& is) {\n";
+  code<<"  char* buf = nullptr;\n";
+  code<<"  size_t buf_size = 0L;\n";
   code<<"  for (size_t i = 0; i < size_; ++i) {\n";
-  code<<"   d[i].Load(fp);\n";
-  code<<"   m[i].Load(fp);\n";
+  code<<"   d[i].load(is);\n";
+  code<<"   m[i].load(is, &buf, buf_size);\n";
   code<<"  }\n";
+  code<<"  if (buf != nullptr) { free(buf); }\n";
   code<<" }\n";
 #endif
 

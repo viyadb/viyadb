@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 ViyaDB Group
+ * Copyright (c) 2017-present ViyaDB Group
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,8 +53,11 @@ Database::~Database() {
 }
 
 void Database::CreateTable(const util::Config& table_conf) {
+  CreateTable(table_conf.str("name"), table_conf);
+}
+
+void Database::CreateTable(const std::string& name, const util::Config& table_conf) {
   folly::RWSpinLock::WriteHolder guard(lock_);
-  std::string name = table_conf.str("name");
   LOG(INFO)<<"Creating table: "<<name;
   auto it = tables_.find(name);
   if (it != tables_.end()) {
@@ -85,14 +88,13 @@ Table* Database::GetTable(const std::string& name) {
 }
 
 void Database::PrintMetadata(std::string& metadata) {
-  using json = nlohmann::json;
-  json meta;
-  meta["tables"] = json::array();
+  nlohmann::json meta;
+  meta["tables"] = nlohmann::json::array();
   {
     folly::RWSpinLock::ReadHolder guard(lock_);
     for (auto& it : tables_) {
       auto table = it.second;
-      json table_meta;
+      nlohmann::json table_meta;
       table_meta["name"] = table->name();
       meta["tables"].push_back(table_meta);
     }

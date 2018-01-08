@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 ViyaDB Group
+ * Copyright (c) 2017-present ViyaDB Group
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ class Database {
     ~Database();
 
     void CreateTable(const util::Config& table_conf);
+    void CreateTable(const std::string& name, const util::Config& table_conf);
     void DropTable(const std::string& name);
     Table* GetTable(const std::string& name);
 

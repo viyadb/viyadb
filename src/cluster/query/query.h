@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 ViyaDB Group
+ * Copyright (c) 2017-present ViyaDB Group
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,18 @@
  * limitations under the License.
  */
 
-#ifndef VIYA_CLUSTER_QUERY_H_
-#define VIYA_CLUSTER_QUERY_H_
+#ifndef VIYA_CLUSTER_QUERY_QUERY_H_
+#define VIYA_CLUSTER_QUERY_QUERY_H_
 
 #include <memory>
 #include <vector>
 #include "util/config.h"
 
+namespace viya { namespace cluster { class Controller; class Partitioning; class Plan; }}
+
 namespace viya {
 namespace cluster {
-
-class Controller;
-class Partitioning;
-class Plan;
+namespace query {
 
 namespace util = viya::util;
 
@@ -35,7 +34,8 @@ class ClusterQuery {
     ClusterQuery(const util::Config& query, const Controller& controller);
     ClusterQuery(const util::Config& query, const Partitioning& partitioning, const Plan& plan);
 
-    const std::vector<std::string>& target_workers() const { return target_workers_; }
+    const util::Config& query() const { return query_; }
+    const std::vector<std::vector<std::string>>& target_workers() const { return target_workers_; }
 
   private:
     void FindTargetWorkers();
@@ -44,9 +44,9 @@ class ClusterQuery {
     const util::Config& query_;
     const Partitioning& partitioning_;
     const Plan& plan_;
-    std::vector<std::string> target_workers_;
+    std::vector<std::vector<std::string>> target_workers_;
 };
 
-}}
+}}}
 
-#endif // VIYA_CLUSTER_QUERY_H_
+#endif // VIYA_CLUSTER_QUERY_QUERY_H_

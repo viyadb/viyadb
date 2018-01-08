@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 ViyaDB Group
+ * Copyright (c) 2017-present ViyaDB Group
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,6 @@ Code TableMetadata::GenerateCode() const {
 
   StoreDefs store_defs(table_);
   code<<store_defs.GenerateCode();
-
-  code<<"using json = nlohmann::json;\n";
 
   code<<"extern \"C\" void viya_table_metadata(db::Table& table, std::string& output) __attribute__((__visibility__(\"default\")));\n";
   code<<"extern \"C\" void viya_table_metadata(db::Table& table, std::string& output) {\n";
