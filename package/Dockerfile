@@ -3,6 +3,8 @@ from ubuntu:zesty
 MAINTAINER Michael Spector <michael@viyadb.com>
 LABEL Description="ViyaDB is in-memory analytical data store"
 
+ENV TERM=xterm
+
 ADD ubuntu-toolchain-r.list /etc/apt/sources.list.d/ubuntu-toolchain-r.list
 RUN apt-get update \
   && apt-get install -y --no-install-recommends --allow-unauthenticated \

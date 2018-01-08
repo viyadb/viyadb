@@ -17,7 +17,7 @@ will be created.
 
     vagrant ssh
 
-## Building viya
+## Building ViyaDB
 
     cd /viyadb
     mkdir build

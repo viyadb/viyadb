@@ -23,6 +23,9 @@ make -j4 install
 rm -rf \
   ${package_name}/lib/cmake \
   ${package_name}/lib/pkgconfig \
+  ${package_name}/lib/libevent*.a \
+  ${package_name}/lib/libcppkafka*.a \
+  ${package_name}/lib/libglog*.a \
   ${package_name}/include/curl \
   ${package_name}/bin/curl-config
 

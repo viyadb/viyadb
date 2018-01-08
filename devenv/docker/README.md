@@ -1,5 +1,5 @@
 
-Development environment vased on Vagrant.
+Development environment vased on Docker.
 
 ## Prerequisites
 
@@ -24,7 +24,7 @@ will be created.
 
     ./run.sh
 
-## Building viya
+## Building ViyaDB
 
     cd /viyadb
     mkdir build
