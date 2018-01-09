@@ -31,20 +31,52 @@ namespace util = viya::util;
 
 class ClusterQuery {
   public:
-    ClusterQuery(const util::Config& query, const Controller& controller);
-    ClusterQuery(const util::Config& query, const Partitioning& partitioning, const Plan& plan);
+    ClusterQuery(const util::Config& query):query_(query) {}
+    virtual ~ClusterQuery() {}
 
     const util::Config& query() const { return query_; }
+
+    virtual void Accept(class ClusterQueryVisitor& visitor) = 0;
+
+  protected:
+    const util::Config& query_;
+};
+
+class RemoteQuery : public ClusterQuery {
+  public:
+    RemoteQuery(const util::Config& query, const Controller& controller);
+    RemoteQuery(const util::Config& query, const Partitioning& partitioning, const Plan& plan);
+
     const std::vector<std::vector<std::string>>& target_workers() const { return target_workers_; }
+
+    void Accept(class ClusterQueryVisitor& visitor);
 
   private:
     void FindTargetWorkers();
 
   private:
-    const util::Config& query_;
     const Partitioning& partitioning_;
     const Plan& plan_;
     std::vector<std::vector<std::string>> target_workers_;
+};
+
+class LocalQuery : public ClusterQuery {
+  public:
+    LocalQuery(const util::Config& query):ClusterQuery(query) {}
+
+    void Accept(class ClusterQueryVisitor& visitor);
+};
+
+class ClusterQueryVisitor {
+  public:
+    virtual void Visit(const RemoteQuery* query __attribute__((unused))) {};
+    virtual void Visit(const LocalQuery* query __attribute__((unused))) {};
+};
+
+class ClusterQueryFactory {
+  public:
+    static std::unique_ptr<ClusterQuery> Create(
+      const util::Config& query, const Controller& controller);
 };
 
 }}}

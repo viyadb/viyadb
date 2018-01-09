@@ -21,6 +21,7 @@
 #include "cluster/http/service.h"
 #include "cluster/controller.h"
 #include "cluster/query/query.h"
+#include "cluster/query/aggregator.h"
 
 namespace viya {
 namespace cluster {
@@ -30,7 +31,7 @@ namespace sql = viya::sql;
 namespace server = viya::server;
 namespace query = viya::cluster::query;
 
-Service::Service(Controller& controller):controller_(controller),aggregator_(controller) {
+Service::Service(Controller& controller):controller_(controller) {
   server_.config.port = controller.cluster_config().num("http_port", 5555);
   server_.config.reuse_address = true;
 }
@@ -40,18 +41,22 @@ void Service::SendError(ResponsePtr response, const std::string& error) {
   *response<<"HTTP/1.1 400 Bad Request\r\nContent-Length: "<<error.size()<<"\r\n\r\n"<<error;
 }
 
-void Service::ProcessQuery(const util::Config& query, ResponsePtr response, RequestPtr request) {
-  query::ClusterQuery cluster_query(query, controller_);
-  auto target_workers = cluster_query.target_workers();
-  if (target_workers.size() > 1) {
-    server::http::ChunkedTsvOutput output(*response);
-    aggregator_.RunQuery(cluster_query, output);
-  } else if (target_workers.empty()) {
-    *response<<"HTTP/1.1 201 OK\r\nContent-Length: 0\r\n\r\n";
-  } else {
-    auto replicas = *target_workers.begin();
+void Service::ProcessQuery(util::Config& query, ResponsePtr response, RequestPtr request) {
+  auto params = request->parse_query_string();
+  if (params.find("header") != params.end()) {
+    query.set_boolean("header", true);
+  }
+
+  auto cluster_query = query::ClusterQueryFactory::Create(query, controller_);
+
+  server::http::ChunkedTsvOutput output(*response);
+  query::Aggregator aggregator(controller_, output);
+  cluster_query->Accept(aggregator);
+
+  auto& redirect_worker = aggregator.redirect_worker();
+  if (!redirect_worker.empty()) {
     std::ostringstream worker_url;
-    worker_url<<"http://"<<replicas[std::rand() % replicas.size()]<<request->path;
+    worker_url<<"http://"<<redirect_worker<<request->path;
     if (!request->query_string.empty()) {
       worker_url<<"?"<<request->query_string;
     }

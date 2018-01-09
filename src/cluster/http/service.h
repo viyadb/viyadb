@@ -18,7 +18,6 @@
 #define VIYA_CLUSTER_HTTP_SERVICE_H_
 
 #include <server_http.hpp>
-#include "cluster/query/aggregator.h"
 
 namespace viya { namespace cluster { class Controller; }}
 namespace viya { namespace util { class Config; }}
@@ -28,7 +27,6 @@ namespace cluster {
 namespace http {
 
 namespace util = viya::util;
-namespace query = viya::cluster::query;
 
 typedef SimpleWeb::Server<SimpleWeb::HTTP> HttpServer;
 typedef std::shared_ptr<HttpServer::Request> RequestPtr;
@@ -42,11 +40,10 @@ class Service {
 
   private:
     void SendError(ResponsePtr response, const std::string& error);
-    void ProcessQuery(const util::Config& query, ResponsePtr response, RequestPtr request);
+    void ProcessQuery(util::Config& query, ResponsePtr response, RequestPtr request);
 
   private:
     Controller& controller_;
-    query::Aggregator aggregator_;
     HttpServer server_;
 };
 

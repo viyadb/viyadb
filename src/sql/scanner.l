@@ -64,6 +64,7 @@ IN              { return token::IN; }
 BETWEEN         { return token::BETWEEN; }
 SHOW            { return token::SHOW; }
 TABLES          { return token::TABLES; }
+WORKERS         { return token::WORKERS; }
 COPY            { return token::COPY; }
 WITH            { return token::WITH; }
 FORMAT          { return token::FORMAT; }

@@ -3,6 +3,13 @@
 #include "sql/scanner.h"
 
 #define yylex driver.scanner_->yylex
+
+char* dup(const char* str) {
+  size_t len = strlen(str);
+  char* newstr = new char[len+1];
+  strncpy(newstr, str, len+1);
+  return newstr;
+}
 %}
 
 %code requires
@@ -33,7 +40,8 @@
 /* Tokens */
 %token TOK_EOF 0 "end of file"
 %token SELECT SEARCH FROM WHERE BY ORDER HAVING ASC DESC LIMIT
-%token AND OR NOT NE LE GE IN BETWEEN SHOW TABLES COPY WITH FORMAT TSV
+%token AND OR NOT NE LE GE IN BETWEEN SHOW TABLES WORKERS
+%token COPY WITH FORMAT TSV
 %token <sval> IDENTIFIER STRING FLOATVAL INTVAL
 
 /* Data types */
@@ -48,7 +56,7 @@
 
 /* Non-terminal types */
 %type <stmt> statement select_statement show_statement copy_statement
-%type <sval> table_name column_name string_literal filter_literal num_literal limit_opt copy_format
+%type <sval> table_name column_name string_literal filter_literal num_literal limit_opt copy_format show_what
 %type <jsonval> select_cols select_col filter_opt filter comp_filter relop_filter filter_literals
 %type <jsonval> having_opt orderby_opt orderby_cols orderby_col copy_opt copy_opts copy_opts_opt copy_source
 %type <jsonval> copy_cols_opt copy_cols
@@ -108,12 +116,17 @@ select_statement: SELECT select_cols FROM table_name filter_opt having_opt order
                   }
 ;
 
-show_statement: SHOW TABLES {
+show_statement: SHOW show_what {
                   $$ = new Statement(Statement::Type::QUERY);
                   auto& d = $$->descriptor();
                   d["type"] = "show";
-                  d["what"] = "tables";
+                  d["what"] = $2;
+                  delete[] $2;
                 }
+;
+
+show_what: TABLES  { $$ = dup("tables"); }
+         | WORKERS { $$ = dup("workers"); }
 ;
 
 copy_statement: COPY table_name copy_cols_opt FROM copy_source copy_opts_opt {
@@ -165,7 +178,7 @@ copy_opts: copy_opt
 copy_opt: FORMAT copy_format { $$ = new json {{"format", $2}}; delete[] $2; }
 ;
 
-copy_format: TSV { $$ = new char[4] {'t', 's', 'v', '\0'}; }
+copy_format: TSV { $$ = dup("tsv"); }
 ;
 
 filter_opt: WHERE filter { $$ = $2; }

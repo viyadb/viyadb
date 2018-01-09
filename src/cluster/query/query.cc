@@ -163,42 +163,57 @@ void FilterAnalyzer::Visit(const query::CompositeFilter* filter) {
 void FilterAnalyzer::Visit(const query::EmptyFilter* filter __attribute__((unused))) {
 }
 
-ClusterQuery::ClusterQuery(const util::Config& query, const Controller& controller):
-  ClusterQuery(
+RemoteQuery::RemoteQuery(const util::Config& query, const Controller& controller):
+  RemoteQuery(
     query,
     controller.tables_partitioning().at(query.str("table")),
     controller.tables_plans().at(query.str("table"))) {
 }
 
-ClusterQuery::ClusterQuery(const util::Config& query, const Partitioning& partitioning, const Plan& plan):
-  query_(query),partitioning_(partitioning),plan_(plan) {
+RemoteQuery::RemoteQuery(const util::Config& query, const Partitioning& partitioning, const Plan& plan):
+  ClusterQuery(query),partitioning_(partitioning),plan_(plan) {
 
   FindTargetWorkers();
 }
 
-void ClusterQuery::FindTargetWorkers() {
+void RemoteQuery::FindTargetWorkers() {
   target_workers_.clear();
 
-  query::FilterFactory filter_factory;
-  if (!query_.exists("filter")) {
-    throw std::runtime_error("query filter must be provided");
-  }
-  std::unique_ptr<query::Filter> filter(filter_factory.Create(query_.sub("filter")));
+  if (query_.exists("filter")) {
+    query::FilterFactory filter_factory;
+    std::unique_ptr<query::Filter> filter(filter_factory.Create(query_.sub("filter")));
 
-  std::vector<std::string> some_strings;
+    std::vector<std::string> some_strings;
 
-  struct Hash {
-    size_t operator() (const std::vector<std::string>& v) const {
-      return boost::hash_range(v.begin(), v.end());
+    struct Hash {
+      size_t operator() (const std::vector<std::string>& v) const {
+        return boost::hash_range(v.begin(), v.end());
+      }
+    };
+    std::unordered_set<std::vector<std::string>, Hash> workers;
+
+    FilterAnalyzer filter_analyzer(*filter, partitioning_);
+    for (auto& partition : filter_analyzer.FindTargetPartitions()) {
+      workers.insert(plan_.partitions_workers()[partition]);
     }
-  };
-  std::unordered_set<std::vector<std::string>, Hash> workers;
-
-  FilterAnalyzer filter_analyzer(*filter, partitioning_);
-  for (auto& partition : filter_analyzer.FindTargetPartitions()) {
-    workers.insert(plan_.partitions_workers()[partition]);
+    std::copy(workers.begin(), workers.end(), std::back_inserter(target_workers_));
   }
-  std::copy(workers.begin(), workers.end(), std::back_inserter(target_workers_));
+}
+
+void RemoteQuery::Accept(ClusterQueryVisitor& visitor) {
+  visitor.Visit(this);
+}
+
+void LocalQuery::Accept(ClusterQueryVisitor& visitor) {
+  visitor.Visit(this);
+}
+
+std::unique_ptr<ClusterQuery> ClusterQueryFactory::Create(
+  const util::Config& query, const Controller& controller) {
+  if (query.str("type") == "show") {
+    return std::move(std::make_unique<LocalQuery>(query));
+  }
+  return std::move(std::make_unique<RemoteQuery>(query, controller));
 }
 
 }}}

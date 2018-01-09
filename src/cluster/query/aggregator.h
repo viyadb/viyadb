@@ -20,6 +20,7 @@
 #include <vector>
 #include <functional>
 #include "util/config.h"
+#include "cluster/query/query.h"
 
 struct event_base;
 struct evhttp_request;
@@ -57,19 +58,25 @@ class MultiHttpClient {
     std::vector<evhttp_connection*> connections_;
 };
 
-class Aggregator {
+class Aggregator : public ClusterQueryVisitor {
   public:
-    Aggregator(Controller& controller);
+    Aggregator(Controller& controller, query::RowOutput& output);
 
-    void RunQuery(const ClusterQuery& cluster_query, query::RowOutput& output);
+    void Visit(const RemoteQuery* query);
+    void Visit(const LocalQuery* query);
+
+    const std::string& redirect_worker() const { return redirect_worker_; }
 
   protected:
     std::string CreateTempTable(const util::Config& worker_query);
-    util::Config CreateWorkerQuery(const ClusterQuery& cluster_query);
+    util::Config CreateWorkerQuery(const RemoteQuery* cluster_query);
     const std::string& SelectWorker(const std::vector<std::string>& workers);
+    void ShowWorkers();
 
   private:
     Controller& controller_;
+    query::RowOutput& output_;
+    std::string redirect_worker_;
 };
 
 }}}

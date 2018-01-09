@@ -95,7 +95,9 @@ std::vector<util::Config> Driver::ParseQueries(std::istream& stream) {
   Parse(stream);
   std::vector<util::Config> queries;
   for (auto stmt : stmts_) {
-    queries.emplace_back(new json(stmt->descriptor()));
+    if (stmt->type() == Statement::Type::QUERY) {
+      queries.emplace_back(new json(stmt->descriptor()));
+    }
   }
   return std::move(queries);
 }

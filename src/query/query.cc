@@ -151,9 +151,9 @@ Query* QueryFactory::Create(const util::Config& config, db::Database& database) 
     if (what == "tables") {
       return new ShowTablesQuery(database);
     }
-    throw std::invalid_argument("Can't show information on: " + what);
+    throw std::invalid_argument("don't know how to show " + what);
   }
-  throw std::invalid_argument("Unsupported query type: " + type);
+  throw std::invalid_argument("unsupported query type: " + type);
 }
 
 }}

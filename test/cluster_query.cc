@@ -82,8 +82,8 @@ TEST_F(ClusterQuery, SimpleCondition)
         " \"metrics\": [\"revenue\"],"
         " \"filter\": {\"op\": \"eq\", \"column\": \"user\", \"value\": \"" + value + "\"}}");
 
-  cluster::query::ClusterQuery cluster_query(query, partitioning, plan);
-  auto actual = cluster_query.target_workers();
+  cluster::query::RemoteQuery remote_query(query, partitioning, plan);
+  auto actual = remote_query.target_workers();
 
   auto code = CalculateCode(std::vector<std::string> { value });
   auto& expected = plan.partitions_workers()[partitioning.mapping()[code]];
@@ -108,8 +108,8 @@ TEST_F(ClusterQuery, NonKeyFieldCondition)
         "               {\"op\": \"eq\", \"column\": \"user\", \"value\": \"" + value + "\"},"
         "               {\"op\": \"ne\", \"column\": \"country\", \"value\": \"\"}]}}");
 
-  cluster::query::ClusterQuery cluster_query(query, partitioning, plan);
-  auto actual = cluster_query.target_workers();
+  cluster::query::RemoteQuery remote_query(query, partitioning, plan);
+  auto actual = remote_query.target_workers();
 
   auto code = CalculateCode(std::vector<std::string> { value });
   auto& expected = plan.partitions_workers()[partitioning.mapping()[code]];
@@ -137,8 +137,8 @@ TEST_F(ClusterQuery, MultipleColumns)
         "               {\"op\": \"eq\", \"column\": \"user\", \"value\": \"b\"},"
         "               {\"op\": \"eq\", \"column\": \"date\", \"value\": \"2\"}]}]}}");
 
-  cluster::query::ClusterQuery cluster_query(query, partitioning, plan);
-  auto actual = cluster_query.target_workers();
+  cluster::query::RemoteQuery remote_query(query, partitioning, plan);
+  auto actual = remote_query.target_workers();
 
   std::vector<std::vector<std::string>> expected {{"host1:5001"}, {"host3:5001"}};
   EXPECT_EQ(expected, actual);
@@ -158,8 +158,8 @@ TEST_F(ClusterQuery, ValuesCombinations)
         "              {\"op\": \"in\", \"column\": \"user\", \"values\": [\"a\", \"b\"]},"
         "              {\"op\": \"in\", \"column\": \"date\", \"values\": [\"1\", \"2\"]}]}}");
 
-  cluster::query::ClusterQuery cluster_query(query, partitioning, plan);
-  auto actual = cluster_query.target_workers();
+  cluster::query::RemoteQuery remote_query(query, partitioning, plan);
+  auto actual = remote_query.target_workers();
 
   std::vector<std::vector<std::string>> expected {{"host1:5001"}, {"host1:5000"}, {"host3:5001"}, {"host3:5000"}};
   EXPECT_EQ(expected, actual);
@@ -178,8 +178,8 @@ TEST_F(ClusterQuery2Replicas, SimpleCondition)
         " \"metrics\": [\"revenue\"],"
         " \"filter\": {\"op\": \"eq\", \"column\": \"user\", \"value\": \"" + value + "\"}}");
 
-  cluster::query::ClusterQuery cluster_query(query, partitioning, plan);
-  auto actual = cluster_query.target_workers();
+  cluster::query::RemoteQuery remote_query(query, partitioning, plan);
+  auto actual = remote_query.target_workers();
 
   auto code = CalculateCode(std::vector<std::string> { value });
   auto& expected = plan.partitions_workers()[partitioning.mapping()[code]];
@@ -207,8 +207,8 @@ TEST_F(ClusterQuery2Replicas, MultipleColumns)
         "               {\"op\": \"eq\", \"column\": \"user\", \"value\": \"b\"},"
         "               {\"op\": \"eq\", \"column\": \"date\", \"value\": \"2\"}]}]}}");
 
-  cluster::query::ClusterQuery cluster_query(query, partitioning, plan);
-  auto actual = cluster_query.target_workers();
+  cluster::query::RemoteQuery remote_query(query, partitioning, plan);
+  auto actual = remote_query.target_workers();
 
   std::vector<std::vector<std::string>> expected {
     {"host1:5001", "host2:5001"},

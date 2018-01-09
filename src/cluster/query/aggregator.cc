@@ -93,8 +93,8 @@ void MultiHttpClient::Await() {
   event_base_dispatch(event_base_);
 }
 
-Aggregator::Aggregator(Controller& controller)
-  :controller_(controller) {
+Aggregator::Aggregator(Controller& controller, query::RowOutput& output)
+  :controller_(controller),output_(output) {
 }
 
 const std::string& Aggregator::SelectWorker(const std::vector<std::string>& workers) {
@@ -138,8 +138,8 @@ std::string Aggregator::CreateTempTable(const util::Config& query) {
   return tmp_table;
 }
 
-util::Config Aggregator::CreateWorkerQuery(const ClusterQuery& cluster_query) {
-  util::Config worker_query = cluster_query.query();
+util::Config Aggregator::CreateWorkerQuery(const RemoteQuery* remote_query) {
+  util::Config worker_query = remote_query->query();
   worker_query.erase("header");
   worker_query.erase("having");
   worker_query.erase("sort");
@@ -148,8 +148,19 @@ util::Config Aggregator::CreateWorkerQuery(const ClusterQuery& cluster_query) {
   return worker_query;
 }
 
-void Aggregator::RunQuery(const ClusterQuery& cluster_query, query::RowOutput& output) {
-  auto worker_query = CreateWorkerQuery(cluster_query);
+void Aggregator::Visit(const RemoteQuery* remote_query) {
+  auto& target_workers = remote_query->target_workers();
+
+  if (target_workers.empty()) {
+    throw std::runtime_error("query must contain clustering key in its filter");
+  }
+
+  if (target_workers.size() == 1) {
+    redirect_worker_ = SelectWorker(target_workers[0]);
+    return;
+  }
+
+  auto worker_query = CreateWorkerQuery(remote_query);
 
   auto tmp_table = CreateTempTable(worker_query);
   util::ScopeGuard cleanup = [this, &tmp_table]() {
@@ -171,7 +182,7 @@ void Aggregator::RunQuery(const ClusterQuery& cluster_query, query::RowOutput& o
   });
 
   auto query_data = worker_query.dump();
-  for (auto& replicas : cluster_query.target_workers()) {
+  for (auto& replicas : target_workers) {
     auto& worker_id = SelectWorker(replicas);
     auto sep = worker_id.find(":");
     auto host = worker_id.substr(0, sep);
@@ -180,10 +191,27 @@ void Aggregator::RunQuery(const ClusterQuery& cluster_query, query::RowOutput& o
   }
   http_client.Await();
 
-  util::Config agg_query = cluster_query.query();
+  util::Config agg_query = remote_query->query();
   agg_query.set_str("table", tmp_table.c_str());
   agg_query.erase("filter");
-  controller_.db().Query(agg_query, output);
+  controller_.db().Query(agg_query, output_);
+}
+
+void Aggregator::ShowWorkers() {
+  query::RowOutput::Row workers;
+  // TODO: implement me
+  output_.Start();
+  output_.SendAsCol(workers);
+  output_.Flush();
+}
+
+void Aggregator::Visit(const LocalQuery* local_query) {
+  auto& query = local_query->query();
+  if (query.str("type") == "show" && query.str("what") == "workers") {
+    ShowWorkers();
+  } else {
+    controller_.db().Query(query, output_);
+  }
 }
 
 }}}
