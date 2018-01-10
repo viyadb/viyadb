@@ -12,8 +12,13 @@ ViyaDB is in-memory columnar analytical data store, featuring:
  * Dynamic period based rollup
  * REST API interface with intuitive JSON-based language
  * Basic SQL (DML) support
+ 
+## Quickstart
 
-For more information please visit the Website: http://viyadb.com
+ * Learn about ViyaDB through [Mobile Attribution Tracking Sample](http://viyadb.com/samples/#mobile-attribution-tracking)
+ * Read more on ViyaDB [Usage](http://viyadb.com/usage)
+ 
+For more information please visit the official Website: http://viyadb.com
 
 ## Building
 
