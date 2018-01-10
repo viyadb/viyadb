@@ -67,7 +67,7 @@ void Session::Create() {
   );
   if (r.status_code != 200) {
     if (r.status_code == 0) {
-      throw std::runtime_error("Can't contact Consul (host is unreachable)");
+      throw std::runtime_error("Can't contact Consul at: " + consul_.url() + " (host is unreachable)");
     }
     throw std::runtime_error("Can't register new session (" + r.text + ")");
   }
@@ -86,7 +86,7 @@ void Session::Renew() {
   );
 
   if (r.status_code == 0) {
-    LOG(WARNING)<<"Can't contact Consul (host is unreachable)";
+    LOG(WARNING)<<"Can't contact Consul at: "<<consul_.url()<<" (host is unreachable)";
   }
   else if (r.status_code == 404) {
     LOG(WARNING)<<"Session '"<<id_<<"' was invalidated externally";

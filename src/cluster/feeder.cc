@@ -54,7 +54,7 @@ void Feeder::Start() {
   }
 }
 
-void Feeder::LoadHistoricalData() {
+void Feeder::LoadHistoricalData(const std::string& target_worker) {
   std::vector<std::string> delete_paths;
   util::ScopeGuard cleanup = [&delete_paths]() { for (auto& path : delete_paths) fs::remove_all(path); };
 
@@ -69,6 +69,9 @@ void Feeder::LoadHistoricalData() {
 
         for (auto& part_it : partitions) {
           auto& worker_id = part_it.first;
+          if (!target_worker.empty() && worker_id != target_worker) {
+            continue;
+          }
           auto& partition = part_it.second;
 
           std::string target_path = Downloader::Fetch(prefix + "/part=" + std::to_string(partition));
@@ -82,21 +85,9 @@ void Feeder::LoadHistoricalData() {
   }
 }
 
-bool Feeder::ProcessMessage(const std::string& indexer_id, const Message& message) {
-  const MicroBatchInfo& mb_info = static_cast<const MicroBatchInfo&>(message);
+void Feeder::LoadMicroBatch(const MicroBatchInfo& mb_info, const std::string& target_worker) {
   std::vector<std::string> delete_paths;
   util::ScopeGuard cleanup = [&delete_paths]() { for (auto& path : delete_paths) fs::remove_all(path); };
-
-  uint32_t last_microbatch = 0L;
-  auto& indexers_batches = controller_.indexers_batches();
-  if (indexers_batches.size() > 0) {
-    last_microbatch = controller_.indexers_batches().at(indexer_id)->last_microbatch();
-  }
-
-  if (mb_info.id() <= last_microbatch) {
-    LOG(WARNING)<<"Skipping already processed micro batch: "<<mb_info.id();
-    return true;
-  }
 
   LOG(INFO)<<"Processing micro batch: "<<mb_info.id();
   for (auto& it : mb_info.tables_info()) {
@@ -108,10 +99,48 @@ bool Feeder::ProcessMessage(const std::string& indexer_id, const Message& messag
       if (target_path != path) {
         delete_paths.push_back(target_path);
       }
-      loader_.LoadFilesToAll(target_path, table_name, table_info);
+
+      if (target_worker.empty()) {
+        loader_.LoadFilesToAll(target_path, table_name, table_info);
+      } else {
+        loader_.LoadFiles(target_path, table_name, table_info, target_worker);
+      }
     }
   }
-  return false;
+}
+
+bool Feeder::IsNewMicroBatch(const std::string& indexer_id, const MicroBatchInfo& mb_info) {
+  uint32_t last_microbatch = 0L;
+  auto& indexers_batches = controller_.indexers_batches();
+  if (indexers_batches.size() > 0) {
+    last_microbatch = controller_.indexers_batches().at(indexer_id)->last_microbatch();
+  }
+  return mb_info.id() > last_microbatch;
+}
+
+bool Feeder::ProcessMessage(const std::string& indexer_id, const Message& message) {
+  auto& mb_info = static_cast<const MicroBatchInfo&>(message);
+
+  if (IsNewMicroBatch(indexer_id, mb_info)) {
+    LoadMicroBatch(mb_info);
+    return false;
+  }
+  LOG(WARNING)<<"Skipping already processed micro batch: "<<mb_info.id();
+  return true;
+}
+
+void Feeder::ReloadWorker(const std::string& worker_id) {
+  LoadHistoricalData(worker_id);
+
+  for (auto notifier : notifiers_) {
+    for (auto& message : notifier->GetAllMessages()) {
+      auto& mb_info = static_cast<const MicroBatchInfo&>(*message);
+
+      if (IsNewMicroBatch(notifier->indexer_id(), mb_info)) {
+        LoadMicroBatch(mb_info, worker_id);
+      }
+    }
+  }
 }
 
 }}

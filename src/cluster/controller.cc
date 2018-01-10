@@ -138,9 +138,7 @@ void Controller::InitializePartitioning() {
         // Take partitioning config from indexer responsible for that table:
         for (auto& indexer_it : indexers_configs_) {
           auto indexer_tables = indexer_it.second.strlist("tables");
-          if (std::find_if(indexer_tables.begin(), indexer_tables.end(), [&table_name](auto& t) {
-            return table_name == t;
-          }) != indexer_tables.end()) {
+          if (std::find(indexer_tables.begin(), indexer_tables.end(), table_name) != indexer_tables.end()) {
             auto batch_conf = indexer_it.second.sub("batch");
             if (batch_conf.exists("partitioning")) {
               partitioning = batch_conf.sub("partitioning");

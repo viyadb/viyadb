@@ -38,10 +38,17 @@ class MessageProcessor {
 
 class Notifier {
   public:
+    Notifier(const std::string& indexer_id):indexer_id_(indexer_id) {}
     virtual ~Notifier() = default;
+
+    const std::string indexer_id() const { return indexer_id_; }
+
     virtual void Listen(MessageProcessor& processor) = 0;
     virtual std::vector<std::unique_ptr<Message>> GetAllMessages() = 0;
     virtual std::unique_ptr<Message> GetLastMessage() = 0;
+
+  protected:
+    const std::string indexer_id_;
 };
 
 class NotifierFactory {

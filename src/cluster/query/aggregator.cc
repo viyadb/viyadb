@@ -15,7 +15,6 @@
  */
 
 #include <random>
-#include <evhttp.h>
 #include <glog/logging.h>
 #include <json.hpp>
 #include "db/table.h"
@@ -27,6 +26,7 @@
 #include "cluster/controller.h"
 #include "cluster/query/query.h"
 #include "cluster/query/aggregator.h"
+#include "cluster/query/client.h"
 
 namespace viya {
 namespace cluster {
@@ -36,69 +36,8 @@ using json = nlohmann::json;
 
 namespace input = viya::input;
 
-static void on_request_completed(evhttp_request *req, void *obj) {
-  static_cast<MultiHttpClient*>(obj)->OnRequestCompleted(req);
-}
-
-MultiHttpClient::MultiHttpClient(const std::function<void(const char*, size_t)> response_handler):
-  response_handler_(response_handler),requests_(0) {
-  event_base_ = event_base_new();
-}
-
-MultiHttpClient::~MultiHttpClient() {
-  for (auto conn : connections_) {
-    evhttp_connection_free(conn);
-  }
-  if (event_base_) {
-    event_base_free(event_base_);
-  }
-}
-
-void MultiHttpClient::OnRequestCompleted(evhttp_request* request) {
-  if (request->response_code != 200) {
-    throw std::runtime_error(
-      request->response_code_line ? request->response_code_line :
-      "wrong HTTP status (" + std::to_string(request->response_code) + ")");
-  }
-
-  auto buf_size = EVBUFFER_LENGTH(request->input_buffer);
-  auto buf = (char*) EVBUFFER_DATA(request->input_buffer);
-
-  response_handler_(buf, buf_size);
-
-  if (--requests_ == 0) {
-    event_base_loopbreak(event_base_);
-  }
-}
-
-void MultiHttpClient::Send(const std::string& host, uint16_t port, const std::string& path,
-                           const std::string& data) {
-
-  auto request = evhttp_request_new(on_request_completed, this);
-
-  evhttp_add_header(request->output_headers, "Content-Type", "application/json");
-  evbuffer_add(request->output_buffer, data.c_str(), data.size());
-
-  auto connection = evhttp_connection_base_new(event_base_, nullptr, host.c_str(), port);
-  connections_.push_back(connection);
-
-  int ret = evhttp_make_request(connection, request, EVHTTP_REQ_POST, path.c_str());
-  if (ret != 0) {
-    throw std::runtime_error("evhttp_make_request failed");
-  }
-  ++requests_;
-}
-
-void MultiHttpClient::Await() {
-  event_base_dispatch(event_base_);
-}
-
 Aggregator::Aggregator(Controller& controller, query::RowOutput& output)
   :controller_(controller),output_(output) {
-}
-
-const std::string& Aggregator::SelectWorker(const std::vector<std::string>& workers) {
-  return workers[std::rand() % workers.size()];
 }
 
 std::string Aggregator::CreateTempTable(const util::Config& query) {
@@ -156,7 +95,7 @@ void Aggregator::Visit(const RemoteQuery* remote_query) {
   }
 
   if (target_workers.size() == 1) {
-    redirect_worker_ = SelectWorker(target_workers[0]);
+    redirect_worker_ = target_workers[0][std::rand() % target_workers[0].size()];
     return;
   }
 
@@ -176,18 +115,18 @@ void Aggregator::Visit(const RemoteQuery* remote_query) {
   load_desc.set_str("format", "tsv");
   load_desc.set_strlist("columns", columns);
 
-  MultiHttpClient http_client([&load_desc, table](const char* buf, size_t buf_size) {
-    input::BufferLoader loader(load_desc, *table, buf, buf_size);
-    loader.LoadData();
+  WorkersClient http_client([&load_desc, table](const char* buf, size_t buf_size) {
+    if (buf_size > 0) {
+      input::BufferLoader loader(load_desc, *table, buf, buf_size);
+      loader.LoadData();
+    }
   });
 
   auto query_data = worker_query.dump();
   for (auto& replicas : target_workers) {
-    auto& worker_id = SelectWorker(replicas);
-    auto sep = worker_id.find(":");
-    auto host = worker_id.substr(0, sep);
-    auto port = worker_id.substr(sep+1);
-    http_client.Send(host, std::atoi(port.c_str()), "/query", query_data);
+    auto randomized_workers = replicas;
+    std::random_shuffle(randomized_workers.begin(), randomized_workers.end());
+    http_client.Send(randomized_workers, "/query", query_data);
   }
   http_client.Await();
 

@@ -50,9 +50,8 @@ class FilterAnalyzer : public query::FilterVisitor {
 
   private:
     bool IsKeyColumn(const std::string& col) {
-      return std::find_if(partitioning_.columns().begin(),
-                          partitioning_.columns().end(),
-                          [&col](auto& kc) { return col == kc; }) != partitioning_.columns().end();
+      return std::find(partitioning_.columns().begin(), partitioning_.columns().end(), col)
+        != partitioning_.columns().end();
     }
 
     void AddKeyValue(const std::string& col, const std::string& value) {

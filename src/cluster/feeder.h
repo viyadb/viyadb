@@ -36,10 +36,13 @@ class Feeder : public MessageProcessor {
     ~Feeder();
 
     bool ProcessMessage(const std::string& indexer_id, const Message& message);
+    void ReloadWorker(const std::string& worker_id);
 
   protected:
     void Start();
-    void LoadHistoricalData();
+    bool IsNewMicroBatch(const std::string& indexer_id, const MicroBatchInfo& mb_info);
+    void LoadHistoricalData(const std::string& target_worker = "");
+    void LoadMicroBatch(const MicroBatchInfo& mb_info, const std::string& target_worker = "");
 
   private:
     const Controller& controller_;

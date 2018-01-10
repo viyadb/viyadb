@@ -68,7 +68,7 @@ void Service::Register() {
   );
   if (r.status_code != 200) {
     if (r.status_code == 0) {
-      throw std::runtime_error("Can't contact Consul (host is unreachable)");
+      throw std::runtime_error("Can't contact Consul at: " + consul_.url() + " (host is unreachable)");
     }
     throw std::runtime_error("Can't register new service (" + r.text + ")");
   }

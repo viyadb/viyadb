@@ -18,13 +18,8 @@
 #define VIYA_CLUSTER_QUERY_AGGREGATOR_H_
 
 #include <vector>
-#include <functional>
 #include "util/config.h"
 #include "cluster/query/query.h"
-
-struct event_base;
-struct evhttp_request;
-struct evhttp_connection;
 
 namespace viya { namespace cluster { class Controller; }}
 namespace viya { namespace query { class RowOutput; }}
@@ -38,26 +33,6 @@ class ClusterQuery;
 namespace util = viya::util;
 namespace query = viya::query;
 
-class MultiHttpClient {
-  public:
-    MultiHttpClient(const std::function<void(const char*, size_t)> response_handler);
-    MultiHttpClient(const MultiHttpClient&) = delete;
-    ~MultiHttpClient();
-
-    void Send(const std::string& host, uint16_t port, const std::string& path,
-              const std::string& data);
-
-    void Await();
-
-    void OnRequestCompleted(evhttp_request* req);
-
-  private:
-    const std::function<void(const char*, size_t)> response_handler_;
-    int requests_;
-    event_base* event_base_;
-    std::vector<evhttp_connection*> connections_;
-};
-
 class Aggregator : public ClusterQueryVisitor {
   public:
     Aggregator(Controller& controller, query::RowOutput& output);
@@ -70,7 +45,6 @@ class Aggregator : public ClusterQueryVisitor {
   protected:
     std::string CreateTempTable(const util::Config& worker_query);
     util::Config CreateWorkerQuery(const RemoteQuery* cluster_query);
-    const std::string& SelectWorker(const std::vector<std::string>& workers);
     void ShowWorkers();
 
   private:

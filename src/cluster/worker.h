@@ -34,6 +34,7 @@ class Worker {
     void CreateKey() const;
 
   private:
+    const std::string id_;
     const util::Config& config_;
     const consul::Consul consul_;
     std::unique_ptr<consul::Session> session_;

@@ -41,7 +41,6 @@ class KafkaNotifier: public Notifier {
     std::map<uint32_t, int64_t> GetLatestOffsets(cppkafka::Consumer& consumer);
 
   private:
-    const std::string indexer_id_;
     const std::string brokers_;
     const std::string topic_;
     IndexerType indexer_type_;

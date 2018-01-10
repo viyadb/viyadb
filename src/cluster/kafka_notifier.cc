@@ -31,7 +31,7 @@ namespace cluster {
 
 KafkaNotifier::KafkaNotifier(const std::string& indexer_id,
                              const util::Config& config, IndexerType indexer_type):
-  indexer_id_(indexer_id),
+  Notifier(indexer_id),
   brokers_(config.str("channel")),
   topic_(config.str("queue")),
   indexer_type_(indexer_type) {

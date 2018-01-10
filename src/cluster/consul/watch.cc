@@ -48,7 +48,7 @@ std::unique_ptr<json> Watch::LastChanges(int32_t timeout) {
       case 200:
         break;
       case 0:
-        throw std::runtime_error("Can't contact Consul (host is unreachable)");
+        throw std::runtime_error("Can't contact Consul at: " + url_ + " (host is unreachable)");
       case 404:
         throw std::runtime_error("Key doesn't exist: " + key_);
       default:
