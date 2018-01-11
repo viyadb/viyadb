@@ -1,3 +1,5 @@
+<img src="http://viyadb.com/img/logo.svg" height="100px" />
+
 ViyaDB
 =======
 
