@@ -119,8 +119,7 @@ void ValueParser::Visit(const db::TimeDimension *dimension) {
                               "ctx->");
     code_ << ts_rollup.GenerateCode();
   } else if (!dimension->granularity().empty()) {
-    code_ << " ctx->time" << dim_idx
-          << ".trunc<static_cast<util::TimeUnit>("
+    code_ << " ctx->time" << dim_idx << ".trunc<static_cast<util::TimeUnit>("
           << static_cast<int>(dimension->granularity().time_unit())
           << ")>();\n";
   }
@@ -192,7 +191,8 @@ Code UpsertGenerator::UpsertContextCode() const {
     code << " " << struct_name << " card_dim_key" << dim_idx << ";\n";
 
     code << " std::unordered_map<" << struct_name << ","
-         << "util::Bitset<" << std::to_string(guard.dim()->num_type().size()) << ">"
+         << "util::Bitset<" << std::to_string(guard.dim()->num_type().size())
+         << ">"
          << "," << struct_name << "Hasher> card_stats" << dim_idx << ";\n";
   }
 

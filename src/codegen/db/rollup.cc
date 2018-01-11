@@ -28,9 +28,8 @@ Code RollupDefs::GenerateCode() const {
   for (auto dimension : dimensions_) {
     if (dimension->dim_type() == db::Dimension::DimType::TIME) {
       auto dim_idx = std::to_string(dimension->index());
-      code << " util::Time"
-           << std::to_string(dimension->num_type().size() * 8) << " time"
-           << dim_idx << ";\n";
+      code << " util::Time" << std::to_string(dimension->num_type().size() * 8)
+           << " time" << dim_idx << ";\n";
       auto &rollup_rules =
           static_cast<const db::TimeDimension *>(dimension)->rollup_rules();
       for (size_t rule_idx = 0; rule_idx < rollup_rules.size(); ++rule_idx) {
