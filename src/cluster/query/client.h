@@ -29,6 +29,8 @@ namespace viya {
 namespace cluster {
 namespace query {
 
+class WorkersStates;
+
 class WorkersToTry {
 public:
   WorkersToTry(const std::vector<std::string> &workers, size_t current = 0L)
@@ -46,7 +48,9 @@ private:
 class WorkersClient {
 public:
   WorkersClient(
+      WorkersStates &workers_states,
       const std::function<void(const char *, size_t)> response_handler);
+
   WorkersClient(const WorkersClient &) = delete;
   ~WorkersClient();
 
@@ -61,14 +65,16 @@ private:
             size_t data_size);
 
 private:
+  WorkersStates &workers_states_;
   const std::function<void(const char *, size_t)> response_handler_;
   int requests_;
   event_base *event_base_;
   std::vector<evhttp_connection *> connections_;
   std::unordered_map<const evhttp_request *, WorkersToTry *> requests_workers_;
 };
-}
-}
-}
+
+} // query namespace
+} // cluster namespace
+} // viya namespace
 
 #endif // VIYA_CLUSTER_QUERY_CLIENT_H_

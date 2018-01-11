@@ -90,7 +90,8 @@ public:
 private:
   const util::Config &cluster_config_;
 };
-}
-}
+
+} // namespace cluster
+} // namespace viya
 
 #endif // VIYA_CLUSTER_PLAN_H_

@@ -29,7 +29,8 @@ public:
   static int RunWithInput(const std::vector<std::string> &cmd,
                           const std::string &input);
 };
-}
-}
+
+} // namespace util
+} // namespace viya
 
 #endif // VIYA_UTIL_COMMAND_H

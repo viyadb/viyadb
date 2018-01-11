@@ -58,6 +58,7 @@ void LeaderElector::Start() {
     std::this_thread::sleep_for(std::chrono::milliseconds(10000));
   });
 }
-}
-}
-}
+
+} // namespace consul
+} // namespace cluster
+} // namespace viya

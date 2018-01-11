@@ -26,5 +26,6 @@ std::string get_hostname() {
   gethostname(hostname, HOST_NAME_MAX);
   return std::string(hostname);
 }
-}
-}
+
+} // namespace util
+} // namespace viya

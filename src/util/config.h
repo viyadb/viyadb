@@ -71,7 +71,8 @@ private:
 private:
   void *conf_;
 };
-}
-}
+
+} // namespace util
+} // namespace viya
 
 #endif /* VIYA_UTIL_CONFIG_H_ */

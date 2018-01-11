@@ -17,6 +17,7 @@
 #ifndef VIYA_CLUSTER_HTTP_SERVICE_H_
 #define VIYA_CLUSTER_HTTP_SERVICE_H_
 
+#include "cluster/query/worker_state.h"
 #include <server_http.hpp>
 
 namespace viya {
@@ -35,6 +36,7 @@ namespace cluster {
 namespace http {
 
 namespace util = viya::util;
+namespace query = viya::cluster::query;
 
 typedef SimpleWeb::Server<SimpleWeb::HTTP> HttpServer;
 typedef std::shared_ptr<HttpServer::Request> RequestPtr;
@@ -54,9 +56,11 @@ private:
 private:
   Controller &controller_;
   HttpServer server_;
+  query::WorkersStates workers_states_;
 };
-}
-}
-}
+
+} // namespace http
+} // namespace cluster
+} // namespace viya
 
 #endif // VIYA_CLUSTER_HTTP_SERVICE_H_

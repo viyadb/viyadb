@@ -35,5 +35,6 @@ std::string Code::str() const {
   ss << body_.str();
   return ss.str();
 }
-}
-}
+
+} // namespace codegen
+} // namespace viya

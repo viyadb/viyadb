@@ -166,5 +166,6 @@ std::unique_ptr<Message> KafkaNotifier::GetLastMessage() {
   }
   return std::move(last_message);
 }
-}
-}
+
+} // namespace cluster
+} // namespace viya

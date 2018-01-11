@@ -45,5 +45,6 @@ Notifier *NotifierFactory::Create(const std::string &indexer_id,
   }
   return notifier;
 }
-}
-}
+
+} // namespace cluster
+} // namespace viya

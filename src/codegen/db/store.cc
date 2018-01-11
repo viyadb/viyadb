@@ -102,6 +102,7 @@ Code MetricsStruct::GenerateCode() const {
   for (auto *metric : metrics_) {
     if (metric->agg_type() == db::Metric::AggregationType::BITSET) {
       code.AddHeaders({"util/bitset.h"});
+      code << "namespace util = viya::util;\n";
       break;
     }
   }
@@ -116,7 +117,7 @@ Code MetricsStruct::GenerateCode() const {
     auto &num_type = metric->num_type();
     code << " ";
     if (metric->agg_type() == db::Metric::AggregationType::BITSET) {
-      code << "Bitset<" << std::to_string(num_type.size()) << "> _"
+      code << "util::Bitset<" << std::to_string(num_type.size()) << "> _"
            << metric_idx;
     } else {
       code << num_type.cpp_type() << " _" << metric_idx << "=";

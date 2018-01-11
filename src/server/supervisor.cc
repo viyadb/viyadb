@@ -137,8 +137,7 @@ void Supervisor::Start() {
                          << std::to_string(status)
                          << "). Restarting it in a moment.";
 
-              auto &worker_conf = workers_[worker_idx].config;
-              StartWorker(worker_conf, workers_[worker_idx]);
+              StartWorker(workers_[worker_idx].config, workers_[worker_idx]);
             } else {
               LOG(ERROR) << "Worker #" << std::to_string(worker_idx)
                          << " failed too fast for "
@@ -176,6 +175,8 @@ util::Config Supervisor::PrepareWorkerConfig(const util::Config &config,
 
   auto port = config.num("http_port") + worker_idx;
   worker_config.set_num("http_port", port);
+  worker_config.erase("supervise");
+  worker_config.erase("workers");
   worker_config.set_str("id",
                         util::get_hostname() + ":" + std::to_string(port));
 

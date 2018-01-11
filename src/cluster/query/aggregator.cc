@@ -18,6 +18,7 @@
 #include "cluster/controller.h"
 #include "cluster/query/client.h"
 #include "cluster/query/query.h"
+#include "cluster/query/worker_state.h"
 #include "db/table.h"
 #include "input/buffer_loader.h"
 #include "query/output.h"
@@ -36,8 +37,10 @@ using json = nlohmann::json;
 
 namespace input = viya::input;
 
-Aggregator::Aggregator(Controller &controller, query::RowOutput &output)
-    : controller_(controller), output_(output) {}
+Aggregator::Aggregator(Controller &controller, WorkersStates &workers_states,
+                       query::RowOutput &output)
+    : controller_(controller), workers_states_(workers_states),
+      output_(output) {}
 
 std::string Aggregator::CreateTempTable(const util::Config &query) {
   std::string tmp_table = "query-" + std::to_string(std::rand());
@@ -121,7 +124,7 @@ void Aggregator::Visit(const RemoteQuery *remote_query) {
   load_desc.set_strlist("columns", columns);
 
   WorkersClient http_client(
-      [&load_desc, table](const char *buf, size_t buf_size) {
+      workers_states_, [&load_desc, table](const char *buf, size_t buf_size) {
         if (buf_size > 0) {
           input::BufferLoader loader(load_desc, *table, buf, buf_size);
           loader.LoadData();
@@ -158,6 +161,7 @@ void Aggregator::Visit(const LocalQuery *local_query) {
     controller_.db().Query(query, output_);
   }
 }
-}
-}
-}
+
+} // query namespace
+} // cluster namespace
+} // viya namespace

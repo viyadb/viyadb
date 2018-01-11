@@ -154,5 +154,6 @@ void Feeder::ReloadWorker(const std::string &worker_id) {
     }
   }
 }
-}
-}
+
+} // namespace cluster
+} // namespace viya

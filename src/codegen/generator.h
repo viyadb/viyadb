@@ -81,7 +81,8 @@ protected:
 private:
   std::string code_;
 };
-}
-};
+
+} // namespace codegen
+} // namespace viya
 
 #endif // VIYA_CODEGEN_GENERATOR_H_

@@ -52,7 +52,8 @@ private:
   const Controller &controller_;
   const std::string load_prefix_;
 };
-}
-}
+
+} // namespace cluster
+} // namespace viya
 
 #endif // VIYA_CLUSTER_CONFIGURATOR_H_

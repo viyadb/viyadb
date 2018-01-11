@@ -37,7 +37,6 @@ void Viyad::Start() {
 #ifdef __linux__
   SetCpuAffinity();
 #endif
-
   db::Database database(config_);
   http::Service http_service(config_, database);
 

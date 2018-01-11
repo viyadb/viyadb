@@ -115,5 +115,6 @@ void Statsd::Gauge(const std::string &key, int64_t value, float rate) const {
 void Statsd::Set(const std::string &key, int64_t value, float rate) const {
   Send(key, value, rate, "s");
 }
-}
-}
+
+} // namespace util
+} // namespace viya

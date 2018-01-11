@@ -71,5 +71,6 @@ Downloader &Downloader::Instance() {
 std::string Downloader::Fetch(const std::string &path) {
   return Instance().Download(path);
 }
-}
-}
+
+} // namespace cluster
+} // namespace viya

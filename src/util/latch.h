@@ -47,7 +47,8 @@ private:
   std::condition_variable cond_;
   size_t count_;
 };
-}
-}
+
+} // namespace util
+} // namespace viya
 
 #endif // VIYA_UTIL_LATCH_H_

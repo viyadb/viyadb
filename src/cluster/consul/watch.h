@@ -42,8 +42,9 @@ private:
   const std::string url_;
   long index_;
 };
-}
-}
-}
+
+} // namespace consul
+} // namespace cluster
+} // namespace viya
 
 #endif // VIYA_CLUSTER_CONSUL_WATCH_H_

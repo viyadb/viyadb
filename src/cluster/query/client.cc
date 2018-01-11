@@ -15,6 +15,7 @@
  */
 
 #include "cluster/query/client.h"
+#include "cluster/query/worker_state.h"
 #include <evhttp.h>
 
 namespace viya {
@@ -33,8 +34,10 @@ static void on_request_completed(evhttp_request *req, void *obj) {
 }
 
 WorkersClient::WorkersClient(
+    WorkersStates &workers_states,
     const std::function<void(const char *, size_t)> response_handler)
-    : response_handler_(response_handler), requests_(0) {
+    : workers_states_(workers_states), response_handler_(response_handler),
+      requests_(0) {
   event_base_ = event_base_new();
 }
 
@@ -82,6 +85,9 @@ void WorkersClient::Send(WorkersToTry *workers_to_try, const char *uri,
                          const char *data, size_t data_size) {
   while (true) {
     auto &worker_id = workers_to_try->Next();
+    if (workers_states_.IsFailing(worker_id)) {
+      continue;
+    }
     auto sep = worker_id.find(":");
     auto host = worker_id.substr(0, sep);
     auto port = worker_id.substr(sep + 1);
@@ -100,6 +106,7 @@ void WorkersClient::Send(WorkersToTry *workers_to_try, const char *uri,
       requests_workers_.insert(std::make_pair(request, workers_to_try));
       break;
     }
+    workers_states_.SetFailing(worker_id);
   }
 }
 
@@ -110,6 +117,7 @@ void WorkersClient::Send(const std::vector<std::string> &workers,
 }
 
 void WorkersClient::Await() { event_base_dispatch(event_base_); }
-}
-}
-}
+
+} // query namespace
+} // cluster namespace
+} // viya namespace

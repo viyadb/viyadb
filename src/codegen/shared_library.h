@@ -39,7 +39,8 @@ private:
   void *handle_;
   void *GetFunctionPtr(const std::string &name);
 };
-}
-}
+
+} // namespace codegen
+} // namespace viya
 
 #endif // VIYA_CODEGEN_SHARED_LIBRARY_H_

@@ -43,7 +43,8 @@ public:
   virtual Parser::token_type yylex(Parser::semantic_type *yylval,
                                    Parser::location_type *l, Driver &driver);
 };
-}
-}
+
+} // namespace sql
+} // namespace viya
 
 #endif // VIYA_SQL_SCANNER_H_

@@ -81,5 +81,6 @@ uint32_t Duration::add_to(uint32_t timestamp, int sign) const {
 uint64_t Duration::add_to(uint64_t timestamp, int sign) const {
   return add_to((uint32_t)(timestamp / 1000000L), sign) * 1000000L;
 }
-}
-}
+
+} // namespace util
+} // namespace viya

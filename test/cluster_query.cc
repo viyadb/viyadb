@@ -66,7 +66,7 @@ protected:
   uint32_t CalculateCode(const std::vector<std::string> &values) {
     uint32_t code = 0;
     for (auto &v : values) {
-      code = crc32(code, v);
+      code = util::crc32(code, v);
     }
     return code % partitions_num;
   }

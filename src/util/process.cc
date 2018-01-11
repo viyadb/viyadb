@@ -32,5 +32,6 @@ int Process::RunWithInput(const std::vector<std::string> &cmd,
   p.communicate(input.c_str(), input.size());
   return p.wait();
 }
-}
-}
+
+} // namespace util
+} // namespace viya

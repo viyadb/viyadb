@@ -68,7 +68,8 @@ public:
   static std::unique_ptr<Message> Create(const std::string &message,
                                          IndexerType indexer_type);
 };
-}
-}
+
+} // namespace cluster
+} // namespace viya
 
 #endif // VIYA_CLUSTER_NOTIFIER_H_

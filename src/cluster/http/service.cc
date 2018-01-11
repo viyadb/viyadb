@@ -53,7 +53,7 @@ void Service::ProcessQuery(util::Config &query, ResponsePtr response,
   auto cluster_query = query::ClusterQueryFactory::Create(query, controller_);
 
   server::http::ChunkedTsvOutput output(*response);
-  query::Aggregator aggregator(controller_, output);
+  query::Aggregator aggregator(controller_, workers_states_, output);
   cluster_query->Accept(aggregator);
 
   auto &redirect_worker = aggregator.redirect_worker();
@@ -100,6 +100,7 @@ void Service::Start() {
             << std::to_string(server_.config.port) << std::endl;
   server_.start();
 }
-}
-}
-}
+
+} // namespace http
+} // namespace cluster
+} // namespace viya

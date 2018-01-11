@@ -52,6 +52,7 @@ std::unique_ptr<json> Watch::LastChanges(int32_t timeout) {
   }
   return std::move(response);
 }
-}
-}
-}
+
+} // namespace consul
+} // namespace cluster
+} // namespace viya

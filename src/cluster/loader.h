@@ -66,7 +66,8 @@ private:
   const std::string load_prefix_;
   ThreadPool load_pool_;
 };
-}
-}
+
+} // namespace cluster
+} // namespace viya
 
 #endif // VIYA_CLUSTER_LOADER_H_

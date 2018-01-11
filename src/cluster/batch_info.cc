@@ -63,5 +63,6 @@ MicroBatchInfo::MicroBatchInfo(const json &message) : Message(message) {
     tables_info_.emplace(it.key(), it.value().get<json>());
   }
 }
-}
-}
+
+} // namespace cluster
+} // namespace viya

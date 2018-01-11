@@ -171,5 +171,6 @@ Plan PlanGenerator::Generate(
 
   return {partitions};
 }
-}
-}
+
+} // namespace cluster
+} // namespace viya

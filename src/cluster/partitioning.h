@@ -37,7 +37,8 @@ private:
   size_t total_;
   std::vector<std::string> columns_;
 };
-}
-}
+
+} // namespace cluster
+} // namespace viya
 
 #endif // VIYA_CLUSTER_PARTITIONING_H_

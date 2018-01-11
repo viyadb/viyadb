@@ -19,6 +19,8 @@
 
 #include <cstdint>
 #include <ctime>
+#include <mutex>
+#include <unordered_map>
 
 namespace viya {
 namespace cluster {
@@ -37,8 +39,21 @@ private:
   std::time_t last_update_;
   uint32_t refresh_sec_;
 };
-}
-}
-}
+
+class WorkersStates {
+public:
+  WorkersStates() {}
+
+  bool IsFailing(const std::string &worker_id);
+  void SetFailing(const std::string &worker_id);
+
+private:
+  std::unordered_map<std::string, WorkerState> states_;
+  std::mutex mutex_;
+};
+
+} // query namespace
+} // cluster namespace
+} // viya namespace
 
 #endif // VIYA_CLUSTER_QUERY_WORKER_STATE_H_

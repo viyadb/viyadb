@@ -25,7 +25,7 @@ namespace cluster {
 using json = nlohmann::json;
 
 Worker::Worker(const util::Config &config)
-    : id_(config_.str("id")), config_(config), consul_(config) {
+    : id_(config.str("id")), config_(config), consul_(config) {
   session_ = consul_.CreateSession(std::string("viyadb-worker"));
   CreateKey();
 }
@@ -34,14 +34,23 @@ void Worker::CreateKey() const {
   auto worker_key =
       "clusters/" + config_.str("cluster_id") + "/nodes/workers/" + id_;
 
-  util::Config worker_data = config_;
+  util::Config worker_data;
+  if (config_.exists("rack_id")) {
+    worker_data.set_str("rack_id", config_.str("rack_id"));
+  }
+  if (config_.exists("cpu_list")) {
+    worker_data.set_numlist("cpu_list", config_.numlist("cpu_list"));
+  }
+  worker_data.set_num("http_port", config_.num("http_port"));
   worker_data.set_str("hostname", util::get_hostname());
+  worker_data.set_str("id", id_);
 
   while (!session_->EphemeralKey(worker_key, worker_data.dump())) {
-    LOG(WARNING)
-        << "The worker key is still locked by the previous process... waiting";
+    LOG(WARNING) << "The worker key is still locked by the previous "
+                    "process... waiting";
     std::this_thread::sleep_for(std::chrono::milliseconds(10000));
   }
 }
-}
-}
+
+} // namespace cluster
+} // namespace viya

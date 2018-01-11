@@ -194,5 +194,6 @@ void Loader::ListFiles(const std::string &path,
     ++it;
   }
 }
-}
-}
+
+} // namespace cluster
+} // namespace viya

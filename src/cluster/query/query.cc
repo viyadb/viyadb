@@ -33,6 +33,7 @@ namespace cluster {
 namespace query {
 
 namespace query = viya::query;
+namespace util = viya::util;
 
 class FilterAnalyzer : public query::FilterVisitor {
   using ColumnsValues = std::unordered_map<std::string, std::string>;
@@ -94,7 +95,7 @@ std::vector<uint32_t> FilterAnalyzer::FindTargetPartitions() {
     // Calculate the hash code for the key's columns values:
     uint32_t code = 0;
     for (auto &col : key_cols) {
-      code = crc32(code, col_values.at(col));
+      code = util::crc32(code, col_values.at(col));
     }
     code = code % partitioning_.total();
     // Add target partition number to the result list:
@@ -217,6 +218,7 @@ ClusterQueryFactory::Create(const util::Config &query,
   }
   return std::move(std::make_unique<RemoteQuery>(query, controller));
 }
-}
-}
-}
+
+} // query namespace
+} // cluster namespace
+} // viya namespace

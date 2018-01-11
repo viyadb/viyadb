@@ -42,7 +42,8 @@ public:
 private:
   std::function<void()> f;
 };
-}
-}
+
+} // namespace util
+} // namespace viya
 
 #endif // VIYA_UTIL_SCOPE_GUARD_H_

@@ -62,8 +62,9 @@ private:
   std::string url_;
   std::string prefix_;
 };
-}
-}
-}
+
+} // namespace consul
+} // namespace cluster
+} // namespace viya
 
 #endif // VIYA_CLUSTER_CONSUL_CONSUL_H_

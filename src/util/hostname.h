@@ -23,7 +23,8 @@ namespace viya {
 namespace util {
 
 std::string get_hostname();
-}
-}
+
+} // namespace util
+} // namespace viya
 
 #endif // VIYA_UTIL_HOSTNAME_H_

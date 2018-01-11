@@ -263,5 +263,6 @@ void Controller::StartHttpServer() {
   http_service_ = std::make_unique<http::Service>(*this);
   http_service_->Start();
 }
-}
-}
+
+} // namespace cluster
+} // namespace viya

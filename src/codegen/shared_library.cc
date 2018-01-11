@@ -50,5 +50,6 @@ void *SharedLibrary::GetFunctionPtr(const std::string &name) {
   }
   return res;
 }
-}
-}
+
+} // namespace codegen
+} // namespace viya

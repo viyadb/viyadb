@@ -77,7 +77,8 @@ private:
   std::atomic<bool> running_;
   std::thread thread_;
 };
-}
-}
+
+} // namespace util
+} // namespace viya
 
 #endif // VIYA_UTIL_SCHEDULE_H_

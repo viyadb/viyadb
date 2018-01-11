@@ -20,6 +20,9 @@
 #include <roaring64map.hh>
 #include <type_traits>
 
+namespace viya {
+namespace util {
+
 template <int SizeBytes> class Bitset {
   using RoaringType =
       typename std::conditional<SizeBytes == 8, Roaring64Map, Roaring>::type;
@@ -62,5 +65,8 @@ private:
   NumType cardinality_;
   RoaringType roaring_;
 };
+
+} // namespace util
+} // namespace viya
 
 #endif // VIYA_UTIL_BITSET_H_

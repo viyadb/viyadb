@@ -103,5 +103,6 @@ std::vector<util::Config> Driver::ParseQueries(std::istream &stream) {
 void Driver::AddStatement(Statement *stmt) { stmts_.push_back(stmt); }
 
 void Driver::AddError(const std::string &error) { errors_.push_back(error); }
-}
-}
+
+} // namespace sql
+} // namespace viya

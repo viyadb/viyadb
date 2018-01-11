@@ -54,7 +54,8 @@ private:
   const S3Downloader s3_downloader_;
   const FSDownloader fs_downloader_;
 };
-}
-}
+
+} // namespace cluster
+} // namespace viya
 
 #endif // VIYA_CLUSTER_DOWNLOADER_H_

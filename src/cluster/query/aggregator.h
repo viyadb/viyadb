@@ -37,13 +37,15 @@ namespace cluster {
 namespace query {
 
 class ClusterQuery;
+class WorkersStates;
 
 namespace util = viya::util;
 namespace query = viya::query;
 
 class Aggregator : public ClusterQueryVisitor {
 public:
-  Aggregator(Controller &controller, query::RowOutput &output);
+  Aggregator(Controller &controller, WorkersStates &workers_states,
+             query::RowOutput &output);
 
   void Visit(const RemoteQuery *query);
   void Visit(const LocalQuery *query);
@@ -57,11 +59,13 @@ protected:
 
 private:
   Controller &controller_;
+  WorkersStates &workers_states_;
   query::RowOutput &output_;
   std::string redirect_worker_;
 };
-}
-}
-}
+
+} // query namespace
+} // cluster namespace
+} // viya namespace
 
 #endif // VIYA_CLUSTER_QUERY_AGGREGATOR_H_

@@ -120,7 +120,7 @@ void ValueParser::Visit(const db::TimeDimension *dimension) {
     code_ << ts_rollup.GenerateCode();
   } else if (!dimension->granularity().empty()) {
     code_ << " ctx->time" << dim_idx
-          << ".trunc<static_cast<viya::util::TimeUnit>("
+          << ".trunc<static_cast<util::TimeUnit>("
           << static_cast<int>(dimension->granularity().time_unit())
           << ")>();\n";
   }
@@ -192,7 +192,7 @@ Code UpsertGenerator::UpsertContextCode() const {
     code << " " << struct_name << " card_dim_key" << dim_idx << ";\n";
 
     code << " std::unordered_map<" << struct_name << ","
-         << "Bitset<" << std::to_string(guard.dim()->num_type().size()) << ">"
+         << "util::Bitset<" << std::to_string(guard.dim()->num_type().size()) << ">"
          << "," << struct_name << "Hasher> card_stats" << dim_idx << ";\n";
   }
 
@@ -207,7 +207,7 @@ Code UpsertGenerator::UpsertContextCode() const {
 
   for (auto *metric : table.metrics()) {
     if (metric->agg_type() == db::Metric::AggregationType::BITSET) {
-      code << "Bitset<" << std::to_string(metric->num_type().size())
+      code << "util::Bitset<" << std::to_string(metric->num_type().size())
            << "> empty_bitset" << std::to_string(metric->index()) << ";\n";
     }
   }
@@ -237,6 +237,7 @@ Code UpsertGenerator::SetupFunctionCode() const {
   }
 
   code << "namespace input = viya::input;\n";
+  code << "namespace util = viya::util;\n";
 
   StoreDefs store_defs(table);
   code << store_defs.GenerateCode();
@@ -366,7 +367,7 @@ Code UpsertGenerator::CardinalityProtection() const {
     code << " auto it = ctx->card_stats" << dim_idx << ".find(ctx->card_dim_key"
          << dim_idx << ");\n";
     code << " if (it == ctx->card_stats" << dim_idx << ".end()) {\n";
-    code << "  Bitset<" << std::to_string(guard.dim()->num_type().size())
+    code << "  util::Bitset<" << std::to_string(guard.dim()->num_type().size())
          << "> bitset;\n";
     code << "  bitset.add(ctx->upsert_dims._" << dim_idx << ");\n";
     code << "  ctx->card_stats" << dim_idx << ".emplace(ctx->card_dim_key"
@@ -401,7 +402,7 @@ Code UpsertGenerator::PartitionFilter() const {
       code << " {\n";
       code << "  auto& value = values[" << tuple_idx_map[dim->index()]
            << "];\n";
-      code << "  hash = crc32(hash, value);\n";
+      code << "  hash = util::crc32(hash, value);\n";
       code << " }\n";
     }
     code << " if(!ctx->partition_values[hash % "

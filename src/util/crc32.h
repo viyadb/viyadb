@@ -24,6 +24,9 @@
 /* CRC-32 (Ethernet, ZIP, etc.) polynomial in reversed bit order. */
 #define POLY 0xedb88320
 
+namespace viya {
+namespace util {
+
 /* This one is a Java compatible implementation */
 inline uint32_t crc32(uint32_t crc, const std::string &str) {
   const unsigned char *buf =
@@ -38,5 +41,8 @@ inline uint32_t crc32(uint32_t crc, const std::string &str) {
   }
   return ~crc;
 }
+
+} // namespace util
+} // namespace viya
 
 #endif // VIYA_UTIL_CRC32_H_

@@ -57,5 +57,6 @@ void Configurator::CreateTable(const util::Config &table_config,
     throw std::runtime_error("Can't create table in worker (" + r.text + ")");
   }
 }
-}
-}
+
+} // namespace cluster
+} // namespace viya

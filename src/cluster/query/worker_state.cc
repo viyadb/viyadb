@@ -27,7 +27,23 @@ bool WorkerState::IsFailing() {
   return failing_;
 }
 
-void WorkerState::SetFailing() {}
+void WorkerState::SetFailing() {
+  failing_ = true;
+  last_update_ = std::time(nullptr);
 }
+
+bool WorkersStates::IsFailing(const std::string &worker_id) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  auto it = states_.find(worker_id);
+  return it != states_.end() && it->second.IsFailing();
 }
+
+void WorkersStates::SetFailing(const std::string &worker_id) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  auto s = states_.emplace(worker_id, WorkerState{});
+  s.first->second.SetFailing();
 }
+
+} // query namespace
+} // cluster namespace
+} // viya namespace

@@ -95,6 +95,7 @@ void Service::Notify(Status status, const std::string &message) {
     Register();
   }
 }
-}
-}
-}
+
+} // namespace consul
+} // namespace cluster
+} // namespace viya

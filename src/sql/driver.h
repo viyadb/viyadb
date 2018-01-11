@@ -72,7 +72,8 @@ private:
   friend class Parser;
   friend class Scanner;
 };
-}
-}
+
+} // namespace sql
+} // namespace viya
 
 #endif // VIYA_SQL_DRIVER_H_

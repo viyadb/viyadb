@@ -59,7 +59,8 @@ private:
   Loader loader_;
   std::vector<Notifier *> notifiers_;
 };
-}
-}
+
+} // namespace cluster
+} // namespace viya
 
 #endif // VIYA_CLUSTER_FEEDER_H_

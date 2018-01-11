@@ -28,7 +28,7 @@ Code RollupDefs::GenerateCode() const {
   for (auto dimension : dimensions_) {
     if (dimension->dim_type() == db::Dimension::DimType::TIME) {
       auto dim_idx = std::to_string(dimension->index());
-      code << " viya::util::Time"
+      code << " util::Time"
            << std::to_string(dimension->num_type().size() * 8) << " time"
            << dim_idx << ";\n";
       auto &rollup_rules =
@@ -61,7 +61,7 @@ Code RollupReset::GenerateCode() const {
 
         code << prefix_ << "rollup_b" << dim_idx << "_"
              << std::to_string(rule_idx)
-             << " = viya::util::Duration(static_cast<viya::util::TimeUnit>("
+             << " = util::Duration(static_cast<util::TimeUnit>("
              << std::to_string(static_cast<int>(after.time_unit())) << "), "
              << std::to_string(after.count()) << ").add_to((uint32_t) "
              << ts_value << ", -1)";
@@ -88,7 +88,7 @@ Code TimestampRollup::GenerateCode() const {
     code << " if (" << var_name_ << " < " << prefix_ << "rollup_b" << dim_idx
          << "_" << rule_idx << ") {\n";
     code << "  " << prefix_ << "time" << dim_idx
-         << ".trunc<static_cast<viya::util::TimeUnit>("
+         << ".trunc<static_cast<util::TimeUnit>("
          << static_cast<int>(rollup_rule.granularity().time_unit())
          << ")>();\n";
     code << " }\n";

@@ -39,7 +39,8 @@ private:
   const consul::Consul consul_;
   std::unique_ptr<consul::Session> session_;
 };
-}
-}
+
+} // namespace cluster
+} // namespace viya
 
 #endif // VIYA_CLUSTER_WORKER_H_

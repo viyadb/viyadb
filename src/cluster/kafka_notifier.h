@@ -54,7 +54,8 @@ private:
   std::unique_ptr<cppkafka::Consumer> consumer_;
   std::unique_ptr<util::Always> always_;
 };
-}
-}
+
+} // namespace cluster
+} // namespace viya
 
 #endif // VIYA_CLUSTER_KAFKA_NOTIFIER_H_

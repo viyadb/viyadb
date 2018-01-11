@@ -90,7 +90,8 @@ private:
   std::map<std::string, Partitioning> tables_partitioning_;
   std::unique_ptr<Feeder> feeder_;
 };
-}
-}
+
+} // namespace cluster
+} // namespace viya
 
 #endif // VIYA_CLUSTER_CONTROLLER_H_

@@ -80,7 +80,8 @@ private:
   char buf_[250];
   fmt::ArrayWriter w_;
 };
-}
-}
+
+} // namespace util
+} // namespace viya
 
 #endif // VIYA_UTIL_FORMAT_H_

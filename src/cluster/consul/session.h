@@ -49,8 +49,9 @@ private:
   std::string id_;
   std::unique_ptr<util::Repeat> repeat_;
 };
-}
-}
-}
+
+} // namespace consul
+} // namespace cluster
+} // namespace viya
 
 #endif // VIYA_CLUSTER_CONSUL_SESSION_H_

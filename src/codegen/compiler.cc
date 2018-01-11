@@ -141,5 +141,6 @@ std::shared_ptr<SharedLibrary> Compiler::Compile(const std::string &code) {
 
   return library;
 }
-}
-}
+
+} // namespace codegen
+} // namespace viya

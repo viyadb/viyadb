@@ -23,11 +23,13 @@
 
 namespace viya {
 namespace cluster {
+
 class Controller;
 class Partitioning;
 class Plan;
-}
-}
+
+} // namespace cluster
+} // namespace viya
 
 namespace viya {
 namespace cluster {
@@ -87,8 +89,9 @@ public:
   static std::unique_ptr<ClusterQuery> Create(const util::Config &query,
                                               const Controller &controller);
 };
-}
-}
-}
+
+} // query namespace
+} // cluster namespace
+} // viya namespace
 
 #endif // VIYA_CLUSTER_QUERY_QUERY_H_

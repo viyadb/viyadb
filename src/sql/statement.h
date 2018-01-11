@@ -37,7 +37,8 @@ private:
   Type type_;
   json descriptor_;
 };
-}
-}
+
+} // namespace sql
+} // namespace viya
 
 #endif // VIYA_SQL_DRIVER_H_

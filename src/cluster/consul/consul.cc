@@ -108,6 +108,7 @@ void Consul::PutKey(const std::string &key, const std::string &content) const {
     throw std::runtime_error("Can't put key contents (" + r.text + ")");
   }
 }
-}
-}
-}
+
+} // namespace consul
+} // namespace cluster
+} // namespace viya

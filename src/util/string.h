@@ -47,7 +47,8 @@ public:
     return std::stod(str1) < std::stod(str2);
   }
 };
-}
-}
+
+} // namespace util
+} // namespace viya
 
 #endif // VIYA_UTIL_STRING_H_

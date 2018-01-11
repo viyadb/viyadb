@@ -40,7 +40,8 @@ private:
   std::string path_;
   std::unordered_map<uint64_t, std::shared_ptr<SharedLibrary>> libs_;
 };
-}
-}
+
+} // namespace codegen
+} // namespace viya
 
 #endif // VIYA_CODEGEN_COMPILER_H_

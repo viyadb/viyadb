@@ -106,6 +106,7 @@ bool Session::EphemeralKey(const std::string &key,
   }
   return r.text.compare(0, 4, "true") == 0;
 }
-}
-}
-}
+
+} // namespace consul
+} // namespace cluster
+} // namespace viya

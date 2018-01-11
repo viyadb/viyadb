@@ -47,8 +47,9 @@ private:
   std::atomic<bool> leader_;
   std::unique_ptr<util::Always> always_;
 };
-}
-}
-}
+
+} // namespace consul
+} // namespace cluster
+} // namespace viya
 
 #endif // VIYA_CLUSTER_CONSUL_LEADER_H_

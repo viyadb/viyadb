@@ -235,5 +235,6 @@ void Config::MergeFrom(const Config &other) {
     (*this_json)[it.key()] = it.value();
   }
 }
-}
-}
+
+} // namespace util
+} // namespace viya

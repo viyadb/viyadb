@@ -95,7 +95,8 @@ private:
   long last_microbatch_;
   std::map<std::string, BatchTableInfo> tables_info_;
 };
-}
-}
+
+} // namespace cluster
+} // namespace viya
 
 #endif // VIYA_CLUSTER_BATCH_INFO_H_

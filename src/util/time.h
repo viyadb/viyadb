@@ -135,7 +135,8 @@ protected:
   uint32_t micros_;
   std::tm tm_;
 };
-}
-}
+
+} // namespace util
+} // namespace viya
 
 #endif // VIYA_UTIL_TIME_H_

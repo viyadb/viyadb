@@ -46,7 +46,8 @@ private:
   struct sockaddr_in server_;
   int socket_;
 };
-}
-}
+
+} // namespace util
+} // namespace viya
 
 #endif // VIYA_UTIL_STATSD_H_

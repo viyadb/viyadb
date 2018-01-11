@@ -32,5 +32,6 @@ void check_legal_string(const std::string &what, const std::string &str) {
                                 "): " + str);
   }
 }
-}
-}
+
+} // namespace util
+} // namespace viya
