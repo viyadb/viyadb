@@ -14,24 +14,25 @@
  * limitations under the License.
  */
 
-#include <glog/logging.h>
-#include <boost/exception/diagnostic_information.hpp>
-#include "server/viyad.h"
 #include "server/supervisor.h"
+#include "server/viyad.h"
+#include <boost/exception/diagnostic_information.hpp>
+#include <glog/logging.h>
 
 namespace server = viya::server;
 namespace util = viya::util;
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   try {
     FLAGS_logtostderr = 1;
     google::InitGoogleLogging(argv[0]);
 
-    auto supervisor = std::make_unique<server::Supervisor>(std::vector<std::string>(argv, argv + argc));
+    auto supervisor = std::make_unique<server::Supervisor>(
+        std::vector<std::string>(argv, argv + argc));
     supervisor->Start();
 
   } catch (...) {
-    LOG(ERROR)<<boost::current_exception_diagnostic_information();
+    LOG(ERROR) << boost::current_exception_diagnostic_information();
     exit(-1);
   }
 }

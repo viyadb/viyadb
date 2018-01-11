@@ -37,7 +37,11 @@ Vagrant.configure("2") do |config|
         valgrind \
         wget \
         zlib1g-dev \
+        clang-format \
       && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 60 --slave /usr/bin/g++ g++ /usr/bin/g++-7 \
+      && apt-get purge -y \
+        gcc-5-base \
+        gcc-6-base \
       && apt-get clean \
       && apt-get autoremove -y \
       && rm -rf /var/lib/apt/lists/*

@@ -14,34 +14,32 @@
  * limitations under the License.
  */
 
+#include "db.h"
+#include "db/table.h"
+#include "query/output.h"
+#include "util/config.h"
 #include <algorithm>
 #include <gtest/gtest.h>
-#include "db/table.h"
-#include "util/config.h"
-#include "query/output.h"
-#include "db.h"
 
 namespace util = viya::util;
 namespace query = viya::query;
 
-TEST_F(InappEvents, FilterNot)
-{
+TEST_F(InappEvents, FilterNot) {
   LoadEvents();
 
   query::MemoryRowOutput output;
   db.Query(
-    std::move(util::Config(
-        "{\"type\": \"aggregate\","
-        " \"table\": \"events\","
-        " \"dimensions\": [\"event_name\", \"country\"],"
-        " \"metrics\": [\"revenue\"],"
-        " \"filter\": {\"op\": \"not\", \"filter\":"
-        "              {\"op\": \"ne\", \"column\": \"country\", \"value\": \"US\"}}}")), output);
+      std::move(util::Config("{\"type\": \"aggregate\","
+                             " \"table\": \"events\","
+                             " \"dimensions\": [\"event_name\", \"country\"],"
+                             " \"metrics\": [\"revenue\"],"
+                             " \"filter\": {\"op\": \"not\", \"filter\":"
+                             "              {\"op\": \"ne\", \"column\": "
+                             "\"country\", \"value\": \"US\"}}}")),
+      output);
 
   std::vector<query::MemoryRowOutput::Row> expected = {
-    {"purchase", "US", "1.2"},
-    {"donate", "US", "5"}
-  };
+      {"purchase", "US", "1.2"}, {"donate", "US", "5"}};
   std::sort(expected.begin(), expected.end());
 
   auto actual = output.rows();
@@ -50,25 +48,24 @@ TEST_F(InappEvents, FilterNot)
   EXPECT_EQ(expected, actual);
 }
 
-TEST_F(InappEvents, FilterNotOrNe)
-{
+TEST_F(InappEvents, FilterNotOrNe) {
   LoadSortEvents();
 
   query::MemoryRowOutput output;
   db.Query(
-    std::move(util::Config(
-        "{\"type\": \"aggregate\","
-        " \"table\": \"events\","
-        " \"dimensions\": [\"event_name\", \"country\"],"
-        " \"metrics\": [\"revenue\"],"
-        " \"filter\": {\"op\": \"not\", \"filter\":"
-        "              {\"op\": \"or\", \"filters\": ["
-        "               {\"op\": \"ne\", \"column\": \"country\", \"value\": \"CH\"},"
-        "               {\"op\": \"ne\", \"column\": \"event_name\", \"value\": \"refund\"}]}}}")), output);
+      std::move(util::Config("{\"type\": \"aggregate\","
+                             " \"table\": \"events\","
+                             " \"dimensions\": [\"event_name\", \"country\"],"
+                             " \"metrics\": [\"revenue\"],"
+                             " \"filter\": {\"op\": \"not\", \"filter\":"
+                             "              {\"op\": \"or\", \"filters\": ["
+                             "               {\"op\": \"ne\", \"column\": "
+                             "\"country\", \"value\": \"CH\"},"
+                             "               {\"op\": \"ne\", \"column\": "
+                             "\"event_name\", \"value\": \"refund\"}]}}}")),
+      output);
 
-  std::vector<query::MemoryRowOutput::Row> expected = {
-    {"refund", "CH", "1.1"}
-  };
+  std::vector<query::MemoryRowOutput::Row> expected = {{"refund", "CH", "1.1"}};
   std::sort(expected.begin(), expected.end());
 
   auto actual = output.rows();
@@ -77,26 +74,25 @@ TEST_F(InappEvents, FilterNotOrNe)
   EXPECT_EQ(expected, actual);
 }
 
-TEST_F(InappEvents, FilterNotPeriod)
-{
+TEST_F(InappEvents, FilterNotPeriod) {
   LoadSortEvents();
 
   query::MemoryRowOutput output;
   db.Query(
-    std::move(util::Config(
-        "{\"type\": \"aggregate\","
-        " \"table\": \"events\","
-        " \"dimensions\": [\"event_name\", \"country\"],"
-        " \"metrics\": [\"revenue\"],"
-        " \"filter\": {\"op\": \"not\", \"filter\":"
-        "              {\"op\": \"and\", \"filters\": ["
-        "               {\"op\": \"gt\", \"column\": \"revenue\", \"value\": \"0.1\"},"
-        "               {\"op\": \"lt\", \"column\": \"revenue\", \"value\": \"2\"}]}}}")), output);
+      std::move(util::Config("{\"type\": \"aggregate\","
+                             " \"table\": \"events\","
+                             " \"dimensions\": [\"event_name\", \"country\"],"
+                             " \"metrics\": [\"revenue\"],"
+                             " \"filter\": {\"op\": \"not\", \"filter\":"
+                             "              {\"op\": \"and\", \"filters\": ["
+                             "               {\"op\": \"gt\", \"column\": "
+                             "\"revenue\", \"value\": \"0.1\"},"
+                             "               {\"op\": \"lt\", \"column\": "
+                             "\"revenue\", \"value\": \"2\"}]}}}")),
+      output);
 
   std::vector<query::MemoryRowOutput::Row> expected = {
-    {"purchase", "US", "0.1"},
-    {"review", "KZ", "5"}
-  };
+      {"purchase", "US", "0.1"}, {"review", "KZ", "5"}};
   std::sort(expected.begin(), expected.end());
 
   auto actual = output.rows();
@@ -105,24 +101,22 @@ TEST_F(InappEvents, FilterNotPeriod)
   EXPECT_EQ(expected, actual);
 }
 
-TEST_F(InappEvents, FilterNotIn)
-{
+TEST_F(InappEvents, FilterNotIn) {
   LoadSortEvents();
 
   query::MemoryRowOutput output;
-  db.Query(
-    std::move(util::Config(
-        "{\"type\": \"aggregate\","
-        " \"table\": \"events\","
-        " \"dimensions\": [\"event_name\", \"country\"],"
-        " \"metrics\": [\"revenue\"],"
-        " \"filter\": {\"op\": \"not\", \"filter\":"
-        "              {\"op\": \"in\", \"column\": \"event_name\", \"values\": [\"refund\", \"purchase\"]}}}")), output);
+  db.Query(std::move(util::Config(
+               "{\"type\": \"aggregate\","
+               " \"table\": \"events\","
+               " \"dimensions\": [\"event_name\", \"country\"],"
+               " \"metrics\": [\"revenue\"],"
+               " \"filter\": {\"op\": \"not\", \"filter\":"
+               "              {\"op\": \"in\", \"column\": \"event_name\", "
+               "\"values\": [\"refund\", \"purchase\"]}}}")),
+           output);
 
-  std::vector<query::MemoryRowOutput::Row> expected = {
-    {"donate", "RU", "1"},
-    {"review", "KZ", "5"}
-  };
+  std::vector<query::MemoryRowOutput::Row> expected = {{"donate", "RU", "1"},
+                                                       {"review", "KZ", "5"}};
   std::sort(expected.begin(), expected.end());
 
   auto actual = output.rows();

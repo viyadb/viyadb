@@ -17,12 +17,20 @@
 #ifndef VIYA_SQL_DRIVER_H_
 #define VIYA_SQL_DRIVER_H_
 
+#include "util/config.h"
 #include <istream>
 #include <vector>
-#include "util/config.h"
 
-namespace viya { namespace db { class Database; }}
-namespace viya { namespace query { class RowOutput; }}
+namespace viya {
+namespace db {
+class Database;
+}
+}
+namespace viya {
+namespace query {
+class RowOutput;
+}
+}
 
 namespace viya {
 namespace sql {
@@ -36,34 +44,35 @@ class location;
 class Statement;
 
 class Driver {
-  public:
-    Driver(db::Database& db);
-    ~Driver();
+public:
+  Driver(db::Database &db);
+  ~Driver();
 
-    void Run(std::istream& stream, query::RowOutput* output = nullptr, bool header = false);
-    std::vector<util::Config> ParseQueries(std::istream& stream);
-    void Reset();
+  void Run(std::istream &stream, query::RowOutput *output = nullptr,
+           bool header = false);
+  std::vector<util::Config> ParseQueries(std::istream &stream);
+  void Reset();
 
-    const db::Database& db() const { return db_; }
+  const db::Database &db() const { return db_; }
 
-  private:
-    void Parse(std::istream& stream);
-    void AddError(const std::string& error);
-    void AddStatement(Statement* stmt);
+private:
+  void Parse(std::istream &stream);
+  void AddError(const std::string &error);
+  void AddStatement(Statement *stmt);
 
-  private:
-    db::Database &db_;
-    Scanner* scanner_;
-    Parser* parser_;
-    location* location_;
-    //int error_;
-    std::vector<std::string> errors_;
-    std::vector<Statement*> stmts_;
+private:
+  db::Database &db_;
+  Scanner *scanner_;
+  Parser *parser_;
+  location *location_;
+  // int error_;
+  std::vector<std::string> errors_;
+  std::vector<Statement *> stmts_;
 
-    friend class Parser;
-    friend class Scanner;
+  friend class Parser;
+  friend class Scanner;
 };
-
-}}
+}
+}
 
 #endif // VIYA_SQL_DRIVER_H_

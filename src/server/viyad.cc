@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-#include <sys/types.h>
-#include <unistd.h>
-#include <sched.h>
-#include <json.hpp>
+#include "server/viyad.h"
 #include "db/database.h"
 #include "server/http/service.h"
-#include "server/viyad.h"
+#include <json.hpp>
+#include <sched.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 namespace viya {
 namespace server {
@@ -31,8 +31,7 @@ namespace server = viya::server;
 
 using json = nlohmann::json;
 
-Viyad::Viyad(const util::Config& config):config_(config) {
-}
+Viyad::Viyad(const util::Config &config) : config_(config) {}
 
 void Viyad::Start() {
 #ifdef __linux__
@@ -41,7 +40,7 @@ void Viyad::Start() {
 
   db::Database database(config_);
   http::Service http_service(config_, database);
-  
+
   if (config_.exists("cluster_id")) {
     worker_ = std::make_unique<cluster::Worker>(config_);
   }
@@ -51,7 +50,7 @@ void Viyad::Start() {
 #ifdef __linux__
 void Viyad::SetCpuAffinity() {
   if (config_.exists("cpu_list")) {
-    pid_t pid= getpid();
+    pid_t pid = getpid();
     cpu_set_t cpu_set;
     CPU_ZERO(&cpu_set);
     for (auto cpu : config_.numlist("cpu_list")) {
@@ -61,5 +60,5 @@ void Viyad::SetCpuAffinity() {
   }
 }
 #endif
-
-}}
+}
+}

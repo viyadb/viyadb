@@ -17,17 +17,17 @@
 #ifndef VIYA_CLUSTER_CONTROLLER_H_
 #define VIYA_CLUSTER_CONTROLLER_H_
 
-#include <memory>
-#include <map>
+#include "cluster/batch_info.h"
+#include "cluster/consul/consul.h"
+#include "cluster/feeder.h"
+#include "cluster/http/service.h"
+#include "cluster/partitioning.h"
+#include "cluster/plan.h"
 #include "db/database.h"
 #include "util/config.h"
 #include "util/schedule.h"
-#include "cluster/consul/consul.h"
-#include "cluster/http/service.h"
-#include "cluster/plan.h"
-#include "cluster/partitioning.h"
-#include "cluster/feeder.h"
-#include "cluster/batch_info.h"
+#include <map>
+#include <memory>
 
 namespace viya {
 namespace cluster {
@@ -35,51 +35,62 @@ namespace cluster {
 namespace util = viya::util;
 
 class Controller {
-  public:
-    Controller(const util::Config& config);
-    Controller(const Controller& other) = delete;
+public:
+  Controller(const util::Config &config);
+  Controller(const Controller &other) = delete;
 
-    const consul::Consul& consul() const { return consul_; }
-    const util::Config& cluster_config() const { return cluster_config_; }
-    const std::string& cluster_id() const { return cluster_id_; }
-    db::Database& db() { return db_; }
-    const std::map<std::string, util::Config>& tables_configs() const { return tables_configs_; }
-    const std::map<std::string, util::Config>& indexers_configs() const { return indexers_configs_; }
-    const std::map<std::string, std::unique_ptr<BatchInfo>>& indexers_batches() const { return indexers_batches_; }
-    const std::map<std::string, Plan>& tables_plans() const { return tables_plans_; }
-    const std::map<std::string, Partitioning>& tables_partitioning() const { return tables_partitioning_; }
-    bool leader() const { return le_->Leader(); }
+  const consul::Consul &consul() const { return consul_; }
+  const util::Config &cluster_config() const { return cluster_config_; }
+  const std::string &cluster_id() const { return cluster_id_; }
+  db::Database &db() { return db_; }
+  const std::map<std::string, util::Config> &tables_configs() const {
+    return tables_configs_;
+  }
+  const std::map<std::string, util::Config> &indexers_configs() const {
+    return indexers_configs_;
+  }
+  const std::map<std::string, std::unique_ptr<BatchInfo>> &
+  indexers_batches() const {
+    return indexers_batches_;
+  }
+  const std::map<std::string, Plan> &tables_plans() const {
+    return tables_plans_;
+  }
+  const std::map<std::string, Partitioning> &tables_partitioning() const {
+    return tables_partitioning_;
+  }
+  bool leader() const { return le_->Leader(); }
 
-  private:
-    void ReadClusterConfig();
-    bool ReadWorkersConfigs(std::map<std::string, util::Config>& configs);
-    void FetchLatestBatchInfo();
-    void Initialize();
-    void InitializePartitioning();
-    void InitializePlan();
-    void AssignPartitionsToWorkers();
-    bool ReadPlan();
-    bool GeneratePlan();
-    void StartHttpServer();
+private:
+  void ReadClusterConfig();
+  bool ReadWorkersConfigs(std::map<std::string, util::Config> &configs);
+  void FetchLatestBatchInfo();
+  void Initialize();
+  void InitializePartitioning();
+  void InitializePlan();
+  void AssignPartitionsToWorkers();
+  bool ReadPlan();
+  bool GeneratePlan();
+  void StartHttpServer();
 
-  private:
-    util::Config config_;
-    const std::string cluster_id_;
-    const consul::Consul consul_;
-    db::Database db_;
-    util::Config cluster_config_;
-    std::unique_ptr<consul::Session> session_;
-    std::unique_ptr<consul::LeaderElector> le_;
-    std::unique_ptr<util::Later> initializer_;
-    std::unique_ptr<http::Service> http_service_;
-    std::map<std::string, util::Config> tables_configs_;
-    std::map<std::string, util::Config> indexers_configs_;
-    std::map<std::string, std::unique_ptr<BatchInfo>> indexers_batches_;
-    std::map<std::string, Plan> tables_plans_;
-    std::map<std::string, Partitioning> tables_partitioning_;
-    std::unique_ptr<Feeder> feeder_;
+private:
+  util::Config config_;
+  const std::string cluster_id_;
+  const consul::Consul consul_;
+  db::Database db_;
+  util::Config cluster_config_;
+  std::unique_ptr<consul::Session> session_;
+  std::unique_ptr<consul::LeaderElector> le_;
+  std::unique_ptr<util::Later> initializer_;
+  std::unique_ptr<http::Service> http_service_;
+  std::map<std::string, util::Config> tables_configs_;
+  std::map<std::string, util::Config> indexers_configs_;
+  std::map<std::string, std::unique_ptr<BatchInfo>> indexers_batches_;
+  std::map<std::string, Plan> tables_plans_;
+  std::map<std::string, Partitioning> tables_partitioning_;
+  std::unique_ptr<Feeder> feeder_;
 };
-
-}}
+}
+}
 
 #endif // VIYA_CLUSTER_CONTROLLER_H_

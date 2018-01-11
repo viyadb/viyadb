@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-#include "db/table.h"
-#include "db/database.h"
 #include "input/loader.h"
+#include "db/database.h"
+#include "db/table.h"
 
 namespace viya {
 namespace input {
 
-Loader::Loader(const util::Config& config, db::Table& table):
-  desc_(config, table),
-  table_(table),
-  stats_(table.database().statsd(), table.name()) {
+Loader::Loader(const util::Config &config, db::Table &table)
+    : desc_(config, table), table_(table),
+      stats_(table.database().statsd(), table.name()) {
 
   cg::UpsertGenerator upsert_gen(desc_);
 
@@ -32,16 +31,14 @@ Loader::Loader(const util::Config& config, db::Table& table):
   after_upsert_ = upsert_gen.AfterFunction();
   upsert_ = upsert_gen.Function();
 
-  void* upsert_ctx = upsert_gen.SetupFunction()(desc_);
+  void *upsert_ctx = upsert_gen.SetupFunction()(desc_);
   table.set_upsert_ctx(upsert_ctx);
 }
 
-void Loader::BeforeLoad() {
-  before_upsert_(table_.upsert_ctx());
-}
+void Loader::BeforeLoad() { before_upsert_(table_.upsert_ctx()); }
 
 db::UpsertStats Loader::AfterLoad() {
   return after_upsert_(table_.upsert_ctx());
 }
-
-}}
+}
+}

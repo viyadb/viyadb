@@ -17,37 +17,37 @@
 #ifndef VIYA_UTIL_LATCH_H_
 #define VIYA_UTIL_LATCH_H_
 
-#include <mutex>
 #include <condition_variable>
+#include <mutex>
 
 namespace viya {
 namespace util {
 
 class CountDownLatch {
-	public:
-		explicit CountDownLatch(size_t count) : count_(count) {}
-		CountDownLatch(const CountDownLatch& other) = delete;
-		CountDownLatch& operator=(const CountDownLatch& other) = delete;
+public:
+  explicit CountDownLatch(size_t count) : count_(count) {}
+  CountDownLatch(const CountDownLatch &other) = delete;
+  CountDownLatch &operator=(const CountDownLatch &other) = delete;
 
-		void CountDown() {
-			std::lock_guard<std::mutex> lock { mtx_ };
-			--count_;
-			if (count_ == 0) {
-				cond_.notify_all();
-			}
-		}
+  void CountDown() {
+    std::lock_guard<std::mutex> lock{mtx_};
+    --count_;
+    if (count_ == 0) {
+      cond_.notify_all();
+    }
+  }
 
-		void Wait() {
-			std::unique_lock<std::mutex> lock { mtx_ };
-			cond_.wait(lock, [this]() { return count_ == 0; });
-		}
+  void Wait() {
+    std::unique_lock<std::mutex> lock{mtx_};
+    cond_.wait(lock, [this]() { return count_ == 0; });
+  }
 
-	private:
-		std::mutex mtx_;
-		std::condition_variable cond_;
-		size_t count_;
+private:
+  std::mutex mtx_;
+  std::condition_variable cond_;
+  size_t count_;
 };
-
-}}
+}
+}
 
 #endif // VIYA_UTIL_LATCH_H_

@@ -17,25 +17,25 @@
 #ifndef VIYA_CODEGEN_QUERY_POST_AGG_H_
 #define VIYA_CODEGEN_QUERY_POST_AGG_H_
 
-#include "query/query.h"
 #include "codegen/generator.h"
+#include "query/query.h"
 
 namespace viya {
 namespace codegen {
 
 namespace query = viya::query;
 
-class PostAggVisitor: public query::QueryVisitor {
-  public:
-    PostAggVisitor(Code& code):code_(code) {}
+class PostAggVisitor : public query::QueryVisitor {
+public:
+  PostAggVisitor(Code &code) : code_(code) {}
 
-    void Visit(query::AggregateQuery* query);
-    void Visit(query::SearchQuery* query);
+  void Visit(query::AggregateQuery *query);
+  void Visit(query::SearchQuery *query);
 
-  private:
-    Code& code_;
+private:
+  Code &code_;
 };
-
-}}
+}
+}
 
 #endif // VIYA_CODEGEN_QUERY_POST_AGG_H_

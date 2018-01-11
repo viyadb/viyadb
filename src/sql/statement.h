@@ -25,19 +25,19 @@ namespace sql {
 using json = nlohmann::json;
 
 class Statement {
-  public:
-    enum Type { QUERY, LOAD };
+public:
+  enum Type { QUERY, LOAD };
 
-    Statement(Type type):type_(type) {}
+  Statement(Type type) : type_(type) {}
 
-    Type type() const { return type_; }
-    json& descriptor() { return descriptor_; }
+  Type type() const { return type_; }
+  json &descriptor() { return descriptor_; }
 
-  private:
-    Type type_;
-    json descriptor_;
+private:
+  Type type_;
+  json descriptor_;
 };
-
-}}
+}
+}
 
 #endif // VIYA_SQL_DRIVER_H_

@@ -14,29 +14,27 @@
  * limitations under the License.
  */
 
-#include <memory>
-#include <json.hpp>
-#include <glog/logging.h>
 #include "db/database.h"
 #include "db/table.h"
-#include "query/runner.h"
 #include "input/loader_factory.h"
+#include "query/runner.h"
+#include <glog/logging.h>
+#include <json.hpp>
+#include <memory>
 
 namespace viya {
 namespace db {
 
-Database::Database(const util::Config& config):
-  Database(config, 1, config.num("query_threads", 1)) {
-}
+Database::Database(const util::Config &config)
+    : Database(config, 1, config.num("query_threads", 1)) {}
 
-Database::Database(const util::Config& config, size_t write_threads, size_t read_threads):
-  compiler_(config),
-  write_pool_(write_threads),
-  read_pool_(read_threads),
-  watcher_(*this) {
+Database::Database(const util::Config &config, size_t write_threads,
+                   size_t read_threads)
+    : compiler_(config), write_pool_(write_threads), read_pool_(read_threads),
+      watcher_(*this) {
 
   if (config.exists("tables")) {
-    for (const util::Config& table_conf : config.sublist("tables")) {
+    for (const util::Config &table_conf : config.sublist("tables")) {
       CreateTable(table_conf);
     }
   }
@@ -47,18 +45,19 @@ Database::Database(const util::Config& config, size_t write_threads, size_t read
 }
 
 Database::~Database() {
-  for (auto& it : tables_) {
+  for (auto &it : tables_) {
     delete it.second;
   }
 }
 
-void Database::CreateTable(const util::Config& table_conf) {
+void Database::CreateTable(const util::Config &table_conf) {
   CreateTable(table_conf.str("name"), table_conf);
 }
 
-void Database::CreateTable(const std::string& name, const util::Config& table_conf) {
+void Database::CreateTable(const std::string &name,
+                           const util::Config &table_conf) {
   folly::RWSpinLock::WriteHolder guard(lock_);
-  LOG(INFO)<<"Creating table: "<<name;
+  LOG(INFO) << "Creating table: " << name;
   auto it = tables_.find(name);
   if (it != tables_.end()) {
     throw std::runtime_error("Table already exists: " + name);
@@ -66,8 +65,8 @@ void Database::CreateTable(const std::string& name, const util::Config& table_co
   tables_.insert(std::make_pair(name, new Table(table_conf, *this)));
 }
 
-void Database::DropTable(const std::string& name) {
-  LOG(INFO)<<"Dropping table: "<<name;
+void Database::DropTable(const std::string &name) {
+  LOG(INFO) << "Dropping table: " << name;
   folly::RWSpinLock::WriteHolder guard(lock_);
   auto it = tables_.find(name);
   if (it == tables_.end()) {
@@ -78,7 +77,7 @@ void Database::DropTable(const std::string& name) {
   delete table;
 }
 
-Table* Database::GetTable(const std::string& name) {
+Table *Database::GetTable(const std::string &name) {
   folly::RWSpinLock::ReadHolder guard(lock_);
   auto it = tables_.find(name);
   if (it == tables_.end()) {
@@ -87,12 +86,12 @@ Table* Database::GetTable(const std::string& name) {
   return it->second;
 }
 
-void Database::PrintMetadata(std::string& metadata) {
+void Database::PrintMetadata(std::string &metadata) {
   nlohmann::json meta;
   meta["tables"] = nlohmann::json::array();
   {
     folly::RWSpinLock::ReadHolder guard(lock_);
-    for (auto& it : tables_) {
+    for (auto &it : tables_) {
       auto table = it.second;
       nlohmann::json table_meta;
       table_meta["name"] = table->name();
@@ -102,7 +101,8 @@ void Database::PrintMetadata(std::string& metadata) {
   metadata = meta.dump();
 }
 
-query::QueryStats Database::Query(const util::Config& query_conf, query::RowOutput& output) {
+query::QueryStats Database::Query(const util::Config &query_conf,
+                                  query::RowOutput &output) {
   query::QueryFactory query_factory;
   std::unique_ptr<query::Query> q(query_factory.Create(query_conf, *this));
   query::QueryRunner query_runner(*this, output);
@@ -110,10 +110,11 @@ query::QueryStats Database::Query(const util::Config& query_conf, query::RowOutp
   return query_runner.stats();
 }
 
-void Database::Load(const util::Config& load_conf) {
+void Database::Load(const util::Config &load_conf) {
   input::LoaderFactory loader_factory;
-  std::unique_ptr<input::Loader> loader(loader_factory.Create(load_conf, *this));
+  std::unique_ptr<input::Loader> loader(
+      loader_factory.Create(load_conf, *this));
   loader->LoadData();
 }
-
-}}
+}
+}

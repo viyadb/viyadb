@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-#include <stdexcept>
-#include "db/database.h"
 #include "input/loader_factory.h"
+#include "db/database.h"
 #include "input/file_loader.h"
 #include "util/config.h"
+#include <stdexcept>
 
 namespace viya {
 namespace input {
 
-Loader* LoaderFactory::Create(const util::Config& config, db::Database& database) {
+Loader *LoaderFactory::Create(const util::Config &config,
+                              db::Database &database) {
   auto table = database.GetTable(config.str("table"));
 
   std::string type = config.str("type");
@@ -32,5 +33,5 @@ Loader* LoaderFactory::Create(const util::Config& config, db::Database& database
   }
   throw std::invalid_argument("Unsupported input type: " + type);
 }
-
-}}
+}
+}

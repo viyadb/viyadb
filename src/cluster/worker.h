@@ -17,9 +17,9 @@
 #ifndef VIYA_CLUSTER_WORKER_H_
 #define VIYA_CLUSTER_WORKER_H_
 
-#include <memory>
 #include "cluster/consul/consul.h"
 #include "util/config.h"
+#include <memory>
 
 namespace viya {
 namespace cluster {
@@ -27,19 +27,19 @@ namespace cluster {
 namespace util = viya::util;
 
 class Worker {
-  public:
-    Worker(const util::Config& config);
-    Worker(const Worker& other) = delete;
+public:
+  Worker(const util::Config &config);
+  Worker(const Worker &other) = delete;
 
-    void CreateKey() const;
+  void CreateKey() const;
 
-  private:
-    const std::string id_;
-    const util::Config& config_;
-    const consul::Consul consul_;
-    std::unique_ptr<consul::Session> session_;
+private:
+  const std::string id_;
+  const util::Config &config_;
+  const consul::Consul consul_;
+  std::unique_ptr<consul::Session> session_;
 };
-
-}}
+}
+}
 
 #endif // VIYA_CLUSTER_WORKER_H_

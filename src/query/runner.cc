@@ -14,21 +14,22 @@
  * limitations under the License.
  */
 
-#include "db/table.h"
 #include "query/runner.h"
-#include "codegen/query/filter.h"
 #include "codegen/query/agg_query.h"
+#include "codegen/query/filter.h"
 #include "codegen/query/search_query.h"
+#include "db/table.h"
 
 namespace viya {
 namespace query {
 
 namespace cg = viya::codegen;
 
-void QueryRunner::Visit(AggregateQuery* query) {
+void QueryRunner::Visit(AggregateQuery *query) {
   stats_.OnBegin("aggregate", query->table().name());
 
-  auto query_fn = cg::AggQueryGenerator(database_.compiler(), *query).Function();
+  auto query_fn =
+      cg::AggQueryGenerator(database_.compiler(), *query).Function();
 
   cg::FilterArgsPacker filter_args(query->table());
   query->filter()->Accept(filter_args);
@@ -40,33 +41,35 @@ void QueryRunner::Visit(AggregateQuery* query) {
 
   stats_.OnCompile();
 
-  query_fn(query->table(), output_, stats_, filter_args.args(), query->skip(), query->limit(),
-           having_args.args());
+  query_fn(query->table(), output_, stats_, filter_args.args(), query->skip(),
+           query->limit(), having_args.args());
   stats_.OnEnd();
 }
 
-void QueryRunner::Visit(SearchQuery* query) {
+void QueryRunner::Visit(SearchQuery *query) {
   stats_.OnBegin("search", query->table().name());
 
-  auto query_fn = cg::SearchQueryGenerator(database_.compiler(), *query).Function();
+  auto query_fn =
+      cg::SearchQueryGenerator(database_.compiler(), *query).Function();
 
   cg::FilterArgsPacker filter_args(query->table());
   query->filter()->Accept(filter_args);
 
   stats_.OnCompile();
 
-  query_fn(query->table(), output_, stats_, filter_args.args(), query->term(), query->limit());
+  query_fn(query->table(), output_, stats_, filter_args.args(), query->term(),
+           query->limit());
   stats_.OnEnd();
 }
 
-void QueryRunner::Visit(ShowTablesQuery* query) {
+void QueryRunner::Visit(ShowTablesQuery *query) {
   RowOutput::Row tables;
-  for (auto& ent : query->db().tables()) {
+  for (auto &ent : query->db().tables()) {
     tables.push_back(ent.first);
   }
   output_.Start();
   output_.SendAsCol(tables);
   output_.Flush();
 }
-
-}}
+}
+}

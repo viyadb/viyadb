@@ -17,10 +17,10 @@
 #ifndef VIYA_CODEGEN_COMPILER_H_
 #define VIYA_CODEGEN_COMPILER_H_
 
-#include <unordered_map>
-#include <memory>
-#include "util/config.h"
 #include "codegen/shared_library.h"
+#include "util/config.h"
+#include <memory>
+#include <unordered_map>
 
 namespace viya {
 namespace codegen {
@@ -28,19 +28,19 @@ namespace codegen {
 namespace util = viya::util;
 
 class Compiler {
-  public:
-    Compiler(const util::Config& config);
-    std::shared_ptr<SharedLibrary> Compile(const std::string& code);
+public:
+  Compiler(const util::Config &config);
+  std::shared_ptr<SharedLibrary> Compile(const std::string &code);
 
-  private:
-    std::vector<std::string> GetFunctionNames(const std::string& lib_file);
+private:
+  std::vector<std::string> GetFunctionNames(const std::string &lib_file);
 
-  private:
-    std::vector<std::string> cmd_;
-    std::string path_;
-    std::unordered_map<uint64_t,std::shared_ptr<SharedLibrary>> libs_;
+private:
+  std::vector<std::string> cmd_;
+  std::string path_;
+  std::unordered_map<uint64_t, std::shared_ptr<SharedLibrary>> libs_;
 };
-
-}}
+}
+}
 
 #endif // VIYA_CODEGEN_COMPILER_H_

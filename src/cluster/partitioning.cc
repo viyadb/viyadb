@@ -19,11 +19,8 @@
 namespace viya {
 namespace cluster {
 
-Partitioning::Partitioning(const std::vector<uint32_t>& mapping, size_t total,
-                           const std::vector<std::string>& columns):
-  mapping_(mapping),
-  total_(total),
-  columns_(columns) {
+Partitioning::Partitioning(const std::vector<uint32_t> &mapping, size_t total,
+                           const std::vector<std::string> &columns)
+    : mapping_(mapping), total_(total), columns_(columns) {}
 }
-
-}}
+}

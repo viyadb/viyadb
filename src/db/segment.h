@@ -18,8 +18,8 @@
 #define VIYA_DB_SEGMENT_H_
 
 #if ENABLE_PERSISTENCE
-# include <ostream>
-# include <istream>
+#include <istream>
+#include <ostream>
 #endif
 
 #include "util/rwlock.h"
@@ -28,34 +28,34 @@ namespace viya {
 namespace db {
 
 class SegmentBase {
-  public:
-    SegmentBase(size_t capacity):size_(0),capacity_(capacity) {};
+public:
+  SegmentBase(size_t capacity) : size_(0), capacity_(capacity){};
 
-    SegmentBase(const SegmentBase& other) = delete;
-    virtual ~SegmentBase() {}
+  SegmentBase(const SegmentBase &other) = delete;
+  virtual ~SegmentBase() {}
 
-    bool full() const { return size_ == capacity_; }
+  bool full() const { return size_ == capacity_; }
 
-    size_t size() {
-      lock_.lock_shared(); 
-      auto size = size_;
-      lock_.unlock_shared();
-      return size;
-    }
+  size_t size() {
+    lock_.lock_shared();
+    auto size = size_;
+    lock_.unlock_shared();
+    return size;
+  }
 
-    size_t capacity() const  { return capacity_; }
+  size_t capacity() const { return capacity_; }
 
 #if ENABLE_PERSISTENCE
-    virtual void save(std::ostream&) = 0;
-    virtual void load(std::istream&) = 0;
+  virtual void save(std::ostream &) = 0;
+  virtual void load(std::istream &) = 0;
 #endif
 
-  protected:
-    size_t size_;
-    size_t capacity_;
-    folly::RWSpinLock lock_;
+protected:
+  size_t size_;
+  size_t capacity_;
+  folly::RWSpinLock lock_;
 };
-
-}}
+}
+}
 
 #endif // VIYA_DB_SEGMENT_H_

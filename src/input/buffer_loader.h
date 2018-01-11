@@ -17,36 +17,40 @@
 #ifndef VIYA_INPUT_BUFFER_LOADER_H_
 #define VIYA_INPUT_BUFFER_LOADER_H_
 
-#include "input/stats.h"
-#include "input/loader_desc.h"
 #include "input/loader.h"
+#include "input/loader_desc.h"
+#include "input/stats.h"
 
-namespace viya { namespace util { class Config; }}
+namespace viya {
+namespace util {
+class Config;
+}
+}
 
 namespace viya {
 namespace input {
 
 namespace util = viya::util;
 
-class BufferLoader: public Loader {
-  public:
-    BufferLoader(const util::Config&, db::Table&, const char*, size_t);
-    BufferLoader(const BufferLoader&) = delete;
-    virtual ~BufferLoader() {}
+class BufferLoader : public Loader {
+public:
+  BufferLoader(const util::Config &, db::Table &, const char *, size_t);
+  BufferLoader(const BufferLoader &) = delete;
+  virtual ~BufferLoader() {}
 
-    void LoadData();
+  void LoadData();
 
-  protected:
-    BufferLoader(const util::Config&, db::Table&);
+protected:
+  BufferLoader(const util::Config &, db::Table &);
 
-  private:
-    void LoadTsv();
+private:
+  void LoadTsv();
 
-  protected:
-    const char* buf_;
-    size_t buf_size_;
+protected:
+  const char *buf_;
+  size_t buf_size_;
 };
-
-}}
+}
+}
 
 #endif // VIYA_INPUT_BUFFER_LOADER_H_

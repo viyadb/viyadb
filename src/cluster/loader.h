@@ -17,11 +17,11 @@
 #ifndef VIYA_CLUSTER_LOADER_H_
 #define VIYA_CLUSTER_LOADER_H_
 
-#include <boost/filesystem.hpp>
-#include <vector>
-#include <unordered_map>
-#include <json.hpp>
 #include <ThreadPool/ThreadPool.h>
+#include <boost/filesystem.hpp>
+#include <json.hpp>
+#include <unordered_map>
+#include <vector>
 
 namespace viya {
 namespace cluster {
@@ -34,38 +34,39 @@ class Controller;
 class TableInfo;
 
 class Loader {
-  public:
-    Loader(const Controller& controller, const std::string& load_prefix);
-    Loader(const Loader& other) = delete;
+public:
+  Loader(const Controller &controller, const std::string &load_prefix);
+  Loader(const Loader &other) = delete;
 
-    void LoadFiles(const std::string& path, const std::string& table_name,
-                   const TableInfo& table_info, const std::string& worker_id);
+  void LoadFiles(const std::string &path, const std::string &table_name,
+                 const TableInfo &table_info, const std::string &worker_id);
 
-    void LoadFilesToAll(const std::string& path, const std::string& table_name,
-                        const TableInfo& table_info);
+  void LoadFilesToAll(const std::string &path, const std::string &table_name,
+                      const TableInfo &table_info);
 
-  private:
-    json GetPartitionFilter(const std::string& table_name, const std::string& worker_id);
+private:
+  json GetPartitionFilter(const std::string &table_name,
+                          const std::string &worker_id);
 
-    void LoadFile(const std::string& file, const std::string& table_name,
-                  const TableInfo& table_info, const std::string& worker_id);
+  void LoadFile(const std::string &file, const std::string &table_name,
+                const TableInfo &table_info, const std::string &worker_id);
 
-    void LoadFileToAll(const std::string& file, const std::string& table_name,
-                       const TableInfo& table_info);
+  void LoadFileToAll(const std::string &file, const std::string &table_name,
+                     const TableInfo &table_info);
 
-    void SendRequest(const std::string& url, const json& request);
+  void SendRequest(const std::string &url, const json &request);
 
-    fs::path ExtractFiles(const std::string& path);
+  fs::path ExtractFiles(const std::string &path);
 
-    void ListFiles(const std::string& path, const std::vector<std::string>& exts,
-                   std::vector<fs::path>& files);
+  void ListFiles(const std::string &path, const std::vector<std::string> &exts,
+                 std::vector<fs::path> &files);
 
-  private:
-    const Controller& controller_;
-    const std::string load_prefix_;
-    ThreadPool load_pool_;
+private:
+  const Controller &controller_;
+  const std::string load_prefix_;
+  ThreadPool load_pool_;
 };
-
-}}
+}
+}
 
 #endif // VIYA_CLUSTER_LOADER_H_

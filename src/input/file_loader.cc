@@ -14,28 +14,28 @@
  * limitations under the License.
  */
 
-#include <algorithm>
-#include <sys/mman.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <cstdio>
-#include <cassert>
-#include <cstring>
-#include <glog/logging.h>
-#include "db/table.h"
-#include "db/database.h"
-#include "util/config.h"
 #include "input/file_loader.h"
+#include "db/database.h"
+#include "db/table.h"
+#include "util/config.h"
+#include <algorithm>
+#include <cassert>
+#include <cstdio>
+#include <cstring>
+#include <fcntl.h>
+#include <glog/logging.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 namespace viya {
 namespace input {
 
-FileLoader::FileLoader(const util::Config& config, db::Table& table):
-  BufferLoader(config, table),fd_(-1) {
+FileLoader::FileLoader(const util::Config &config, db::Table &table)
+    : BufferLoader(config, table), fd_(-1) {
 
-  auto& fname = desc_.fname();
+  auto &fname = desc_.fname();
   fd_ = open(fname.c_str(), O_RDONLY);
   if (fd_ == -1) {
     throw std::runtime_error("File not accessible: " + fname);
@@ -47,30 +47,32 @@ FileLoader::FileLoader(const util::Config& config, db::Table& table):
   }
   buf_size_ = fs.st_size;
 
-  buf_ = static_cast<const char*>(mmap(NULL, buf_size_, PROT_READ, MAP_SHARED, fd_, 0));
+  buf_ = static_cast<const char *>(
+      mmap(NULL, buf_size_, PROT_READ, MAP_SHARED, fd_, 0));
   if (buf_ == MAP_FAILED) {
     throw std::runtime_error("Can't mmap() on file: " + fname);
   }
 
-  if (madvise(const_cast<char*>(buf_), buf_size_, MADV_WILLNEED | MADV_SEQUENTIAL) == -1) {
-    LOG(WARNING)<<"Can't madvise() on file: "<<fname;
+  if (madvise(const_cast<char *>(buf_), buf_size_,
+              MADV_WILLNEED | MADV_SEQUENTIAL) == -1) {
+    LOG(WARNING) << "Can't madvise() on file: " << fname;
   }
 
-  LOG(INFO)<<"Loading "<<desc_.fname()<<" into table: "<<desc_.table().name();
+  LOG(INFO) << "Loading " << desc_.fname()
+            << " into table: " << desc_.table().name();
 }
 
 FileLoader::~FileLoader() {
   if (fd_ != -1) {
     if (close(fd_) == -1) {
-      LOG(WARNING)<<"Can't close() input file: "<<desc_.fname();
+      LOG(WARNING) << "Can't close() input file: " << desc_.fname();
     }
   }
   if (buf_ != nullptr) {
-    if (munmap(const_cast<char*>(buf_), buf_size_) == -1) {
-      LOG(WARNING)<<"Can't munmap() input file: "<<desc_.fname();
+    if (munmap(const_cast<char *>(buf_), buf_size_) == -1) {
+      LOG(WARNING) << "Can't munmap() input file: " << desc_.fname();
     }
   }
 }
-
-}}
-
+}
+}

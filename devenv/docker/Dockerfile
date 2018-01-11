@@ -3,6 +3,8 @@ from ubuntu:zesty
 MAINTAINER Michael Spector <spektom@gmail.com>
 LABEL Description="Build environment for ViyaDB"
 
+ENV TERM=xterm
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     autoconf \
     automake \
@@ -23,10 +25,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     valgrind \
     wget \
     zlib1g-dev \
+    clang-format \
   && add-apt-repository ppa:ubuntu-toolchain-r/test \
   && apt-get update && apt-get install -y \
     g++-7 \
   && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 60 --slave /usr/bin/g++ g++ /usr/bin/g++-7 \
+  && apt-get purge -y \
+    gcc-5-base \
+    gcc-6-base \
   && wget -q https://dl.bintray.com/boostorg/release/1.65.1/source/boost_1_65_1.tar.gz \
     && tar xfz boost_1_65_1.tar.gz \
     && rm boost_1_65_1.tar.gz \

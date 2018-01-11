@@ -17,40 +17,49 @@
 #ifndef VIYA_CLUSTER_FEEDER_H_
 #define VIYA_CLUSTER_FEEDER_H_
 
-#include <vector>
-#include <map>
 #include "cluster/batch_info.h"
 #include "cluster/loader.h"
 #include "cluster/notifier.h"
+#include <map>
+#include <vector>
 
-namespace viya { namespace util { class Config; }}
-namespace viya { namespace cluster { class Controller; }}
+namespace viya {
+namespace util {
+class Config;
+}
+}
+namespace viya {
+namespace cluster {
+class Controller;
+}
+}
 
 namespace viya {
 namespace cluster {
 
 class Feeder : public MessageProcessor {
-  public:
-    Feeder(const Controller& controller, const std::string& load_prefix);
-    Feeder(const Feeder& other) = delete;
-    ~Feeder();
+public:
+  Feeder(const Controller &controller, const std::string &load_prefix);
+  Feeder(const Feeder &other) = delete;
+  ~Feeder();
 
-    bool ProcessMessage(const std::string& indexer_id, const Message& message);
-    void ReloadWorker(const std::string& worker_id);
+  bool ProcessMessage(const std::string &indexer_id, const Message &message);
+  void ReloadWorker(const std::string &worker_id);
 
-  protected:
-    void Start();
-    bool IsNewMicroBatch(const std::string& indexer_id, const MicroBatchInfo& mb_info);
-    void LoadHistoricalData(const std::string& target_worker = "");
-    void LoadMicroBatch(const MicroBatchInfo& mb_info, const std::string& target_worker = "");
+protected:
+  void Start();
+  bool IsNewMicroBatch(const std::string &indexer_id,
+                       const MicroBatchInfo &mb_info);
+  void LoadHistoricalData(const std::string &target_worker = "");
+  void LoadMicroBatch(const MicroBatchInfo &mb_info,
+                      const std::string &target_worker = "");
 
-  private:
-    const Controller& controller_;
-    Loader loader_;
-    std::vector<Notifier*> notifiers_;
-
+private:
+  const Controller &controller_;
+  Loader loader_;
+  std::vector<Notifier *> notifiers_;
 };
-
-}}
+}
+}
 
 #endif // VIYA_CLUSTER_FEEDER_H_

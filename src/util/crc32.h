@@ -25,8 +25,9 @@
 #define POLY 0xedb88320
 
 /* This one is a Java compatible implementation */
-inline uint32_t crc32(uint32_t crc, const std::string& str) {
-  const unsigned char* buf = reinterpret_cast<const unsigned char*>(str.c_str());
+inline uint32_t crc32(uint32_t crc, const std::string &str) {
+  const unsigned char *buf =
+      reinterpret_cast<const unsigned char *>(str.c_str());
   size_t len = str.size();
   int k;
   crc = ~crc;

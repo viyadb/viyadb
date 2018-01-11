@@ -17,110 +17,122 @@
 #ifndef VIYA_TEST_DB_H_
 #define VIYA_TEST_DB_H_
 
-#include <gtest/gtest.h>
-#include "util/config.h"
 #include "db/database.h"
 #include "input/simple.h"
+#include "util/config.h"
+#include <gtest/gtest.h>
 
 namespace db = viya::db;
 namespace util = viya::util;
 namespace input = viya::input;
 
 class InappEvents : public testing::Test {
-  protected:
-    InappEvents()
-      :db(std::move(util::Config(
-              "{\"tables\": [{\"name\": \"events\","
-              "               \"dimensions\": [{\"name\": \"country\"},"
-              "                                {\"name\": \"event_name\", \"length\": 20},"
-              "                                {\"name\": \"install_time\", \"type\": \"uint\"}],"
-              "               \"metrics\": [{\"name\": \"count\", \"type\": \"count\"},"
-              "                             {\"name\": \"revenue\", \"type\": \"double_sum\"}]}]}"))) {}
+protected:
+  InappEvents()
+      : db(std::move(util::Config(
+            "{\"tables\": [{\"name\": \"events\","
+            "               \"dimensions\": [{\"name\": \"country\"},"
+            "                                {\"name\": \"event_name\", "
+            "\"length\": 20},"
+            "                                {\"name\": \"install_time\", "
+            "\"type\": \"uint\"}],"
+            "               \"metrics\": [{\"name\": \"count\", \"type\": "
+            "\"count\"},"
+            "                             {\"name\": \"revenue\", \"type\": "
+            "\"double_sum\"}]}]}"))) {}
 
-    void LoadEvents() {
-      auto table = db.GetTable("events");
-      input::SimpleLoader loader(*table);
-      loader.Load({
-        {"US", "purchase", "20141112", "0.1"},
-        {"US", "purchase", "20141113", "1.1"},
-        {"US", "donate", "20141112", "5.0"}
-      });
-    }
+  void LoadEvents() {
+    auto table = db.GetTable("events");
+    input::SimpleLoader loader(*table);
+    loader.Load({{"US", "purchase", "20141112", "0.1"},
+                 {"US", "purchase", "20141113", "1.1"},
+                 {"US", "donate", "20141112", "5.0"}});
+  }
 
-    void LoadSortEvents() {
-      auto table = db.GetTable("events");
-      input::SimpleLoader loader(*table);
-      loader.Load({
-        {"US", "purchase", "20141110", "0.1"},
-        {"IL", "refund", "20141111", "1.01"},
-        {"CH", "refund", "20141111", "1.1"},
-        {"AZ", "refund", "20141111", "1.1"},
-        {"RU", "donate", "20141112", "1.0"},
-        {"KZ", "review", "20141113", "5.0"}
-      });
-    }
+  void LoadSortEvents() {
+    auto table = db.GetTable("events");
+    input::SimpleLoader loader(*table);
+    loader.Load({{"US", "purchase", "20141110", "0.1"},
+                 {"IL", "refund", "20141111", "1.01"},
+                 {"CH", "refund", "20141111", "1.1"},
+                 {"AZ", "refund", "20141111", "1.1"},
+                 {"RU", "donate", "20141112", "1.0"},
+                 {"KZ", "review", "20141113", "5.0"}});
+  }
 
-    void LoadSearchEvents() {
-      auto table = db.GetTable("events");
-      input::SimpleLoader loader(*table);
-      loader.Load({
-        {"US", "purchase", "20141110", "0.1"},
-        {"IL", "refund", "20141111", "1.1"},
-        {"CH", "refund", "20141111", "1.1"},
-        {"AZ", "refund", "20141111", "1.1"},
-        {"RU", "donate", "20141112", "1.0"},
-        {"KZ", "review", "20141113", "5.0"}
-      });
-    }
+  void LoadSearchEvents() {
+    auto table = db.GetTable("events");
+    input::SimpleLoader loader(*table);
+    loader.Load({{"US", "purchase", "20141110", "0.1"},
+                 {"IL", "refund", "20141111", "1.1"},
+                 {"CH", "refund", "20141111", "1.1"},
+                 {"AZ", "refund", "20141111", "1.1"},
+                 {"RU", "donate", "20141112", "1.0"},
+                 {"KZ", "review", "20141113", "5.0"}});
+  }
 
-    db::Database db;
+  db::Database db;
 };
 
 class NumericDimensions : public testing::Test {
-  protected:
-    NumericDimensions()
-      :db(std::move(util::Config(
-              "{\"tables\": [{\"name\": \"events\","
-              "               \"dimensions\": [{\"name\": \"byte\", \"type\": \"byte\"},"
-              "                                {\"name\": \"ubyte\", \"type\": \"ubyte\"},"
-              "                                {\"name\": \"short\", \"type\": \"short\"},"
-              "                                {\"name\": \"ushort\", \"type\": \"ushort\"},"
-              "                                {\"name\": \"int\", \"type\": \"int\"},"
-              "                                {\"name\": \"uint\", \"type\": \"uint\"},"
-              "                                {\"name\": \"long\", \"type\": \"long\"},"
-              "                                {\"name\": \"ulong\", \"type\": \"ulong\"},"
-              "                                {\"name\": \"float\", \"type\": \"float\"},"
-              "                                {\"name\": \"double\", \"type\": \"double\"}],"
-              "               \"metrics\": [{\"name\": \"count\", \"type\": \"count\"}]}]}"))) {}
+protected:
+  NumericDimensions()
+      : db(std::move(util::Config("{\"tables\": [{\"name\": \"events\","
+                                  "               \"dimensions\": [{\"name\": "
+                                  "\"byte\", \"type\": \"byte\"},"
+                                  "                                {\"name\": "
+                                  "\"ubyte\", \"type\": \"ubyte\"},"
+                                  "                                {\"name\": "
+                                  "\"short\", \"type\": \"short\"},"
+                                  "                                {\"name\": "
+                                  "\"ushort\", \"type\": \"ushort\"},"
+                                  "                                {\"name\": "
+                                  "\"int\", \"type\": \"int\"},"
+                                  "                                {\"name\": "
+                                  "\"uint\", \"type\": \"uint\"},"
+                                  "                                {\"name\": "
+                                  "\"long\", \"type\": \"long\"},"
+                                  "                                {\"name\": "
+                                  "\"ulong\", \"type\": \"ulong\"},"
+                                  "                                {\"name\": "
+                                  "\"float\", \"type\": \"float\"},"
+                                  "                                {\"name\": "
+                                  "\"double\", \"type\": \"double\"}],"
+                                  "               \"metrics\": [{\"name\": "
+                                  "\"count\", \"type\": \"count\"}]}]}"))) {}
 
-    void LoadEvents() {
-      auto table = db.GetTable("events");
-      input::SimpleLoader loader(*table);
-      loader.Load({
-        {"-1", "2", "-257", "145", "-10245", "23456", "-281734", "182745", "21.124", "1.092743"},
-        {"-1", "7", "257", "14", "-10245", "1982", "0", "1111111111", "21.124", "1.092743"},
-        {"-6", "2", "-257", "98", "-98", "777", "198", "0", "0.78", "7.912435"},
-        {"9", "29", "-128", "145", "0", "23456", "-281734", "182745", "1.11", "139834.12313"}
-      });
-    }
+  void LoadEvents() {
+    auto table = db.GetTable("events");
+    input::SimpleLoader loader(*table);
+    loader.Load({{"-1", "2", "-257", "145", "-10245", "23456", "-281734",
+                  "182745", "21.124", "1.092743"},
+                 {"-1", "7", "257", "14", "-10245", "1982", "0", "1111111111",
+                  "21.124", "1.092743"},
+                 {"-6", "2", "-257", "98", "-98", "777", "198", "0", "0.78",
+                  "7.912435"},
+                 {"9", "29", "-128", "145", "0", "23456", "-281734", "182745",
+                  "1.11", "139834.12313"}});
+  }
 
-    db::Database db;
+  db::Database db;
 };
 
 class UserEvents : public testing::Test {
-  protected:
-    UserEvents()
-      :db(std::move(util::Config(
-              "{\"tables\": [{\"name\": \"events\","
-              "               \"dimensions\": [{\"name\": \"country\"},"
-              "                                {\"name\": \"event_name\"},"
-              "                                {\"name\": \"time\", \"type\": \"uint\"}],"
-              "               \"metrics\": [{\"name\": \"user_id\", \"type\": \"bitset\"}]}]}"))) {}
+protected:
+  UserEvents()
+      : db(std::move(util::Config(
+            "{\"tables\": [{\"name\": \"events\","
+            "               \"dimensions\": [{\"name\": \"country\"},"
+            "                                {\"name\": \"event_name\"},"
+            "                                {\"name\": \"time\", \"type\": "
+            "\"uint\"}],"
+            "               \"metrics\": [{\"name\": \"user_id\", \"type\": "
+            "\"bitset\"}]}]}"))) {}
 
-    void LoadEvents() {
-      auto table = db.GetTable("events");
-      input::SimpleLoader loader(*table);
-      loader.Load({
+  void LoadEvents() {
+    auto table = db.GetTable("events");
+    input::SimpleLoader loader(*table);
+    loader.Load({
         {"US", "purchase", "1495475514", "12345"},
         {"RU", "support", "1495475517", "12346"},
         {"US", "openapp", "1495475632", "12347"},
@@ -129,27 +141,28 @@ class UserEvents : public testing::Test {
         {"US", "uninstall", "1495475809", "12350"},
         {"KZ", "purchase", "1495475808", "12351"},
         {"US", "purchase", "1495476000", "12352"},
-      });
-    }
+    });
+  }
 
-    db::Database db;
+  db::Database db;
 };
 
 class TimeEvents : public testing::Test {
-  protected:
-    TimeEvents()
-      :db(std::move(util::Config(
-              "{\"tables\": [{\"name\": \"events\","
-              "               \"dimensions\": [{\"name\": \"country\"},"
-              "                                {\"name\": \"event_name\"},"
-              "                                {\"name\": \"install_time\","
-              "                                 \"type\": \"time\"}],"
-              "               \"metrics\": [{\"name\": \"count\", \"type\": \"count\"}]}]}"))) {}
+protected:
+  TimeEvents()
+      : db(std::move(util::Config(
+            "{\"tables\": [{\"name\": \"events\","
+            "               \"dimensions\": [{\"name\": \"country\"},"
+            "                                {\"name\": \"event_name\"},"
+            "                                {\"name\": \"install_time\","
+            "                                 \"type\": \"time\"}],"
+            "               \"metrics\": [{\"name\": \"count\", \"type\": "
+            "\"count\"}]}]}"))) {}
 
-    void LoadEvents() {
-      auto table = db.GetTable("events");
-      input::SimpleLoader loader(*table);
-      loader.Load({
+  void LoadEvents() {
+    auto table = db.GetTable("events");
+    input::SimpleLoader loader(*table);
+    loader.Load({
         {"US", "purchase", "1420107084"},
         {"RU", "support", "1420150284"},
         {"US", "openapp", "1420178111"},
@@ -158,28 +171,31 @@ class TimeEvents : public testing::Test {
         {"US", "uninstall", "1420495805"},
         {"KZ", "purchase", "1420488000"},
         {"US", "purchase", "1420625132"},
-      });
-    }
+    });
+  }
 
-    db::Database db;
+  db::Database db;
 };
 
 class MultiTenantEvents : public testing::Test {
-  protected:
-    MultiTenantEvents()
-      :db(std::move(util::Config(
-              "{\"tables\": [{\"name\": \"events\","
-              "               \"dimensions\": [{\"name\": \"app_id\"},"
-              "                                {\"name\": \"country\"},"
-              "                                {\"name\": \"event_name\"},"
-              "                                {\"name\": \"time\", \"type\": \"uint\"}],"
-              "               \"metrics\": [{\"name\": \"value\", \"type\": \"long_sum\"},"
-              "                             {\"name\": \"count\", \"type\": \"count\"}]}]}"))) {}
+protected:
+  MultiTenantEvents()
+      : db(std::move(util::Config(
+            "{\"tables\": [{\"name\": \"events\","
+            "               \"dimensions\": [{\"name\": \"app_id\"},"
+            "                                {\"name\": \"country\"},"
+            "                                {\"name\": \"event_name\"},"
+            "                                {\"name\": \"time\", \"type\": "
+            "\"uint\"}],"
+            "               \"metrics\": [{\"name\": \"value\", \"type\": "
+            "\"long_sum\"},"
+            "                             {\"name\": \"count\", \"type\": "
+            "\"count\"}]}]}"))) {}
 
-    void LoadEvents(const util::Config& load_desc) {
-      auto table = db.GetTable("events");
-      input::SimpleLoader loader(load_desc, *table);
-      loader.Load({
+  void LoadEvents(const util::Config &load_desc) {
+    auto table = db.GetTable("events");
+    input::SimpleLoader loader(load_desc, *table);
+    loader.Load({
         {"com.bee", "US", "purchase", "1495475514", "15"},
         {"com.bee", "RU", "support", "1495475517", "23"},
         {"com.horse", "US", "openapp", "1495475632", "137"},
@@ -188,10 +204,10 @@ class MultiTenantEvents : public testing::Test {
         {"com.bird", "US", "uninstall", "1495475809", "35"},
         {"com.bird", "KZ", "purchase", "1495475808", "231"},
         {"com.bird", "US", "purchase", "1495476000", "32"},
-      });
-    }
+    });
+  }
 
-    db::Database db;
+  db::Database db;
 };
 
 #endif // VIYA_TEST_DB_H_

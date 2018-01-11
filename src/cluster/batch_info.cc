@@ -14,40 +14,38 @@
  * limitations under the License.
  */
 
+#include "cluster/batch_info.h"
 #include <json.hpp>
 #include <set>
-#include "cluster/batch_info.h"
 
 namespace viya {
 namespace cluster {
 
 using json = nlohmann::json;
 
-Message::Message(const json& message):id_(message["id"]) {
-}
+Message::Message(const json &message) : id_(message["id"]) {}
 
-TableInfo::TableInfo(const json& message):
-  paths_(message["paths"].get<std::vector<std::string>>()),
-  columns_(message["columns"].get<std::vector<std::string>>()) {
-}
+TableInfo::TableInfo(const json &message)
+    : paths_(message["paths"].get<std::vector<std::string>>()),
+      columns_(message["columns"].get<std::vector<std::string>>()) {}
 
-BatchTableInfo::BatchTableInfo(const json& message):TableInfo(message) {
+BatchTableInfo::BatchTableInfo(const json &message) : TableInfo(message) {
   if (message.find("partitioning") != message.end()) {
     json partition_conf = message["partitionConf"];
     partitioning_ = std::make_unique<Partitioning>(
-      message["partitioning"].get<std::vector<uint32_t>>(),
-      partition_conf["partitions"],
-      partition_conf["columns"].get<std::vector<std::string>>()
-    );
+        message["partitioning"].get<std::vector<uint32_t>>(),
+        partition_conf["partitions"],
+        partition_conf["columns"].get<std::vector<std::string>>());
   }
 }
 
-BatchInfo::BatchInfo(const json& message):
-  Message(message),last_microbatch_(0L) {
+BatchInfo::BatchInfo(const json &message)
+    : Message(message), last_microbatch_(0L) {
 
   auto micro_batches = message["microBatches"].get<std::vector<long>>();
   if (!micro_batches.empty()) {
-    last_microbatch_ = *std::max_element(micro_batches.begin(), micro_batches.end());
+    last_microbatch_ =
+        *std::max_element(micro_batches.begin(), micro_batches.end());
   }
 
   auto tables = message["tables"].get<json>();
@@ -56,14 +54,14 @@ BatchInfo::BatchInfo(const json& message):
   }
 }
 
-MicroBatchTableInfo::MicroBatchTableInfo(const json& message):TableInfo(message) {
-}
+MicroBatchTableInfo::MicroBatchTableInfo(const json &message)
+    : TableInfo(message) {}
 
-MicroBatchInfo::MicroBatchInfo(const json& message):Message(message) {
+MicroBatchInfo::MicroBatchInfo(const json &message) : Message(message) {
   auto tables = message["tables"].get<json>();
   for (auto it = tables.begin(); it != tables.end(); ++it) {
     tables_info_.emplace(it.key(), it.value().get<json>());
   }
 }
-
-}}
+}
+}

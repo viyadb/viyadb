@@ -19,8 +19,16 @@
 
 #include <server_http.hpp>
 
-namespace viya { namespace cluster { class Controller; }}
-namespace viya { namespace util { class Config; }}
+namespace viya {
+namespace cluster {
+class Controller;
+}
+}
+namespace viya {
+namespace util {
+class Config;
+}
+}
 
 namespace viya {
 namespace cluster {
@@ -33,20 +41,22 @@ typedef std::shared_ptr<HttpServer::Request> RequestPtr;
 typedef std::shared_ptr<HttpServer::Response> ResponsePtr;
 
 class Service {
-  public:
-    Service(Controller& controller);
+public:
+  Service(Controller &controller);
 
-    void Start();
+  void Start();
 
-  private:
-    void SendError(ResponsePtr response, const std::string& error);
-    void ProcessQuery(util::Config& query, ResponsePtr response, RequestPtr request);
+private:
+  void SendError(ResponsePtr response, const std::string &error);
+  void ProcessQuery(util::Config &query, ResponsePtr response,
+                    RequestPtr request);
 
-  private:
-    Controller& controller_;
-    HttpServer server_;
+private:
+  Controller &controller_;
+  HttpServer server_;
 };
-
-}}}
+}
+}
+}
 
 #endif // VIYA_CLUSTER_HTTP_SERVICE_H_

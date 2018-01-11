@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-#include <stack>
-#include <unordered_set>
-#include <unordered_map>
+#include "cluster/query/query.h"
+#include "cluster/controller.h"
+#include "cluster/partitioning.h"
+#include "cluster/plan.h"
+#include "query/filter.h"
+#include "util/crc32.h"
 #include <algorithm>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/functional/hash.hpp>
 #include <glog/logging.h>
-#include "query/filter.h"
-#include "util/crc32.h"
-#include "cluster/controller.h"
-#include "cluster/partitioning.h"
-#include "cluster/plan.h"
-#include "cluster/query/query.h"
- 
+#include <stack>
+#include <unordered_map>
+#include <unordered_set>
+
 namespace viya {
 namespace cluster {
 namespace query {
@@ -38,61 +38,62 @@ class FilterAnalyzer : public query::FilterVisitor {
   using ColumnsValues = std::unordered_map<std::string, std::string>;
   using FilterValues = std::vector<ColumnsValues>;
 
-  public:
-    FilterAnalyzer(const query::Filter& filter, const Partitioning& partitioning);
+public:
+  FilterAnalyzer(const query::Filter &filter, const Partitioning &partitioning);
 
-    std::vector<uint32_t> FindTargetPartitions();
+  std::vector<uint32_t> FindTargetPartitions();
 
-    void Visit(const query::RelOpFilter* filter);
-    void Visit(const query::InFilter* filter);
-    void Visit(const query::CompositeFilter* filter);
-    void Visit(const query::EmptyFilter* filter);
+  void Visit(const query::RelOpFilter *filter);
+  void Visit(const query::InFilter *filter);
+  void Visit(const query::CompositeFilter *filter);
+  void Visit(const query::EmptyFilter *filter);
 
-  private:
-    bool IsKeyColumn(const std::string& col) {
-      return std::find(partitioning_.columns().begin(), partitioning_.columns().end(), col)
-        != partitioning_.columns().end();
-    }
+private:
+  bool IsKeyColumn(const std::string &col) {
+    return std::find(partitioning_.columns().begin(),
+                     partitioning_.columns().end(),
+                     col) != partitioning_.columns().end();
+  }
 
-    void AddKeyValue(const std::string& col, const std::string& value) {
-      auto& values = stack_.top();
-      values.emplace_back(ColumnsValues {});
-      values.back().emplace(col, value);
-    }
+  void AddKeyValue(const std::string &col, const std::string &value) {
+    auto &values = stack_.top();
+    values.emplace_back(ColumnsValues{});
+    values.back().emplace(col, value);
+  }
 
-  private:
-    std::stack<FilterValues> stack_;
-    const query::Filter& filter_;
-    const Partitioning& partitioning_;
+private:
+  std::stack<FilterValues> stack_;
+  const query::Filter &filter_;
+  const Partitioning &partitioning_;
 };
 
-FilterAnalyzer::FilterAnalyzer(const query::Filter& filter, const Partitioning& partitioning):
-  filter_(filter),partitioning_(partitioning) {
-}
+FilterAnalyzer::FilterAnalyzer(const query::Filter &filter,
+                               const Partitioning &partitioning)
+    : filter_(filter), partitioning_(partitioning) {}
 
 std::vector<uint32_t> FilterAnalyzer::FindTargetPartitions() {
   filter_.Accept(*this);
 
-  auto& filter_values = stack_.top();
-  auto& key_cols = partitioning_.columns();
+  auto &filter_values = stack_.top();
+  auto &key_cols = partitioning_.columns();
   std::vector<uint32_t> partitions;
 
   // Validate that all cluster key columns are provided:
-  for (auto& col_values : filter_values) {
+  for (auto &col_values : filter_values) {
     if (col_values.size() != key_cols.size()) {
       std::vector<std::string> missing_cols;
-      for (auto& col: key_cols) {
+      for (auto &col : key_cols) {
         if (col_values.find(col) == col_values.end()) {
           missing_cols.push_back(col);
         }
       }
-      throw std::runtime_error(
-        "Key columns are missing from filter: " + boost::algorithm::join(missing_cols, ", "));
+      throw std::runtime_error("Key columns are missing from filter: " +
+                               boost::algorithm::join(missing_cols, ", "));
     }
 
     // Calculate the hash code for the key's columns values:
     uint32_t code = 0;
-    for (auto& col : key_cols) {
+    for (auto &col : key_cols) {
       code = crc32(code, col_values.at(col));
     }
     code = code % partitioning_.total();
@@ -103,35 +104,37 @@ std::vector<uint32_t> FilterAnalyzer::FindTargetPartitions() {
   return partitions;
 }
 
-void FilterAnalyzer::Visit(const query::RelOpFilter* filter) {
-  stack_.emplace(FilterValues {});
+void FilterAnalyzer::Visit(const query::RelOpFilter *filter) {
+  stack_.emplace(FilterValues{});
 
-  if (filter->op() == query::RelOpFilter::Operator::EQUAL && IsKeyColumn(filter->column())) {
+  if (filter->op() == query::RelOpFilter::Operator::EQUAL &&
+      IsKeyColumn(filter->column())) {
     AddKeyValue(filter->column(), filter->value());
   }
 }
 
-void FilterAnalyzer::Visit(const query::InFilter* filter) {
-  stack_.emplace(FilterValues {});
+void FilterAnalyzer::Visit(const query::InFilter *filter) {
+  stack_.emplace(FilterValues{});
 
   if (filter->equal() && IsKeyColumn(filter->column())) {
-    for (auto& value : filter->values()) {
+    for (auto &value : filter->values()) {
       AddKeyValue(filter->column(), value);
     }
   }
 }
 
-void FilterAnalyzer::Visit(const query::CompositeFilter* filter) {
-  stack_.emplace(FilterValues {});
+void FilterAnalyzer::Visit(const query::CompositeFilter *filter) {
+  stack_.emplace(FilterValues{});
 
   for (auto f : filter->filters()) {
     f->Accept(*this);
 
-    FilterValues filter_values = std::move(const_cast<FilterValues&>(stack_.top()));
+    FilterValues filter_values =
+        std::move(const_cast<FilterValues &>(stack_.top()));
     stack_.pop();
 
     // Merge current filter's with all previous filters' values:
-    auto& curr_values = stack_.top();
+    auto &curr_values = stack_.top();
     if (curr_values.empty()) {
       curr_values.swap(filter_values);
     } else {
@@ -141,10 +144,10 @@ void FilterAnalyzer::Visit(const query::CompositeFilter* filter) {
         if (filter_values.empty()) {
           combinations.swap(curr_values);
         } else {
-          for (auto& cv : curr_values) {
-            for (auto& fv : filter_values) {
-              combinations.emplace_back(ColumnsValues {});
-              auto& last = combinations.back();
+          for (auto &cv : curr_values) {
+            for (auto &fv : filter_values) {
+              combinations.emplace_back(ColumnsValues{});
+              auto &last = combinations.back();
               last.insert(cv.begin(), cv.end());
               last.insert(fv.begin(), fv.end());
             }
@@ -153,24 +156,25 @@ void FilterAnalyzer::Visit(const query::CompositeFilter* filter) {
         curr_values.swap(combinations);
       } else { // OR
         // Union values sets:
-        curr_values.insert(curr_values.end(), filter_values.begin(), filter_values.end());
+        curr_values.insert(curr_values.end(), filter_values.begin(),
+                           filter_values.end());
       }
     }
   }
 }
 
-void FilterAnalyzer::Visit(const query::EmptyFilter* filter __attribute__((unused))) {
-}
+void FilterAnalyzer::Visit(const query::EmptyFilter *filter
+                           __attribute__((unused))) {}
 
-RemoteQuery::RemoteQuery(const util::Config& query, const Controller& controller):
-  RemoteQuery(
-    query,
-    controller.tables_partitioning().at(query.str("table")),
-    controller.tables_plans().at(query.str("table"))) {
-}
+RemoteQuery::RemoteQuery(const util::Config &query,
+                         const Controller &controller)
+    : RemoteQuery(query,
+                  controller.tables_partitioning().at(query.str("table")),
+                  controller.tables_plans().at(query.str("table"))) {}
 
-RemoteQuery::RemoteQuery(const util::Config& query, const Partitioning& partitioning, const Plan& plan):
-  ClusterQuery(query),partitioning_(partitioning),plan_(plan) {
+RemoteQuery::RemoteQuery(const util::Config &query,
+                         const Partitioning &partitioning, const Plan &plan)
+    : ClusterQuery(query), partitioning_(partitioning), plan_(plan) {
 
   FindTargetWorkers();
 }
@@ -180,40 +184,39 @@ void RemoteQuery::FindTargetWorkers() {
 
   if (query_.exists("filter")) {
     query::FilterFactory filter_factory;
-    std::unique_ptr<query::Filter> filter(filter_factory.Create(query_.sub("filter")));
+    std::unique_ptr<query::Filter> filter(
+        filter_factory.Create(query_.sub("filter")));
 
     std::vector<std::string> some_strings;
 
     struct Hash {
-      size_t operator() (const std::vector<std::string>& v) const {
+      size_t operator()(const std::vector<std::string> &v) const {
         return boost::hash_range(v.begin(), v.end());
       }
     };
     std::unordered_set<std::vector<std::string>, Hash> workers;
 
     FilterAnalyzer filter_analyzer(*filter, partitioning_);
-    for (auto& partition : filter_analyzer.FindTargetPartitions()) {
+    for (auto &partition : filter_analyzer.FindTargetPartitions()) {
       workers.insert(plan_.partitions_workers()[partition]);
     }
-    std::copy(workers.begin(), workers.end(), std::back_inserter(target_workers_));
+    std::copy(workers.begin(), workers.end(),
+              std::back_inserter(target_workers_));
   }
 }
 
-void RemoteQuery::Accept(ClusterQueryVisitor& visitor) {
-  visitor.Visit(this);
-}
+void RemoteQuery::Accept(ClusterQueryVisitor &visitor) { visitor.Visit(this); }
 
-void LocalQuery::Accept(ClusterQueryVisitor& visitor) {
-  visitor.Visit(this);
-}
+void LocalQuery::Accept(ClusterQueryVisitor &visitor) { visitor.Visit(this); }
 
-std::unique_ptr<ClusterQuery> ClusterQueryFactory::Create(
-  const util::Config& query, const Controller& controller) {
+std::unique_ptr<ClusterQuery>
+ClusterQueryFactory::Create(const util::Config &query,
+                            const Controller &controller) {
   if (query.str("type") == "show") {
     return std::move(std::make_unique<LocalQuery>(query));
   }
   return std::move(std::make_unique<RemoteQuery>(query, controller));
 }
-
-}}}
-
+}
+}
+}

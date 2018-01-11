@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#include <evhttp.h>
 #include "cluster/query/client.h"
+#include <evhttp.h>
 
 namespace viya {
 namespace cluster {
 namespace query {
 
-const std::string& WorkersToTry::Next() {
+const std::string &WorkersToTry::Next() {
   if (current_ >= workers_.size()) {
     throw std::runtime_error("no more workers to try");
   }
@@ -29,16 +29,17 @@ const std::string& WorkersToTry::Next() {
 }
 
 static void on_request_completed(evhttp_request *req, void *obj) {
-  static_cast<WorkersClient*>(obj)->OnRequestCompleted(req);
+  static_cast<WorkersClient *>(obj)->OnRequestCompleted(req);
 }
 
-WorkersClient::WorkersClient(const std::function<void(const char*, size_t)> response_handler):
-  response_handler_(response_handler),requests_(0) {
+WorkersClient::WorkersClient(
+    const std::function<void(const char *, size_t)> response_handler)
+    : response_handler_(response_handler), requests_(0) {
   event_base_ = event_base_new();
 }
 
 WorkersClient::~WorkersClient() {
-  for (auto& it : requests_workers_) {
+  for (auto &it : requests_workers_) {
     delete it.second;
   }
   for (auto conn : connections_) {
@@ -49,22 +50,24 @@ WorkersClient::~WorkersClient() {
   }
 }
 
-void WorkersClient::OnRequestCompleted(evhttp_request* request) {
+void WorkersClient::OnRequestCompleted(evhttp_request *request) {
   if (request->response_code != 200) {
-    throw std::runtime_error(
-      request->response_code_line ? request->response_code_line :
-      "wrong HTTP status (" + std::to_string(request->response_code) + ")");
+    throw std::runtime_error(request->response_code_line
+                                 ? request->response_code_line
+                                 : "wrong HTTP status (" +
+                                       std::to_string(request->response_code) +
+                                       ")");
   }
 
   if (false) { // TODO: decide that we want to query other worker
-    auto data = (char*) EVBUFFER_DATA(request->output_buffer);
+    auto data = (char *)EVBUFFER_DATA(request->output_buffer);
     auto data_size = EVBUFFER_LENGTH(request->output_buffer);
 
     Send(requests_workers_.at(request), request->uri, data, data_size);
     requests_workers_.erase(request);
 
   } else {
-    auto buf = (char*) EVBUFFER_DATA(request->input_buffer);
+    auto buf = (char *)EVBUFFER_DATA(request->input_buffer);
     auto buf_size = EVBUFFER_LENGTH(request->input_buffer);
 
     response_handler_(buf, buf_size);
@@ -75,21 +78,22 @@ void WorkersClient::OnRequestCompleted(evhttp_request* request) {
   }
 }
 
-void WorkersClient::Send(WorkersToTry* workers_to_try,
-                         const char* uri, const char* data, size_t data_size) {
+void WorkersClient::Send(WorkersToTry *workers_to_try, const char *uri,
+                         const char *data, size_t data_size) {
   while (true) {
-    auto& worker_id = workers_to_try->Next();
+    auto &worker_id = workers_to_try->Next();
     auto sep = worker_id.find(":");
     auto host = worker_id.substr(0, sep);
-    auto port = worker_id.substr(sep+1);
+    auto port = worker_id.substr(sep + 1);
 
     auto request = evhttp_request_new(on_request_completed, this);
 
-    evhttp_add_header(request->output_headers, "Content-Type", "application/json");
+    evhttp_add_header(request->output_headers, "Content-Type",
+                      "application/json");
     evbuffer_add(request->output_buffer, data, data_size);
 
     auto connection = evhttp_connection_base_new(
-      event_base_, nullptr, host.c_str(), std::atoi(port.c_str()));
+        event_base_, nullptr, host.c_str(), std::atoi(port.c_str()));
     connections_.push_back(connection);
 
     if (evhttp_make_request(connection, request, EVHTTP_REQ_POST, uri) == 0) {
@@ -99,15 +103,13 @@ void WorkersClient::Send(WorkersToTry* workers_to_try,
   }
 }
 
-void WorkersClient::Send(const std::vector<std::string>& workers,
-                         const std::string& uri, const std::string& data) {
+void WorkersClient::Send(const std::vector<std::string> &workers,
+                         const std::string &uri, const std::string &data) {
   Send(new WorkersToTry(workers), uri.c_str(), data.c_str(), data.size());
   ++requests_;
 }
 
-void WorkersClient::Await() {
-  event_base_dispatch(event_base_);
+void WorkersClient::Await() { event_base_dispatch(event_base_); }
 }
-
-}}}
-
+}
+}

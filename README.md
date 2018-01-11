@@ -22,11 +22,15 @@ For more information please visit the official Website: http://viyadb.com
 
 ## Building
 
-If your development machine is not Linux, please refer to [this](devenv) document for instructions.
+The easiest way to build ViyaDB is using `viyadb/devenv` Docker image:
+
+    docker run --rm -v $(pwd):/viyadb viyadb/devenv:latest /viyadb/scripts/travis-build.sh
+
+If for some reason you'd like to use your own system tools, please read on.
 
 ### Prerequisites
 
-You must have the following prerequisites installed:
+The following components are required for building ViyaDB:
 
  * CMake >= 3.9
  * Boost >= 1.65.1
@@ -34,24 +38,16 @@ You must have the following prerequisites installed:
  * Bison >= 2:3.0.4
  * g++ >= 7.1
 
-Additional third party dependencies are included into the project as Git submodules.
+Additional third party dependencies are included into the project as [Git submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules).
 
 ### Building
-
-To fetch third party dependencies for the first time, run:
-
-    git submodule update --init --recursive
-
-To update third party dependencies when needed, run:
-
-    git submodule update --recursive --remote
 
 To build the project, run:
 
     mkdir build/
     cd build/
     cmake ..
-    make -j8
+    make -j4
 
 ### Testing
 

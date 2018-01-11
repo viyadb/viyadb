@@ -17,9 +17,9 @@
 #ifndef VIYA_CLUSTER_QUERY_CLIENT_H_
 #define VIYA_CLUSTER_QUERY_CLIENT_H_
 
-#include <vector>
-#include <unordered_map>
 #include <functional>
+#include <unordered_map>
+#include <vector>
 
 struct event_base;
 struct evhttp_request;
@@ -30,43 +30,45 @@ namespace cluster {
 namespace query {
 
 class WorkersToTry {
-  public:
-    WorkersToTry(const std::vector<std::string>& workers, size_t current = 0L):
-      workers_(workers),current_(current) {}
+public:
+  WorkersToTry(const std::vector<std::string> &workers, size_t current = 0L)
+      : workers_(workers), current_(current) {}
 
-    WorkersToTry(const WorkersToTry& other) = delete;
+  WorkersToTry(const WorkersToTry &other) = delete;
 
-    const std::string& Next();
+  const std::string &Next();
 
-  private:
-    const std::vector<std::string> workers_;
-    size_t current_;
+private:
+  const std::vector<std::string> workers_;
+  size_t current_;
 };
 
 class WorkersClient {
-  public:
-    WorkersClient(const std::function<void(const char*, size_t)> response_handler);
-    WorkersClient(const WorkersClient&) = delete;
-    ~WorkersClient();
+public:
+  WorkersClient(
+      const std::function<void(const char *, size_t)> response_handler);
+  WorkersClient(const WorkersClient &) = delete;
+  ~WorkersClient();
 
-    void Send(const std::vector<std::string>& workers,
-              const std::string& uri, const std::string& data);
+  void Send(const std::vector<std::string> &workers, const std::string &uri,
+            const std::string &data);
 
-    void OnRequestCompleted(evhttp_request* req);
-    void Await();
+  void OnRequestCompleted(evhttp_request *req);
+  void Await();
 
-  private:
-    void Send(WorkersToTry* workers_to_try,
-              const char* uri, const char* data, size_t data_size);
+private:
+  void Send(WorkersToTry *workers_to_try, const char *uri, const char *data,
+            size_t data_size);
 
-  private:
-    const std::function<void(const char*, size_t)> response_handler_;
-    int requests_;
-    event_base* event_base_;
-    std::vector<evhttp_connection*> connections_;
-    std::unordered_map<const evhttp_request*, WorkersToTry*> requests_workers_;
+private:
+  const std::function<void(const char *, size_t)> response_handler_;
+  int requests_;
+  event_base *event_base_;
+  std::vector<evhttp_connection *> connections_;
+  std::unordered_map<const evhttp_request *, WorkersToTry *> requests_workers_;
 };
-
-}}}
+}
+}
+}
 
 #endif // VIYA_CLUSTER_QUERY_CLIENT_H_

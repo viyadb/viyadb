@@ -17,76 +17,82 @@
 #ifndef VIYA_CODEGEN_QUERY_FILTER_H_
 #define VIYA_CODEGEN_QUERY_FILTER_H_
 
+#include "codegen/generator.h"
 #include "db/column.h"
 #include "query/filter.h"
-#include "codegen/generator.h"
 
-namespace viya { namespace db { class Table; }}
+namespace viya {
+namespace db {
+class Table;
+}
+}
 
 namespace viya {
 namespace codegen {
 
 namespace query = viya::query;
 
-class FilterArgsPacker: public query::FilterVisitor {
-  public:
-    FilterArgsPacker(const db::Table& table):table_(table) {}
+class FilterArgsPacker : public query::FilterVisitor {
+public:
+  FilterArgsPacker(const db::Table &table) : table_(table) {}
 
-    void Visit(const query::RelOpFilter* filter);
-    void Visit(const query::InFilter* filter);
-    void Visit(const query::CompositeFilter* filter);
-    void Visit(const query::EmptyFilter* filter);
+  void Visit(const query::RelOpFilter *filter);
+  void Visit(const query::InFilter *filter);
+  void Visit(const query::CompositeFilter *filter);
+  void Visit(const query::EmptyFilter *filter);
 
-    const std::vector<db::AnyNum>& args() const { return args_; }
+  const std::vector<db::AnyNum> &args() const { return args_; }
 
-  private:
-    const db::Table& table_;
-    std::vector<db::AnyNum> args_;
+private:
+  const db::Table &table_;
+  std::vector<db::AnyNum> args_;
 };
 
-class FilterArgsUnpack: public CodeGenerator {
-  public:
-    FilterArgsUnpack(const db::Table& table, const query::Filter* filter, const std::string& var_prefix)
-      :table_(table),filter_(filter),var_prefix_(var_prefix) {}
-    FilterArgsUnpack(const FilterArgsUnpack& other) = delete;
+class FilterArgsUnpack : public CodeGenerator {
+public:
+  FilterArgsUnpack(const db::Table &table, const query::Filter *filter,
+                   const std::string &var_prefix)
+      : table_(table), filter_(filter), var_prefix_(var_prefix) {}
+  FilterArgsUnpack(const FilterArgsUnpack &other) = delete;
 
-    Code GenerateCode() const;
+  Code GenerateCode() const;
 
-  private:
-    const db::Table& table_;
-    const query::Filter* filter_;
-    const std::string var_prefix_;
+private:
+  const db::Table &table_;
+  const query::Filter *filter_;
+  const std::string var_prefix_;
 };
 
-class SegmentSkip: CodeGenerator {
-  public:
-    SegmentSkip(const db::Table& table, const query::Filter* filter):
-      table_(table),filter_(filter) {}
+class SegmentSkip : CodeGenerator {
+public:
+  SegmentSkip(const db::Table &table, const query::Filter *filter)
+      : table_(table), filter_(filter) {}
 
-    SegmentSkip(const SegmentSkip& other) = delete;
+  SegmentSkip(const SegmentSkip &other) = delete;
 
-    Code GenerateCode() const;
+  Code GenerateCode() const;
 
-  private:
-    const db::Table& table_;
-    const query::Filter* filter_;
+private:
+  const db::Table &table_;
+  const query::Filter *filter_;
 };
 
-class FilterComparison: CodeGenerator {
-  public:
-    FilterComparison(const db::Table& table, const query::Filter* filter, const std::string& var_prefix):
-      table_(table),filter_(filter),var_prefix_(var_prefix) {}
+class FilterComparison : CodeGenerator {
+public:
+  FilterComparison(const db::Table &table, const query::Filter *filter,
+                   const std::string &var_prefix)
+      : table_(table), filter_(filter), var_prefix_(var_prefix) {}
 
-    FilterComparison(const FilterComparison& other) = delete;
+  FilterComparison(const FilterComparison &other) = delete;
 
-    Code GenerateCode() const;
+  Code GenerateCode() const;
 
-  private:
-    const db::Table& table_;
-    const query::Filter* filter_;
-    const std::string var_prefix_;
+private:
+  const db::Table &table_;
+  const query::Filter *filter_;
+  const std::string var_prefix_;
 };
-
-}}
+}
+}
 
 #endif // VIYA_CODEGEN_QUERY_FILTER_H_

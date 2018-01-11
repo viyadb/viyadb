@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-#include <iostream>
-#include <limits.h>
-#include <stdlib.h>
-#include <fstream>
-#include <stdexcept>
-#include <thread>
-#include <glog/logging.h>
-#include <boost/algorithm/string.hpp>
+#include "server/args.h"
 #include "db/defs.h"
 #include "util/config.h"
-#include "server/args.h"
+#include <boost/algorithm/string.hpp>
+#include <fstream>
+#include <glog/logging.h>
+#include <iostream>
+#include <limits.h>
+#include <stdexcept>
+#include <stdlib.h>
+#include <thread>
 
 namespace viya {
 namespace server {
@@ -33,9 +33,9 @@ namespace util = viya::util;
 
 std::string CmdlineArgs::Help() {
   std::stringstream ss;
-  ss<<"ViyaDB "<<VIYA_VERSION<<std::endl
-    <<"Usage: viyad [-h] [-p port] [-c cpu_list]"<<std::endl
-    <<"       config-file";
+  ss << "ViyaDB " << VIYA_VERSION << std::endl
+     << "Usage: viyad [-h] [-p port] [-c cpu_list]" << std::endl
+     << "       config-file";
   return ss.str();
 }
 
@@ -44,28 +44,26 @@ util::Config CmdlineArgs::Parse(std::vector<std::string> args) {
   std::string config_file;
   for (size_t i = 1; i < args.size(); ++i) {
     if (args[i] == "-h" || args[i] == "--help") {
-      std::cout<<Help()<<std::endl;
+      std::cout << Help() << std::endl;
       exit(0);
     }
 
-    if ((args[i] == "-p" || args[i] == "--port") && i+1 < args.size()) {
+    if ((args[i] == "-p" || args[i] == "--port") && i + 1 < args.size()) {
       args_config.set_num("http_port", std::stoi(args[++i]));
-    }
-    else if ((args[i] == "-c" || args[i] == "--cpu") && i+1 < args.size()) {
+    } else if ((args[i] == "-c" || args[i] == "--cpu") && i + 1 < args.size()) {
       std::vector<std::string> vals;
       boost::split(vals, args[++i], boost::is_any_of(","));
       std::vector<long> cpu_list;
-      for (auto& v : vals) {
+      for (auto &v : vals) {
         cpu_list.push_back(std::stoi(v));
       }
       args_config.set_numlist("cpu_list", cpu_list);
-    }
-    else {
+    } else {
       config_file = args[i];
     }
   }
   if (config_file.empty()) {
-    std::cerr<<Help()<<std::endl;
+    std::cerr << Help() << std::endl;
     exit(-1);
   }
   util::Config config = Defaults();
@@ -92,22 +90,22 @@ util::Config CmdlineArgs::Defaults() {
   return config;
 }
 
-util::Config CmdlineArgs::OpenConfig(const std::string& file) {
+util::Config CmdlineArgs::OpenConfig(const std::string &file) {
   char log_file[PATH_MAX];
   if (realpath(file.c_str(), log_file) == nullptr) {
     throw std::runtime_error("Config file not found: " + file);
   }
-  LOG(INFO)<<"Opening config file: "<<log_file;
+  LOG(INFO) << "Opening config file: " << log_file;
 
   std::ifstream fs(log_file);
   if (!fs.good()) {
-    throw std::runtime_error("Can't access config file: " + std::string(log_file));
+    throw std::runtime_error("Can't access config file: " +
+                             std::string(log_file));
   }
   std::stringstream buf;
-  buf<<fs.rdbuf();
+  buf << fs.rdbuf();
   util::Config config(buf.str().c_str());
   return config;
 }
-
-}}
-
+}
+}

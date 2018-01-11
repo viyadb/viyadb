@@ -14,50 +14,47 @@
  * limitations under the License.
  */
 
-#include <algorithm>
-#include <stdexcept>
-#include <iostream>
-#include "util/config.h"
 #include "query/filter.h"
+#include "util/config.h"
+#include <algorithm>
+#include <iostream>
+#include <stdexcept>
 
 namespace viya {
 namespace query {
 
-void RelOpFilter::Accept(FilterVisitor& visitor) const {
+void RelOpFilter::Accept(FilterVisitor &visitor) const { visitor.Visit(this); }
+
+void InFilter::Accept(FilterVisitor &visitor) const { visitor.Visit(this); }
+
+void CompositeFilter::Accept(FilterVisitor &visitor) const {
   visitor.Visit(this);
 }
 
-void InFilter::Accept(FilterVisitor& visitor) const {
-  visitor.Visit(this);
-}
+void EmptyFilter::Accept(FilterVisitor &visitor) const { visitor.Visit(this); }
 
-void CompositeFilter::Accept(FilterVisitor& visitor) const {
-  visitor.Visit(this);
-}
-
-void EmptyFilter::Accept(FilterVisitor& visitor) const {
-  visitor.Visit(this);
-}
-
-Filter* FilterFactory::Create(const util::Config& config, bool negate) {
+Filter *FilterFactory::Create(const util::Config &config, bool negate) {
   if (!config.exists("op")) {
     return new EmptyFilter();
   }
   std::string op = config.str("op");
   if (op == "and" || op == "or") {
-    std::vector<Filter*> filters;
-    for (util::Config& filter_conf : config.sublist("filters")) {
+    std::vector<Filter *> filters;
+    for (util::Config &filter_conf : config.sublist("filters")) {
       filters.push_back(Create(filter_conf, negate));
     }
-    std::sort(filters.begin(), filters.end(), [] (const Filter* a, const Filter* b) -> bool { 
-        return a->precedence() < b->precedence();
-    });
+    std::sort(filters.begin(), filters.end(),
+              [](const Filter *a, const Filter *b) -> bool {
+                return a->precedence() < b->precedence();
+              });
     if (negate) {
       return new CompositeFilter(op == "and" ? CompositeFilter::Operator::OR
-                                 : CompositeFilter::Operator::AND, filters);
+                                             : CompositeFilter::Operator::AND,
+                                 filters);
     }
     return new CompositeFilter(op == "and" ? CompositeFilter::Operator::AND
-                               : CompositeFilter::Operator::OR, filters);
+                                           : CompositeFilter::Operator::OR,
+                               filters);
   }
   if (op == "not") {
     return Create(config.sub("filter"), !negate);
@@ -84,7 +81,8 @@ Filter* FilterFactory::Create(const util::Config& config, bool negate) {
   }
   if (op == "lt") {
     if (negate) {
-      return new RelOpFilter(RelOpFilter::Operator::GREATER_EQUAL, column, value);
+      return new RelOpFilter(RelOpFilter::Operator::GREATER_EQUAL, column,
+                             value);
     }
     return new RelOpFilter(RelOpFilter::Operator::LESS, column, value);
   }
@@ -108,6 +106,5 @@ Filter* FilterFactory::Create(const util::Config& config, bool negate) {
   }
   throw std::invalid_argument("Unsupported filter operataor: " + op);
 }
-
-}}
-
+}
+}

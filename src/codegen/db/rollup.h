@@ -17,64 +17,66 @@
 #ifndef VIYA_CODEGEN_DB_ROLLUP_H_
 #define VIYA_CODEGEN_DB_ROLLUP_H_
 
-#include "db/rollup.h"
 #include "codegen/generator.h"
+#include "db/rollup.h"
 
 namespace viya {
 namespace db {
 
 class Dimension;
 class TimeDimension;
-
-}}
+}
+}
 
 namespace viya {
 namespace codegen {
 
 namespace db = viya::db;
 
-class RollupDefs: public CodeGenerator {
-  public:
-    RollupDefs(const std::vector<const db::Dimension*>& dimensions):
-      dimensions_(dimensions) {}
+class RollupDefs : public CodeGenerator {
+public:
+  RollupDefs(const std::vector<const db::Dimension *> &dimensions)
+      : dimensions_(dimensions) {}
 
-    RollupDefs(const RollupDefs& other) = delete;
+  RollupDefs(const RollupDefs &other) = delete;
 
-    Code GenerateCode() const;
+  Code GenerateCode() const;
 
-  private:
-    const std::vector<const db::Dimension*>& dimensions_;
+private:
+  const std::vector<const db::Dimension *> &dimensions_;
 };
 
-class RollupReset: public CodeGenerator {
-  public:
-    RollupReset(const std::vector<const db::Dimension*>& dimensions, const std::string& prefix = ""):
-      dimensions_(dimensions),prefix_(prefix) {}
+class RollupReset : public CodeGenerator {
+public:
+  RollupReset(const std::vector<const db::Dimension *> &dimensions,
+              const std::string &prefix = "")
+      : dimensions_(dimensions), prefix_(prefix) {}
 
-    RollupReset(const RollupReset& other) = delete;
+  RollupReset(const RollupReset &other) = delete;
 
-    Code GenerateCode() const;
+  Code GenerateCode() const;
 
-  private:
-    const std::vector<const db::Dimension*>& dimensions_;
-    const std::string prefix_;
+private:
+  const std::vector<const db::Dimension *> &dimensions_;
+  const std::string prefix_;
 };
 
-class TimestampRollup: public CodeGenerator {
-  public:
-    TimestampRollup(const db::TimeDimension* dimension, const std::string& var_name, const std::string& prefix = "")
-      :dimension_(dimension),var_name_(var_name),prefix_(prefix) {}
+class TimestampRollup : public CodeGenerator {
+public:
+  TimestampRollup(const db::TimeDimension *dimension,
+                  const std::string &var_name, const std::string &prefix = "")
+      : dimension_(dimension), var_name_(var_name), prefix_(prefix) {}
 
-    TimestampRollup(const TimestampRollup& other) = delete;
+  TimestampRollup(const TimestampRollup &other) = delete;
 
-    Code GenerateCode() const;
+  Code GenerateCode() const;
 
-  private:
-    const db::TimeDimension* dimension_;
-    std::string var_name_;
-    const std::string prefix_;
+private:
+  const db::TimeDimension *dimension_;
+  std::string var_name_;
+  const std::string prefix_;
 };
-
-}}
+}
+}
 
 #endif // VIYA_CODEGEN_DB_ROLLUP_H_

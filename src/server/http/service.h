@@ -17,10 +17,14 @@
 #ifndef VIYA_SERVER_HTTP_SERVICE_H_
 #define VIYA_SERVER_HTTP_SERVICE_H_
 
-#include <server_http.hpp>
 #include "util/config.h"
+#include <server_http.hpp>
 
-namespace viya { namespace db { class Database; }}
+namespace viya {
+namespace db {
+class Database;
+}
+}
 
 namespace viya {
 namespace server {
@@ -34,19 +38,20 @@ typedef std::shared_ptr<HttpServer::Request> RequestPtr;
 typedef std::shared_ptr<HttpServer::Response> ResponsePtr;
 
 class Service {
-  public:
-    Service(const util::Config& config, db::Database& database);
+public:
+  Service(const util::Config &config, db::Database &database);
 
-    void Start();
+  void Start();
 
-  private:
-    void SendError(ResponsePtr response, const std::string& error);
+private:
+  void SendError(ResponsePtr response, const std::string &error);
 
-  private:
-    db::Database& database_;
-    HttpServer server_;
+private:
+  db::Database &database_;
+  HttpServer server_;
 };
-
-}}}
+}
+}
+}
 
 #endif // VIYA_SERVER_HTTP_SERVICE_H_

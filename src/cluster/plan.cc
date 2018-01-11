@@ -14,25 +14,25 @@
  * limitations under the License.
  */
 
-#include <sstream>
-#include <map>
 #include "cluster/plan.h"
+#include <map>
+#include <sstream>
 
 namespace viya {
 namespace cluster {
 
-Plan::Plan(const Partitions& partitions):
-  partitions_(partitions) {
+Plan::Plan(const Partitions &partitions) : partitions_(partitions) {
   AssignPartitionsToWorkers();
 }
 
-Plan::Plan(const json& plan) {
+Plan::Plan(const json &plan) {
   for (auto plan_it = plan.begin(); plan_it != plan.end(); ++plan_it) {
     Replicas replicas;
-    for (auto placement_it = plan_it->begin(); placement_it != plan_it->end(); ++placement_it) {
+    for (auto placement_it = plan_it->begin(); placement_it != plan_it->end();
+         ++placement_it) {
       json placement = *placement_it;
-      replicas.emplace_back(
-        placement["hostname"].get<std::string>(), (uint16_t)placement["port"].get<int>());
+      replicas.emplace_back(placement["hostname"].get<std::string>(),
+                            (uint16_t)placement["port"].get<int>());
     }
     partitions_.emplace_back(std::move(replicas));
   }
@@ -42,11 +42,11 @@ Plan::Plan(const json& plan) {
 
 json Plan::ToJson() const {
   json plan = json::array();
-  for (auto& replicas : partitions_) {
+  for (auto &replicas : partitions_) {
     json partitions = json::array();
-    for (auto& p : replicas) {
+    for (auto &p : replicas) {
       partitions.push_back({{"hostname", p.hostname()}, {"port", p.port()}});
-    } 
+    }
     std::sort(partitions.begin(), partitions.end());
     plan.push_back(partitions);
   }
@@ -60,9 +60,10 @@ void Plan::AssignPartitionsToWorkers() {
 
   std::vector<uint32_t> partitions;
   uint32_t partition = 0;
-  for (auto& replicas : partitions_) {
-    for (auto& replica : replicas) {
-      std::string worker_id = replica.hostname() + ":" + std::to_string(replica.port());
+  for (auto &replicas : partitions_) {
+    for (auto &replica : replicas) {
+      std::string worker_id =
+          replica.hostname() + ":" + std::to_string(replica.port());
       workers_partitions_.emplace(worker_id, partition);
       partitions_workers_[partition].push_back(worker_id);
     }
@@ -70,12 +71,12 @@ void Plan::AssignPartitionsToWorkers() {
   }
 }
 
-PlanGenerator::PlanGenerator(const util::Config& cluster_config)
-  :cluster_config_(cluster_config) {
-}
+PlanGenerator::PlanGenerator(const util::Config &cluster_config)
+    : cluster_config_(cluster_config) {}
 
-Plan PlanGenerator::Generate(size_t partitions_num,
-                             const std::map<std::string, util::Config>& workers_configs) {
+Plan PlanGenerator::Generate(
+    size_t partitions_num,
+    const std::map<std::string, util::Config> &workers_configs) {
 
   typedef std::vector<util::Config> workers;
   typedef std::map<std::string, workers> workers_by_host;
@@ -84,18 +85,18 @@ Plan PlanGenerator::Generate(size_t partitions_num,
   hosts_by_rack hbr;
   size_t total_workers = 0;
 
-  for (auto& it : workers_configs) {
-    auto& worker_conf = it.second;
+  for (auto &it : workers_configs) {
+    auto &worker_conf = it.second;
     std::string rack_id = worker_conf.str("rack_id", "");
     std::string hostname = worker_conf.str("hostname");
 
     auto hbr_it = hbr.find(rack_id);
     if (hbr_it == hbr.end()) {
-      hbr_it = hbr.emplace(rack_id, workers_by_host {}).first;
+      hbr_it = hbr.emplace(rack_id, workers_by_host{}).first;
     }
     auto wbh_it = hbr_it->second.find(hostname);
     if (wbh_it == hbr_it->second.end()) {
-      wbh_it = hbr_it->second.emplace(hostname, workers {}).first;
+      wbh_it = hbr_it->second.emplace(hostname, workers{}).first;
     }
     wbh_it->second.push_back(worker_conf);
     ++total_workers;
@@ -106,15 +107,15 @@ Plan PlanGenerator::Generate(size_t partitions_num,
   // Validate configuration:
   if (partitions_num * replicas_num > total_workers) {
     std::ostringstream s;
-    s<<"Can't place "<<std::to_string(replicas_num)
-      <<" copies of "<<std::to_string(partitions_num)
-      <<" partitions on "<<std::to_string(total_workers)<<" workers";
+    s << "Can't place " << std::to_string(replicas_num) << " copies of "
+      << std::to_string(partitions_num) << " partitions on "
+      << std::to_string(total_workers) << " workers";
     throw std::runtime_error(s.str());
   }
   if (replicas_num > hbr.size()) {
     std::ostringstream s;
-    s<<"Replication factor of "<<std::to_string(replicas_num)
-      <<" is smaller than the number of racks: "<<std::to_string(hbr.size());
+    s << "Replication factor of " << std::to_string(replicas_num)
+      << " is smaller than the number of racks: " << std::to_string(hbr.size());
     throw std::runtime_error(s.str());
   }
 
@@ -141,13 +142,16 @@ Plan PlanGenerator::Generate(size_t partitions_num,
     worker_idxs[i].resize(rh[i].size(), 0);
   }
 
-  Partitions partitions(partitions_num, Replicas {});
+  Partitions partitions(partitions_num, Replicas{});
   size_t partition = 0;
   while (partition < partitions_num) {
     // Iterate on every rack and on every host in cycles.
-    // Let's say we have two racks, two hosts under each rack and two workers under each host:
-    // r1:h1:w1 -> r2:h1:w1 -> r1:h2:w1 -> r2:h2:w1 -> r1:h1:w2 -> r2:h1:w2 -> r1:h2:w2 -> r2:h2:w2
-    for (size_t ri = 0, w = 0, p = 0; p < replicas_num && w < total_workers; ++w) {
+    // Let's say we have two racks, two hosts under each rack and two workers
+    // under each host:
+    // r1:h1:w1 -> r2:h1:w1 -> r1:h2:w1 -> r2:h2:w1 -> r1:h1:w2 -> r2:h1:w2 ->
+    // r1:h2:w2 -> r2:h2:w2
+    for (size_t ri = 0, w = 0, p = 0; p < replicas_num && w < total_workers;
+         ++w) {
       size_t hi = host_idxs[ri];
       size_t wi = worker_idxs[ri][hi];
 
@@ -155,7 +159,8 @@ Plan PlanGenerator::Generate(size_t partitions_num,
       if (wi < rh[ri][hi].size()) {
         auto next_worker = rh[ri][hi][wi];
         worker_idxs[ri][hi] = wi + 1;
-        partitions[partition].emplace_back(next_worker.str("hostname"), next_worker.num("http_port"));
+        partitions[partition].emplace_back(next_worker.str("hostname"),
+                                           next_worker.num("http_port"));
         ++p;
       }
       host_idxs[ri] = (hi + 1) % rh[ri].size();
@@ -164,7 +169,7 @@ Plan PlanGenerator::Generate(size_t partitions_num,
     ++partition;
   }
 
-  return { partitions };
+  return {partitions};
 }
-
-}}
+}
+}

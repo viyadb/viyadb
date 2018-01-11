@@ -17,16 +17,18 @@
 #ifndef VIYA_DB_STATS_H_
 #define VIYA_DB_STATS_H_
 
+#include <cstddef>
+
 namespace viya {
 namespace db {
 
 class UpsertStats {
-  public:
-    UpsertStats():new_recs(0) {}
+public:
+  UpsertStats() : new_recs(0) {}
 
-    size_t new_recs;
+  size_t new_recs;
 };
-
-}}
+}
+}
 
 #endif // VIYA_DB_STATS_H_

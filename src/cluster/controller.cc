@@ -14,48 +14,51 @@
  * limitations under the License.
  */
 
+#include "cluster/controller.h"
+#include "cluster/configurator.h"
+#include "cluster/notifier.h"
+#include <boost/exception/diagnostic_information.hpp>
 #include <chrono>
 #include <glog/logging.h>
-#include <boost/exception/diagnostic_information.hpp>
-#include "cluster/controller.h"
-#include "cluster/notifier.h"
-#include "cluster/configurator.h"
 
 namespace viya {
 namespace cluster {
 
-Controller::Controller(const util::Config& config):
-  config_(config),
-  cluster_id_(config.str("cluster_id")),
-  consul_(config),
-  db_(config, 0, 0) {
+Controller::Controller(const util::Config &config)
+    : config_(config), cluster_id_(config.str("cluster_id")), consul_(config),
+      db_(config, 0, 0) {
 
   ReadClusterConfig();
 
   session_ = consul_.CreateSession(std::string("viyadb-controller"));
-  le_ = consul_.ElectLeader(*session_, "clusters/" + cluster_id_ + "/nodes/controller/leader");
+  le_ = consul_.ElectLeader(
+      *session_, "clusters/" + cluster_id_ + "/nodes/controller/leader");
 
   initializer_ = std::make_unique<util::Later>(10000L, [this]() {
     try {
       Initialize();
     } catch (...) {
-      LOG(ERROR)<<"Error initializing controller: "<<boost::current_exception_diagnostic_information();
+      LOG(ERROR) << "Error initializing controller: "
+                 << boost::current_exception_diagnostic_information();
     }
   });
 }
 
 void Controller::ReadClusterConfig() {
-  cluster_config_ = util::Config(consul_.GetKey("clusters/" + cluster_id_ + "/config"));
-  LOG(INFO)<<"Using cluster configuration: "<<cluster_config_.dump();
+  cluster_config_ =
+      util::Config(consul_.GetKey("clusters/" + cluster_id_ + "/config"));
+  LOG(INFO) << "Using cluster configuration: " << cluster_config_.dump();
 
   tables_configs_.clear();
-  for (auto& table : cluster_config_.strlist("tables", {})) {
-    auto& table_conf = tables_configs_.emplace(
-      table, consul_.GetKey("tables/" + table + "/config")).first->second;
+  for (auto &table : cluster_config_.strlist("tables", {})) {
+    auto &table_conf =
+        tables_configs_
+            .emplace(table, consul_.GetKey("tables/" + table + "/config"))
+            .first->second;
 
     // Adapt metrics:
-    json* raw_config = reinterpret_cast<json*>(table_conf.json_ptr());
-    for (auto& metric : (*raw_config)["metrics"]) {
+    json *raw_config = reinterpret_cast<json *>(table_conf.json_ptr());
+    for (auto &metric : (*raw_config)["metrics"]) {
       if (metric["type"] == "count") {
         metric["type"] = "long_sum";
       }
@@ -63,32 +66,41 @@ void Controller::ReadClusterConfig() {
 
     db_.CreateTable(table_conf);
   }
-  LOG(INFO)<<"Read "<<tables_configs_.size()<<" tables configurations";
+  LOG(INFO) << "Read " << tables_configs_.size() << " tables configurations";
 
   indexers_configs_.clear();
-  for (auto& indexer_id : cluster_config_.strlist("indexers", {})) {
-    indexers_configs_.emplace(indexer_id, consul_.GetKey("indexers/" + indexer_id + "/config"));
+  for (auto &indexer_id : cluster_config_.strlist("indexers", {})) {
+    indexers_configs_.emplace(
+        indexer_id, consul_.GetKey("indexers/" + indexer_id + "/config"));
   }
-  LOG(INFO)<<"Read "<<indexers_configs_.size()<<" indexers configurations";
+  LOG(INFO) << "Read " << indexers_configs_.size()
+            << " indexers configurations";
 }
 
-bool Controller::ReadWorkersConfigs(std::map<std::string, util::Config>& configs) {
+bool Controller::ReadWorkersConfigs(
+    std::map<std::string, util::Config> &configs) {
   configs.clear();
 
-  auto active_workers = consul_.ListKeys("clusters/" + cluster_id_ + "/nodes/workers");
-  auto workers_num = (size_t)cluster_config_.num("workers", config_.num("workers"));
+  auto active_workers =
+      consul_.ListKeys("clusters/" + cluster_id_ + "/nodes/workers");
+  auto workers_num =
+      (size_t)cluster_config_.num("workers", config_.num("workers"));
 
   if (workers_num > 0 && active_workers.size() < workers_num) {
-    LOG(INFO)<<"Number of active workers is less than the expected number of workers ("<<workers_num<<")";
+    LOG(INFO) << "Number of active workers is less than the expected number of "
+                 "workers ("
+              << workers_num << ")";
     return false;
   }
 
-  LOG(INFO)<<"Found "<<active_workers.size()<<" active workers";
-  for (auto& worker_id : active_workers) {
-    configs.emplace(worker_id, consul_.GetKey(
-        "clusters/" + cluster_id_ + "/nodes/workers/" + worker_id, false, "{}"));
+  LOG(INFO) << "Found " << active_workers.size() << " active workers";
+  for (auto &worker_id : active_workers) {
+    configs.emplace(worker_id,
+                    consul_.GetKey("clusters/" + cluster_id_ +
+                                       "/nodes/workers/" + worker_id,
+                                   false, "{}"));
   }
-  LOG(INFO)<<"Read "<<configs.size()<<" workers configurations";
+  LOG(INFO) << "Read " << configs.size() << " workers configurations";
   return true;
 }
 
@@ -111,34 +123,39 @@ void Controller::Initialize() {
 
 void Controller::FetchLatestBatchInfo() {
   indexers_batches_.clear();
-  for (auto& it : indexers_configs_) {
-    auto notifier = NotifierFactory::Create(it.first, it.second.sub("batch").sub("notifier"), IndexerType::BATCH);
+  for (auto &it : indexers_configs_) {
+    auto notifier = NotifierFactory::Create(
+        it.first, it.second.sub("batch").sub("notifier"), IndexerType::BATCH);
     auto msg = notifier->GetLastMessage();
     if (msg) {
-      indexers_batches_.emplace(it.first, std::move(static_cast<BatchInfo*>(msg.release())));
+      indexers_batches_.emplace(
+          it.first, std::move(static_cast<BatchInfo *>(msg.release())));
     }
   }
-  LOG(INFO)<<"Fetched "<<indexers_batches_.size()<<" batches from indexers notifiers";
+  LOG(INFO) << "Fetched " << indexers_batches_.size()
+            << " batches from indexers notifiers";
 }
 
 void Controller::InitializePartitioning() {
   tables_partitioning_.clear();
 
   if (indexers_batches_.empty()) {
-    LOG(WARNING)<<"No historical batches information available - generating default partitioning";
+    LOG(WARNING) << "No historical batches information available - generating "
+                    "default partitioning";
 
-    for (auto& table_it : tables_configs_) {
-      auto& table_name = table_it.first;
-      auto& table_conf = table_it.second;
+    for (auto &table_it : tables_configs_) {
+      auto &table_name = table_it.first;
+      auto &table_conf = table_it.second;
 
       util::Config partitioning;
       if (table_conf.exists("partitioning")) {
         partitioning = table_conf.sub("partitioning");
       } else {
         // Take partitioning config from indexer responsible for that table:
-        for (auto& indexer_it : indexers_configs_) {
+        for (auto &indexer_it : indexers_configs_) {
           auto indexer_tables = indexer_it.second.strlist("tables");
-          if (std::find(indexer_tables.begin(), indexer_tables.end(), table_name) != indexer_tables.end()) {
+          if (std::find(indexer_tables.begin(), indexer_tables.end(),
+                        table_name) != indexer_tables.end()) {
             auto batch_conf = indexer_it.second.sub("batch");
             if (batch_conf.exists("partitioning")) {
               partitioning = batch_conf.sub("partitioning");
@@ -157,21 +174,25 @@ void Controller::InitializePartitioning() {
           mapping[v] = v;
         }
         tables_partitioning_.emplace(
-          std::piecewise_construct, std::forward_as_tuple(table_name),
-          std::forward_as_tuple(mapping, total_partitions, partitioning.strlist("columns")));
+            std::piecewise_construct, std::forward_as_tuple(table_name),
+            std::forward_as_tuple(mapping, total_partitions,
+                                  partitioning.strlist("columns")));
       } else {
         // TODO: generate default partitioning based on workers number
       }
     }
   } else {
-    for (auto& batches_it : indexers_batches_) {
-      for (auto& tables_it : batches_it.second->tables_info()) {
-        auto& table_name = tables_it.first;
-        if (tables_partitioning_.find(table_name) != tables_partitioning_.end()) {
+    for (auto &batches_it : indexers_batches_) {
+      for (auto &tables_it : batches_it.second->tables_info()) {
+        auto &table_name = tables_it.first;
+        if (tables_partitioning_.find(table_name) !=
+            tables_partitioning_.end()) {
           throw std::runtime_error("Multiple indexers operate on same tables!");
         }
-        // TODO: check whether partitioning is available (or make it mandatory on indexer side)
-        tables_partitioning_.emplace(table_name, tables_it.second.partitioning());
+        // TODO: check whether partitioning is available (or make it mandatory
+        // on indexer side)
+        tables_partitioning_.emplace(table_name,
+                                     tables_it.second.partitioning());
       }
     }
   }
@@ -183,25 +204,28 @@ void Controller::InitializePlan() {
       if (GeneratePlan()) {
         break;
       }
-      LOG(INFO)<<"Can't generate or store partitioning plan right now... will retry soon";
+      LOG(INFO) << "Can't generate or store partitioning plan right now... "
+                   "will retry soon";
       std::this_thread::sleep_for(std::chrono::seconds(10));
     } else {
       if (ReadPlan()) {
         break;
       }
-      LOG(INFO)<<"Partitioning plan is not available yet... waiting for leader to generate it";
+      LOG(INFO) << "Partitioning plan is not available yet... waiting for "
+                   "leader to generate it";
       std::this_thread::sleep_for(std::chrono::seconds(10));
     }
   }
 }
 
 bool Controller::ReadPlan() {
-  json existing_plan = json::parse(consul_.GetKey("clusters/" + cluster_id_ + "/plan", false, "{}"));
+  json existing_plan = json::parse(
+      consul_.GetKey("clusters/" + cluster_id_ + "/plan", false, "{}"));
   if (existing_plan.empty()) {
     return false;
   }
 
-  LOG(INFO)<<"Reading cached plan from Consul";
+  LOG(INFO) << "Reading cached plan from Consul";
   tables_plans_.clear();
 
   json tables_plans = existing_plan["plan"];
@@ -217,26 +241,27 @@ bool Controller::GeneratePlan() {
     std::this_thread::sleep_for(std::chrono::seconds(10));
   }
 
-  LOG(INFO)<<"Generating partitioning plan";
+  LOG(INFO) << "Generating partitioning plan";
   PlanGenerator plan_generator(cluster_config_);
   tables_plans_.clear();
 
-  for (auto& it : tables_partitioning_) {
-    tables_plans_.emplace(it.first, std::move(
-        plan_generator.Generate(it.second.total(), configs)));
+  for (auto &it : tables_partitioning_) {
+    tables_plans_.emplace(it.first, std::move(plan_generator.Generate(
+                                        it.second.total(), configs)));
   }
 
-  LOG(INFO)<<"Storing partitioning plan to Consul";
+  LOG(INFO) << "Storing partitioning plan to Consul";
   json cache = json({});
-  for (auto& it : tables_plans_) {
+  for (auto &it : tables_plans_) {
     cache[it.first] = it.second.ToJson();
   }
-  return session_->EphemeralKey("clusters/" + cluster_id_ + "/plan", cache.dump());
+  return session_->EphemeralKey("clusters/" + cluster_id_ + "/plan",
+                                cache.dump());
 }
 
 void Controller::StartHttpServer() {
   http_service_ = std::make_unique<http::Service>(*this);
   http_service_->Start();
 }
-
-}}
+}
+}

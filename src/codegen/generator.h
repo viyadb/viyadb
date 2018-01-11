@@ -17,73 +17,71 @@
 #ifndef VIYA_CODEGEN_GENERATOR_H_
 #define VIYA_CODEGEN_GENERATOR_H_
 
+#include "codegen/compiler.h"
 #include <sstream>
 #include <vector>
-#include "codegen/compiler.h"
 
 namespace viya {
 namespace codegen {
 
 class Code {
-  public:
-    Code() {}
-    Code(const Code& other) = delete;
-    Code(Code&& other);
+public:
+  Code() {}
+  Code(const Code &other) = delete;
+  Code(Code &&other);
 
-    void AddHeaders(std::vector<std::string> headers) {
-      headers_.insert(headers_.end(), headers.begin(), headers.end());
-    }
+  void AddHeaders(std::vector<std::string> headers) {
+    headers_.insert(headers_.end(), headers.begin(), headers.end());
+  }
 
-    template<typename T>
-    Code& operator<<(const T& v) {
-      body_<<v;
-      return *this;
-    }
+  template <typename T> Code &operator<<(const T &v) {
+    body_ << v;
+    return *this;
+  }
 
-    Code& operator<<(const Code& c) {
-      body_<<c.body_.str();
-      AddHeaders(c.headers_);
-      return *this;
-    }
+  Code &operator<<(const Code &c) {
+    body_ << c.body_.str();
+    AddHeaders(c.headers_);
+    return *this;
+  }
 
-    std::string str() const;
+  std::string str() const;
 
-  private:
-    std::ostringstream body_;
-    std::vector<std::string> headers_;
+private:
+  std::ostringstream body_;
+  std::vector<std::string> headers_;
 };
 
 class CodeGenerator {
-  public:
-    CodeGenerator() {}
-    virtual ~CodeGenerator() {}
+public:
+  CodeGenerator() {}
+  virtual ~CodeGenerator() {}
 
-    virtual Code GenerateCode() const = 0;
+  virtual Code GenerateCode() const = 0;
 };
 
-class FunctionGenerator: public CodeGenerator {
-  public:
-    FunctionGenerator(Compiler& compiler):compiler_(compiler) {}
+class FunctionGenerator : public CodeGenerator {
+public:
+  FunctionGenerator(Compiler &compiler) : compiler_(compiler) {}
 
-    virtual ~FunctionGenerator() {}
+  virtual ~FunctionGenerator() {}
 
-  protected:
-    template <typename Func>
-    Func GenerateFunction(const std::string& func_name) {
-      if (code_.empty()) {
-        code_ = GenerateCode().str();
-      }
-      auto library = compiler_.Compile(code_);
-      return library->GetFunction<Func>(func_name);
+protected:
+  template <typename Func> Func GenerateFunction(const std::string &func_name) {
+    if (code_.empty()) {
+      code_ = GenerateCode().str();
     }
+    auto library = compiler_.Compile(code_);
+    return library->GetFunction<Func>(func_name);
+  }
 
-  protected:
-    Compiler& compiler_;
+protected:
+  Compiler &compiler_;
 
-  private:
-    std::string code_;
+private:
+  std::string code_;
 };
-
-}};
+}
+};
 
 #endif // VIYA_CODEGEN_GENERATOR_H_

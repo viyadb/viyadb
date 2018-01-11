@@ -17,37 +17,44 @@
 #ifndef VIYA_CLUSTER_KAFKA_NOTIFIER_H_
 #define VIYA_CLUSTER_KAFKA_NOTIFIER_H_
 
-#include <memory>
-#include <map>
 #include "cluster/notifier.h"
+#include <map>
+#include <memory>
 
-namespace cppkafka { class Consumer; class Configuration; }
-namespace viya { namespace util { class Always; }}
+namespace cppkafka {
+class Consumer;
+class Configuration;
+}
+namespace viya {
+namespace util {
+class Always;
+}
+}
 
 namespace viya {
 namespace cluster {
 
-class KafkaNotifier: public Notifier {
-  public:
-    KafkaNotifier(const std::string& indexer_id,
-        const util::Config& config, IndexerType indexer_type);
+class KafkaNotifier : public Notifier {
+public:
+  KafkaNotifier(const std::string &indexer_id, const util::Config &config,
+                IndexerType indexer_type);
 
-    void Listen(MessageProcessor& processor);
-    std::vector<std::unique_ptr<Message>> GetAllMessages();
-    std::unique_ptr<Message> GetLastMessage();
+  void Listen(MessageProcessor &processor);
+  std::vector<std::unique_ptr<Message>> GetAllMessages();
+  std::unique_ptr<Message> GetLastMessage();
 
-  protected:
-    cppkafka::Configuration CreateConsumerConfig(const std::string& group_id);
-    std::map<uint32_t, int64_t> GetLatestOffsets(cppkafka::Consumer& consumer);
+protected:
+  cppkafka::Configuration CreateConsumerConfig(const std::string &group_id);
+  std::map<uint32_t, int64_t> GetLatestOffsets(cppkafka::Consumer &consumer);
 
-  private:
-    const std::string brokers_;
-    const std::string topic_;
-    IndexerType indexer_type_;
-    std::unique_ptr<cppkafka::Consumer> consumer_;
-    std::unique_ptr<util::Always> always_;
+private:
+  const std::string brokers_;
+  const std::string topic_;
+  IndexerType indexer_type_;
+  std::unique_ptr<cppkafka::Consumer> consumer_;
+  std::unique_ptr<util::Always> always_;
 };
-
-}}
+}
+}
 
 #endif // VIYA_CLUSTER_KAFKA_NOTIFIER_H_

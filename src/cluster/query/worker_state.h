@@ -14,17 +14,31 @@
  * limitations under the License.
  */
 
-#include "util/hostname.h"
-#include <limits.h>
-#include <unistd.h>
+#ifndef VIYA_CLUSTER_QUERY_WORKER_STATE_H_
+#define VIYA_CLUSTER_QUERY_WORKER_STATE_H_
+
+#include <cstdint>
+#include <ctime>
 
 namespace viya {
-namespace util {
+namespace cluster {
+namespace query {
 
-std::string get_hostname() {
-  char hostname[HOST_NAME_MAX];
-  gethostname(hostname, HOST_NAME_MAX);
-  return std::string(hostname);
+class WorkerState {
+public:
+  WorkerState(uint32_t refresh_sec = 10L)
+      : failing_(false), last_update_(0L), refresh_sec_(refresh_sec) {}
+
+  bool IsFailing();
+  void SetFailing();
+
+private:
+  bool failing_;
+  std::time_t last_update_;
+  uint32_t refresh_sec_;
+};
 }
 }
 }
+
+#endif // VIYA_CLUSTER_QUERY_WORKER_STATE_H_

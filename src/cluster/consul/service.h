@@ -17,9 +17,9 @@
 #ifndef VIYA_CLUSTER_CONSUL_SERVICE_H_
 #define VIYA_CLUSTER_CONSUL_SERVICE_H_
 
-#include <memory>
-#include <json.hpp>
 #include "util/schedule.h"
+#include <json.hpp>
+#include <memory>
 
 namespace viya {
 namespace cluster {
@@ -32,27 +32,29 @@ class Consul;
 class Service {
   enum Status { OK, FAIL, WARN };
 
-  public:
-    Service(const Consul& consul, const std::string& name, uint16_t port, uint32_t ttl_sec, bool auto_hc);
-    Service(const Service& other) = delete;
-    ~Service();
+public:
+  Service(const Consul &consul, const std::string &name, uint16_t port,
+          uint32_t ttl_sec, bool auto_hc);
+  Service(const Service &other) = delete;
+  ~Service();
 
-    void Notify(Status status, const std::string& message);
+  void Notify(Status status, const std::string &message);
 
-  private:
-    void Register();
-    void Deregister();
+private:
+  void Register();
+  void Deregister();
 
-  private:
-    const Consul& consul_;
-    const std::string name_;
-    const uint16_t port_;
-    const uint32_t ttl_sec_;
-    std::string id_;
-    json data_;
-    std::unique_ptr<util::Repeat> repeat_;
+private:
+  const Consul &consul_;
+  const std::string name_;
+  const uint16_t port_;
+  const uint32_t ttl_sec_;
+  std::string id_;
+  json data_;
+  std::unique_ptr<util::Repeat> repeat_;
 };
-
-}}}
+}
+}
+}
 
 #endif // VIYA_CLUSTER_CONSUL_SERVICE_H_

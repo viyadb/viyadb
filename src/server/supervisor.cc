@@ -14,30 +14,31 @@
  * limitations under the License.
  */
 
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <signal.h>
-#include <stdexcept>
-#include <vector>
 #include <chrono>
 #include <csetjmp>
+#include <signal.h>
+#include <stdexcept>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <vector>
 #if __linux__
- #include <sys/prctl.h>
+#include <sys/prctl.h>
 #endif
-#include <glog/logging.h>
-#include <boost/exception/diagnostic_information.hpp>
 #include "server/args.h"
 #include "server/supervisor.h"
 #include "server/viyad.h"
+#include "util/hostname.h"
+#include <boost/exception/diagnostic_information.hpp>
+#include <glog/logging.h>
 
 namespace viya {
 namespace server {
 
 namespace chrono = std::chrono;
 
-static server::Supervisor* supervisor_ = nullptr;
+static server::Supervisor *supervisor_ = nullptr;
 
-Supervisor::Supervisor(const std::vector<std::string>& args):args_(args) {
+Supervisor::Supervisor(const std::vector<std::string> &args) : args_(args) {
   supervisor_ = this;
 }
 
@@ -55,9 +56,7 @@ void Supervisor::EnableRestartHandler() {
   sigaction(SIGHUP, &sig_action, NULL);
 }
 
-void stop(int signal __attribute__((unused))) {
-  exit(0);
-}
+void stop(int signal __attribute__((unused))) { exit(0); }
 
 void Supervisor::EnableStopHandler() {
   struct sigaction sig_action;
@@ -73,7 +72,7 @@ void Supervisor::Start() {
   EnableStopHandler();
 
   util::Config config = server::CmdlineArgs().Parse(args_);
-  LOG(INFO)<<"Using configuration:\n"<<config.dump();
+  LOG(INFO) << "Using configuration:\n" << config.dump();
 
   size_t workers_num = config.num("workers");
   if (!config.boolean("supervise")) {
@@ -90,13 +89,15 @@ void Supervisor::Start() {
 
   auto cpu_list = config.numlist("cpu_list");
   if (cpu_list.size() < workers_num) {
-    throw std::invalid_argument("Number of available CPU is less than number of workers!");
+    throw std::invalid_argument(
+        "Number of available CPU is less than number of workers!");
   }
   if (cpu_list.size() % workers_num != 0) {
-    throw std::invalid_argument("Number of workers must be a multiplies of CPU number!");
+    throw std::invalid_argument(
+        "Number of workers must be a multiplies of CPU number!");
   }
 
-  LOG(INFO)<<"Starting "<<workers_num<<" workers";
+  LOG(INFO) << "Starting " << workers_num << " workers";
   workers_.resize(workers_num);
   for (size_t worker_idx = 0; worker_idx < workers_num; ++worker_idx) {
     auto worker_config = PrepareWorkerConfig(config, worker_idx);
@@ -121,7 +122,9 @@ void Supervisor::Start() {
         for (auto it = workers_.begin(); it != workers_.end(); ++it) {
           if (it->pid == exited) {
 
-            auto now = chrono::duration_cast<chrono::seconds>(chrono::system_clock::now().time_since_epoch()).count();
+            auto now = chrono::duration_cast<chrono::seconds>(
+                           chrono::system_clock::now().time_since_epoch())
+                           .count();
             if (now - it->last_start < start_fail_secs) {
               ++it->fast_failures;
             }
@@ -129,13 +132,18 @@ void Supervisor::Start() {
             int worker_idx = it - workers_.begin();
             if (it->fast_failures < max_failures) {
 
-              LOG(ERROR)<<"Worker #"<<std::to_string(worker_idx)<<" has exited with bad exit status ("
-                <<std::to_string(status)<<"). Restarting it in a moment.";
+              LOG(ERROR) << "Worker #" << std::to_string(worker_idx)
+                         << " has exited with bad exit status ("
+                         << std::to_string(status)
+                         << "). Restarting it in a moment.";
 
-              StartWorker(workers_[worker_idx].config, workers_[worker_idx]);
+              auto &worker_conf = workers_[worker_idx].config;
+              StartWorker(worker_conf, workers_[worker_idx]);
             } else {
-              LOG(ERROR)<<"Worker #"<<std::to_string(worker_idx)<<" failed too fast for "
-                <<std::to_string(max_failures)<<" times in a row. Not restarting it any more.";
+              LOG(ERROR) << "Worker #" << std::to_string(worker_idx)
+                         << " failed too fast for "
+                         << std::to_string(max_failures)
+                         << " times in a row. Not restarting it any more.";
             }
             break;
           }
@@ -146,8 +154,8 @@ void Supervisor::Start() {
 }
 
 void Supervisor::Stop() {
-  LOG(INFO)<<"Stopping all workers";
-  for (auto& worker : workers_) {
+  LOG(INFO) << "Stopping all workers";
+  for (auto &worker : workers_) {
     kill(worker.pid, SIGTERM);
   }
 
@@ -162,10 +170,14 @@ void Supervisor::Restart() {
   siglongjmp(jump_, 0);
 }
 
-util::Config Supervisor::PrepareWorkerConfig(const util::Config& config, size_t worker_idx) {
+util::Config Supervisor::PrepareWorkerConfig(const util::Config &config,
+                                             size_t worker_idx) {
   util::Config worker_config = config;
 
-  worker_config.set_num("http_port", config.num("http_port") + worker_idx);
+  auto port = config.num("http_port") + worker_idx;
+  worker_config.set_num("http_port", port);
+  worker_config.set_str("id",
+                        util::get_hostname() + ":" + std::to_string(port));
 
   // Calculate list of CPU to allocate for the worker:
   size_t workers_num = config.num("workers");
@@ -180,7 +192,8 @@ util::Config Supervisor::PrepareWorkerConfig(const util::Config& config, size_t 
   return worker_config;
 }
 
-void Supervisor::StartWorker(util::Config worker_config, Supervisor::Worker& info) {
+void Supervisor::StartWorker(util::Config worker_config,
+                             Supervisor::Worker &info) {
   pid_t pid = fork();
   if (pid == -1) {
     throw std::runtime_error("Can't fork any more processes!");
@@ -194,7 +207,7 @@ void Supervisor::StartWorker(util::Config worker_config, Supervisor::Worker& inf
     sig_action.sa_handler = SIG_DFL;
     sig_action.sa_flags = 0;
     sigemptyset(&sig_action.sa_mask);
-    for (int sig = 1; sig < NSIG ; sig++) {
+    for (int sig = 1; sig < NSIG; sig++) {
       if (sig != SIGSEGV && sig != SIGABRT) {
         sigaction(sig, &sig_action, NULL);
       }
@@ -205,7 +218,8 @@ void Supervisor::StartWorker(util::Config worker_config, Supervisor::Worker& inf
       Viyad viyad(worker_config);
       viyad.Start();
     } catch (...) {
-      LOG(ERROR)<<"Exception thrown in worker: "<<boost::current_exception_diagnostic_information();
+      LOG(ERROR) << "Exception thrown in worker: "
+                 << boost::current_exception_diagnostic_information();
       exit(1);
     }
     exit(0);
@@ -214,7 +228,9 @@ void Supervisor::StartWorker(util::Config worker_config, Supervisor::Worker& inf
   // Update worker info to latest settings:
   info.config = worker_config;
   info.pid = pid;
-  info.last_start = chrono::duration_cast<chrono::seconds>(chrono::system_clock::now().time_since_epoch()).count();
+  info.last_start = chrono::duration_cast<chrono::seconds>(
+                        chrono::system_clock::now().time_since_epoch())
+                        .count();
 }
-
-}}
+}
+}

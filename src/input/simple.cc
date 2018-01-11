@@ -14,20 +14,17 @@
  * limitations under the License.
  */
 
-#include <vector>
 #include "input/simple.h"
 #include "util/config.h"
+#include <vector>
 
 namespace viya {
 namespace input {
 
-SimpleLoader::SimpleLoader(db::Table& table):
-  Loader(util::Config {}, table) {
-}
+SimpleLoader::SimpleLoader(db::Table &table) : Loader(util::Config{}, table) {}
 
-SimpleLoader::SimpleLoader(const util::Config& config, db::Table& table):
-  Loader(config, table) {
-}
+SimpleLoader::SimpleLoader(const util::Config &config, db::Table &table)
+    : Loader(config, table) {}
 
 void SimpleLoader::Load(std::initializer_list<std::vector<std::string>> rows) {
   BeforeLoad();
@@ -36,6 +33,5 @@ void SimpleLoader::Load(std::initializer_list<std::vector<std::string>> rows) {
   }
   AfterLoad();
 }
-
-}}
-
+}
+}

@@ -17,8 +17,19 @@
 #ifndef VIYA_CLUSTER_CONFIGURATOR_H_
 #define VIYA_CLUSTER_CONFIGURATOR_H_
 
-namespace viya { namespace util { class Config; }}
-namespace viya { namespace cluster { class Controller; }}
+#include <cstdint>
+#include <string>
+
+namespace viya {
+namespace util {
+class Config;
+}
+}
+namespace viya {
+namespace cluster {
+class Controller;
+}
+}
 
 namespace viya {
 namespace cluster {
@@ -27,20 +38,21 @@ namespace cluster {
  * Configures workers on this node
  */
 class Configurator {
-  public:
-    Configurator(const Controller& controller, const std::string& load_prefix_);
-    Configurator(const Configurator& other) = delete;
+public:
+  Configurator(const Controller &controller, const std::string &load_prefix_);
+  Configurator(const Configurator &other) = delete;
 
-    void ConfigureWorkers();
+  void ConfigureWorkers();
 
-  protected:
-    void CreateTable(const util::Config& table_config, const std::string& hostname, uint16_t port);
+protected:
+  void CreateTable(const util::Config &table_config,
+                   const std::string &hostname, uint16_t port);
 
-  private:
-    const Controller& controller_;
-    const std::string load_prefix_;
+private:
+  const Controller &controller_;
+  const std::string load_prefix_;
 };
-
-}}
+}
+}
 
 #endif // VIYA_CLUSTER_CONFIGURATOR_H_

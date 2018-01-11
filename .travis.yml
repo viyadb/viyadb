@@ -7,4 +7,4 @@ before_install:
   - travis_wait docker pull viyadb/devenv:latest
 
 script:
-  - docker run --rm -v $(pwd):/v viyadb/devenv:latest /bin/bash -c 'mkdir /v/build; cd /v/build; cmake ..; make -j8 && ./test/unit_tests; exit $?'
+  - docker run --rm -v $(pwd):/viyadb viyadb/devenv:latest /viyadb/scripts/travis-build.sh

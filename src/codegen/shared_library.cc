@@ -14,41 +14,41 @@
  * limitations under the License.
  */
 
-#include <stdexcept>
+#include "codegen/shared_library.h"
 #include <dlfcn.h>
 #include <glog/logging.h>
-#include "codegen/shared_library.h"
+#include <stdexcept>
 
 namespace viya {
 namespace codegen {
 
-SharedLibrary::SharedLibrary(const std::string& path):path_(path) {
-  DLOG(INFO)<<"Opening shared library: "<<path;
+SharedLibrary::SharedLibrary(const std::string &path) : path_(path) {
+  DLOG(INFO) << "Opening shared library: " << path;
   handle_ = dlopen(path.c_str(), RTLD_LAZY);
   if (handle_ == nullptr) {
-    throw std::runtime_error(
-        std::string("Error opening shared library: ") + dlerror());
+    throw std::runtime_error(std::string("Error opening shared library: ") +
+                             dlerror());
   }
 }
 
 SharedLibrary::~SharedLibrary() {
-  DLOG(INFO)<<"Closing shared library: "<<path_;
+  DLOG(INFO) << "Closing shared library: " << path_;
   if (handle_ != nullptr && dlclose(handle_) != 0) {
     std::terminate();
   }
 }
 
-void* SharedLibrary::GetFunctionPtr(const std::string& name) {
+void *SharedLibrary::GetFunctionPtr(const std::string &name) {
   // Clear error state:
   dlerror();
 
-  //DLOG(INFO)<<"Looking for symbol '"<<name<<"' in library: "<<path_;
-  void* res = dlsym(handle_, name.c_str());
-  char* error = dlerror();
+  // DLOG(INFO)<<"Looking for symbol '"<<name<<"' in library: "<<path_;
+  void *res = dlsym(handle_, name.c_str());
+  char *error = dlerror();
   if (error != nullptr) {
     throw std::runtime_error(error);
   }
   return res;
 }
-
-}}
+}
+}

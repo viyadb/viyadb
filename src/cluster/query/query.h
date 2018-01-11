@@ -17,11 +17,17 @@
 #ifndef VIYA_CLUSTER_QUERY_QUERY_H_
 #define VIYA_CLUSTER_QUERY_QUERY_H_
 
+#include "util/config.h"
 #include <memory>
 #include <vector>
-#include "util/config.h"
 
-namespace viya { namespace cluster { class Controller; class Partitioning; class Plan; }}
+namespace viya {
+namespace cluster {
+class Controller;
+class Partitioning;
+class Plan;
+}
+}
 
 namespace viya {
 namespace cluster {
@@ -30,55 +36,59 @@ namespace query {
 namespace util = viya::util;
 
 class ClusterQuery {
-  public:
-    ClusterQuery(const util::Config& query):query_(query) {}
-    virtual ~ClusterQuery() {}
+public:
+  ClusterQuery(const util::Config &query) : query_(query) {}
+  virtual ~ClusterQuery() {}
 
-    const util::Config& query() const { return query_; }
+  const util::Config &query() const { return query_; }
 
-    virtual void Accept(class ClusterQueryVisitor& visitor) = 0;
+  virtual void Accept(class ClusterQueryVisitor &visitor) = 0;
 
-  protected:
-    const util::Config& query_;
+protected:
+  const util::Config &query_;
 };
 
 class RemoteQuery : public ClusterQuery {
-  public:
-    RemoteQuery(const util::Config& query, const Controller& controller);
-    RemoteQuery(const util::Config& query, const Partitioning& partitioning, const Plan& plan);
+public:
+  RemoteQuery(const util::Config &query, const Controller &controller);
+  RemoteQuery(const util::Config &query, const Partitioning &partitioning,
+              const Plan &plan);
 
-    const std::vector<std::vector<std::string>>& target_workers() const { return target_workers_; }
+  const std::vector<std::vector<std::string>> &target_workers() const {
+    return target_workers_;
+  }
 
-    void Accept(class ClusterQueryVisitor& visitor);
+  void Accept(class ClusterQueryVisitor &visitor);
 
-  private:
-    void FindTargetWorkers();
+private:
+  void FindTargetWorkers();
 
-  private:
-    const Partitioning& partitioning_;
-    const Plan& plan_;
-    std::vector<std::vector<std::string>> target_workers_;
+private:
+  const Partitioning &partitioning_;
+  const Plan &plan_;
+  std::vector<std::vector<std::string>> target_workers_;
 };
 
 class LocalQuery : public ClusterQuery {
-  public:
-    LocalQuery(const util::Config& query):ClusterQuery(query) {}
+public:
+  LocalQuery(const util::Config &query) : ClusterQuery(query) {}
 
-    void Accept(class ClusterQueryVisitor& visitor);
+  void Accept(class ClusterQueryVisitor &visitor);
 };
 
 class ClusterQueryVisitor {
-  public:
-    virtual void Visit(const RemoteQuery* query __attribute__((unused))) {};
-    virtual void Visit(const LocalQuery* query __attribute__((unused))) {};
+public:
+  virtual void Visit(const RemoteQuery *query __attribute__((unused))){};
+  virtual void Visit(const LocalQuery *query __attribute__((unused))){};
 };
 
 class ClusterQueryFactory {
-  public:
-    static std::unique_ptr<ClusterQuery> Create(
-      const util::Config& query, const Controller& controller);
+public:
+  static std::unique_ptr<ClusterQuery> Create(const util::Config &query,
+                                              const Controller &controller);
 };
-
-}}}
+}
+}
+}
 
 #endif // VIYA_CLUSTER_QUERY_QUERY_H_

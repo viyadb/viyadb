@@ -17,29 +17,29 @@
 #ifndef VIYA_CODEGEN_QUERY_AGG_QUERY_H_
 #define VIYA_CODEGEN_QUERY_AGG_QUERY_H_
 
+#include "codegen/generator.h"
 #include "query/query.h"
 #include "query/runner.h"
-#include "codegen/generator.h"
 
 namespace viya {
 namespace codegen {
 
 namespace query = viya::query;
 
-class AggQueryGenerator: public FunctionGenerator {
-  public:
-    AggQueryGenerator(Compiler& compiler, query::AggregateQuery& query)
-      :FunctionGenerator(compiler),query_(query) {}
+class AggQueryGenerator : public FunctionGenerator {
+public:
+  AggQueryGenerator(Compiler &compiler, query::AggregateQuery &query)
+      : FunctionGenerator(compiler), query_(query) {}
 
-    AggQueryGenerator(const AggQueryGenerator& other) = delete;
+  AggQueryGenerator(const AggQueryGenerator &other) = delete;
 
-    Code GenerateCode() const;
-    query::AggQueryFn Function();
+  Code GenerateCode() const;
+  query::AggQueryFn Function();
 
-  private:
-    query::AggregateQuery& query_;
+private:
+  query::AggregateQuery &query_;
 };
-
-}}
+}
+}
 
 #endif // VIYA_CODEGEN_QUERY_AGG_QUERY_H_
