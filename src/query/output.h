@@ -46,7 +46,8 @@ public:
 private:
   std::vector<Row> rows_;
 };
-}
-}
+
+} // namespace query
+} // namespace viya
 
 #endif // VIYA_QUERY_OUTPUT_H_

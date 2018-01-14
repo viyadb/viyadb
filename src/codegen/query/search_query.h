@@ -39,7 +39,7 @@ public:
 private:
   query::SearchQuery &query_;
 };
-}
-}
+} // namespace codegen
+} // namespace viya
 
 #endif // VIYA_CODEGEN_QUERY_SEARCH_QUERY_H_

@@ -73,8 +73,8 @@ private:
   std::unordered_map<const evhttp_request *, WorkersToTry *> requests_workers_;
 };
 
-} // query namespace
-} // cluster namespace
-} // viya namespace
+} // namespace query
+} // namespace cluster
+} // namespace viya
 
 #endif // VIYA_CLUSTER_QUERY_CLIENT_H_

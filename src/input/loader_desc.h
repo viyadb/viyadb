@@ -24,13 +24,13 @@ namespace viya {
 namespace db {
 class Table;
 class Column;
-}
-}
+} // namespace db
+} // namespace viya
 namespace viya {
 namespace util {
 class Config;
 }
-}
+} // namespace viya
 
 namespace viya {
 namespace input {
@@ -79,7 +79,7 @@ private:
   std::vector<int> tuple_idx_map_;
   std::unique_ptr<PartitionFilter> partition_filter_;
 };
-}
-}
+} // namespace input
+} // namespace viya
 
 #endif // VIYA_INPUT_LOAD_DESC_H_

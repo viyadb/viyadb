@@ -24,5 +24,5 @@ Granularity::Granularity(const std::string &name)
 
 RollupRule::RollupRule(const util::Config &config)
     : granularity_(config.str("granularity")), after_(config.str("after")) {}
-}
-}
+} // namespace db
+} // namespace viya

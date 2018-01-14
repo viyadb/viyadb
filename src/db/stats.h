@@ -28,7 +28,7 @@ public:
 
   size_t new_recs;
 };
-}
-}
+} // namespace db
+} // namespace viya
 
 #endif // VIYA_DB_STATS_H_

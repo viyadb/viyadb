@@ -233,5 +233,5 @@ void Supervisor::StartWorker(util::Config worker_config,
                         chrono::system_clock::now().time_since_epoch())
                         .count();
 }
-}
-}
+} // namespace server
+} // namespace viya

@@ -105,5 +105,5 @@ void BufferLoader::LoadData() {
   stats_.upsert_stats = AfterLoad();
   stats_.OnEnd();
 }
-}
-}
+} // namespace input
+} // namespace viya

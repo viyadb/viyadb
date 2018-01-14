@@ -71,5 +71,6 @@ void QueryRunner::Visit(ShowTablesQuery *query) {
   output_.SendAsCol(tables);
   output_.Flush();
 }
-}
-}
+
+} // namespace query
+} // namespace viya

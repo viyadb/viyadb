@@ -35,7 +35,7 @@ private:
   util::Config Defaults();
   util::Config OpenConfig(const std::string &file);
 };
-}
-}
+} // namespace server
+} // namespace viya
 
 #endif // VIYA_SERVER_ARGS_H_

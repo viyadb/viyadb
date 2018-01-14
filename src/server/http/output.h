@@ -81,8 +81,8 @@ private:
   char row_sep_;
   std::ostringstream buf_;
 };
-}
-}
-}
+} // namespace http
+} // namespace server
+} // namespace viya
 
 #endif // VIYA_SERVER_HTTP_OUTPUT_H_

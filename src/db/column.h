@@ -302,7 +302,7 @@ public:
   virtual void Visit(const ValueMetric *metric) = 0;
   virtual void Visit(const BitsetMetric *metric) = 0;
 };
-}
-}
+} // namespace db
+} // namespace viya
 
 #endif // VIYA_DB_COLUMN_H_

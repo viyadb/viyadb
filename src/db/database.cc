@@ -116,5 +116,5 @@ void Database::Load(const util::Config &load_conf) {
       loader_factory.Create(load_conf, *this));
   loader->LoadData();
 }
-}
-}
+} // namespace db
+} // namespace viya

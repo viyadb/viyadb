@@ -39,5 +39,5 @@ void LoaderStats::OnEnd() {
   statsd_.Timing(prefix.str() + "time", load_time);
   statsd_.Count(prefix.str() + "rows", total_recs);
 }
-}
-}
+} // namespace input
+} // namespace viya

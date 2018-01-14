@@ -17,6 +17,7 @@
 #ifndef VIYA_QUERY_QUERY_H_
 #define VIYA_QUERY_QUERY_H_
 
+#include "db/column.h"
 #include "db/rollup.h"
 #include "query/filter.h"
 
@@ -28,14 +29,14 @@ class Database;
 class Dimension;
 class Metric;
 class Table;
-}
-}
+} // namespace db
+} // namespace viya
 
 namespace viya {
 namespace util {
 class Config;
 }
-}
+} // namespace viya
 
 namespace viya {
 namespace query {
@@ -152,13 +153,30 @@ public:
   const std::vector<DimOutputColumn> &dimension_cols() const {
     return dimension_cols_;
   }
+
   const std::vector<MetricOutputColumn> &metric_cols() const {
     return metric_cols_;
   }
+
+  std::vector<std::string> column_names() const {
+    std::vector<std::string> columns;
+    for (auto &col : dimension_cols_) {
+      columns.push_back(col.dim()->name());
+    }
+    for (auto &col : metric_cols_) {
+      columns.push_back(col.metric()->name());
+    }
+    return std::move(columns);
+  }
+
   const std::vector<SortColumn> &sort_cols() const { return sort_cols_; }
+
   size_t skip() const { return skip_; }
+
   size_t limit() const { return limit_; }
+
   bool header() const { return header_; }
+
   const Filter *having() const { return having_; }
 
   void Accept(class QueryVisitor &visitor);
@@ -206,7 +224,8 @@ class QueryFactory {
 public:
   Query *Create(const util::Config &config, db::Database &database);
 };
-}
-}
+
+} // namespace query
+} // namespace viya
 
 #endif // VIYA_QUERY_QUERY_H_

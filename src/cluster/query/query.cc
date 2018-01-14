@@ -219,6 +219,6 @@ ClusterQueryFactory::Create(const util::Config &query,
   return std::move(std::make_unique<RemoteQuery>(query, controller));
 }
 
-} // query namespace
-} // cluster namespace
-} // viya namespace
+} // namespace query
+} // namespace cluster
+} // namespace viya

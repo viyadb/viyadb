@@ -110,5 +110,5 @@ DimensionDict *Dictionaries::GetOrCreate(const std::string &dim_name,
   }
   return dict;
 }
-}
-}
+} // namespace db
+} // namespace viya

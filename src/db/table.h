@@ -88,7 +88,7 @@ private:
   std::vector<CardinalityGuard> cardinality_guards_;
   void *upsert_ctx_;
 };
-}
-}
+} // namespace db
+} // namespace viya
 
 #endif // VIYA_DB_TABLE_H_

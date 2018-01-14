@@ -59,5 +59,5 @@ void Viyad::SetCpuAffinity() {
   }
 }
 #endif
-}
-}
+} // namespace server
+} // namespace viya

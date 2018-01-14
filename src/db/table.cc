@@ -139,5 +139,5 @@ void Table::PrintMetadata(std::string &output) {
       cg::TableMetadata(database_.compiler(), *this).Function();
   table_metadata(*this, output);
 }
-}
-}
+} // namespace db
+} // namespace viya

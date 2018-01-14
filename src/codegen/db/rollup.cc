@@ -94,5 +94,5 @@ Code TimestampRollup::GenerateCode() const {
   }
   return code;
 }
-}
-}
+} // namespace codegen
+} // namespace viya

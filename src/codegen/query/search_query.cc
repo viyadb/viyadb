@@ -64,5 +64,5 @@ query::SearchQueryFn SearchQueryGenerator::Function() {
   return GenerateFunction<query::SearchQueryFn>(
       std::string("viya_query_search"));
 }
-}
-}
+} // namespace codegen
+} // namespace viya

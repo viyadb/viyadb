@@ -52,8 +52,8 @@ private:
   std::mutex mutex_;
 };
 
-} // query namespace
-} // cluster namespace
-} // viya namespace
+} // namespace query
+} // namespace cluster
+} // namespace viya
 
 #endif // VIYA_CLUSTER_QUERY_WORKER_STATE_H_

@@ -29,8 +29,8 @@ namespace db {
 class Dimension;
 class Metric;
 class Table;
-}
-}
+} // namespace db
+} // namespace viya
 
 namespace viya {
 namespace codegen {
@@ -105,7 +105,7 @@ public:
 private:
   const db::Table &table_;
 };
-}
-}
+} // namespace codegen
+} // namespace viya
 
 #endif // VIYA_CODEGEN_DB_STORE_H_

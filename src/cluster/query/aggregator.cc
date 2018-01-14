@@ -54,13 +54,12 @@ std::string Aggregator::CreateTempTable(const util::Config &query) {
   json *orig_conf = static_cast<json *>(
       controller_.tables_configs().at(query.str("table")).json_ptr());
   json dimensions = json::array();
+  auto query_columns = table_query->column_names();
+
   for (auto &it : (*orig_conf)["dimensions"]) {
     auto dim_name = it["name"];
-    auto &query_dims = table_query->dimension_cols();
-    if (std::find_if(query_dims.begin(), query_dims.end(),
-                     [&dim_name](auto &col) {
-                       return col.dim()->name() == dim_name;
-                     }) != query_dims.end()) {
+    if (std::find(query_columns.begin(), query_columns.end(), dim_name) !=
+        query_columns.end()) {
       dimensions.push_back(it);
     }
   }
@@ -68,11 +67,8 @@ std::string Aggregator::CreateTempTable(const util::Config &query) {
   json metrics = json::array();
   for (auto &it : (*orig_conf)["metrics"]) {
     auto metric_name = it["name"];
-    auto &query_metrics = table_query->metric_cols();
-    if (std::find_if(query_metrics.begin(), query_metrics.end(),
-                     [&metric_name](auto &col) {
-                       return col.metric()->name() == metric_name;
-                     }) != query_metrics.end()) {
+    if (std::find(query_columns.begin(), query_columns.end(), metric_name) !=
+        query_columns.end()) {
       metrics.push_back(it);
     }
   }
@@ -162,6 +158,6 @@ void Aggregator::Visit(const LocalQuery *local_query) {
   }
 }
 
-} // query namespace
-} // cluster namespace
-} // viya namespace
+} // namespace query
+} // namespace cluster
+} // namespace viya

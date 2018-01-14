@@ -33,5 +33,5 @@ void SimpleLoader::Load(std::initializer_list<std::vector<std::string>> rows) {
   }
   AfterLoad();
 }
-}
-}
+} // namespace input
+} // namespace viya

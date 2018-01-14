@@ -109,5 +109,5 @@ Code TableMetadata::GenerateCode() const {
 TableMetadataFn TableMetadata::Function() {
   return GenerateFunction<TableMetadataFn>(std::string("viya_table_metadata"));
 }
-}
-}
+} // namespace codegen
+} // namespace viya

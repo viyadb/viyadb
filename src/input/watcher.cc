@@ -154,5 +154,5 @@ Watcher::~Watcher() {
     thread_.join();
   }
 }
-}
-}
+} // namespace input
+} // namespace viya

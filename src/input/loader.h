@@ -51,7 +51,7 @@ protected:
   cg::AfterUpsertFn after_upsert_;
   cg::UpsertFn upsert_;
 };
-}
-}
+} // namespace input
+} // namespace viya
 
 #endif // VIYA_INPUT_LOADER_H_

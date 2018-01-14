@@ -24,12 +24,12 @@
 namespace cppkafka {
 class Consumer;
 class Configuration;
-}
+} // namespace cppkafka
 namespace viya {
 namespace util {
 class Always;
 }
-}
+} // namespace viya
 
 namespace viya {
 namespace cluster {

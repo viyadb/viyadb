@@ -81,6 +81,17 @@ AggregateQuery::AggregateQuery(const util::Config &config, db::Table &table)
   if (config.exists("having")) {
     FilterFactory filter_factory;
     having_ = filter_factory.Create(config.sub("having"));
+
+    ColumnsCollector columns_collector;
+    having_->Accept(columns_collector);
+    auto query_cols = column_names();
+    for (auto &having_col : columns_collector.columns()) {
+      if (std::find(query_cols.begin(), query_cols.end(), having_col) ==
+          query_cols.end()) {
+        throw std::invalid_argument("Column '" + having_col +
+                                    " is not selected");
+      }
+    }
   }
 
   if (config.exists("sort")) {
@@ -147,5 +158,6 @@ Query *QueryFactory::Create(const util::Config &config,
   }
   throw std::invalid_argument("unsupported query type: " + type);
 }
-}
-}
+
+} // namespace query
+} // namespace viya

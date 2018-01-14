@@ -25,8 +25,8 @@ namespace db {
 
 class Dimension;
 class TimeDimension;
-}
-}
+} // namespace db
+} // namespace viya
 
 namespace viya {
 namespace codegen {
@@ -76,7 +76,7 @@ private:
   std::string var_name_;
   const std::string prefix_;
 };
-}
-}
+} // namespace codegen
+} // namespace viya
 
 #endif // VIYA_CODEGEN_DB_ROLLUP_H_

@@ -53,7 +53,8 @@ private:
   RowOutput &output_;
   QueryStats stats_;
 };
-}
-}
+
+} // namespace query
+} // namespace viya
 
 #endif // VIYA_DB_RUNNER_H_

@@ -26,7 +26,7 @@ namespace viya {
 namespace input {
 class LoaderDesc;
 }
-}
+} // namespace viya
 
 namespace viya {
 namespace codegen {
@@ -82,7 +82,7 @@ private:
 private:
   const input::LoaderDesc &desc_;
 };
-}
-}
+} // namespace codegen
+} // namespace viya
 
 #endif // VIYA_CODEGEN_DB_UPSERT_H_

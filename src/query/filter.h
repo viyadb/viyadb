@@ -18,13 +18,14 @@
 #define VIYA_QUERY_FILTER_H_
 
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 namespace viya {
 namespace util {
 class Config;
 }
-}
+} // namespace viya
 
 namespace viya {
 namespace query {
@@ -141,11 +142,27 @@ public:
   virtual void Visit(const EmptyFilter *filter) = 0;
 };
 
+class ColumnsCollector : public FilterVisitor {
+public:
+  ColumnsCollector() {}
+
+  const std::unordered_set<std::string> &columns() const { return columns_; }
+
+  void Visit(const RelOpFilter *filter);
+  void Visit(const InFilter *filter);
+  void Visit(const CompositeFilter *filter);
+  void Visit(const EmptyFilter *filter);
+
+private:
+  std::unordered_set<std::string> columns_;
+};
+
 class FilterFactory {
 public:
   Filter *Create(const util::Config &config, bool negate = false);
 };
-}
-}
+
+} // namespace query
+} // namespace viya
 
 #endif // VIYA_QUERY_FILTER_H_

@@ -63,7 +63,7 @@ private:
   std::unordered_map<std::string, DimensionDict *> dicts_;
   folly::RWSpinLock lock_;
 };
-}
-}
+} // namespace db
+} // namespace viya
 
 #endif // VIYA_DB_DICTIONARY_H_

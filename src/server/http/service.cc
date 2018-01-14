@@ -140,6 +140,6 @@ void Service::Start() {
             << std::to_string(server_.config.port) << std::endl;
   server_.start();
 }
-}
-}
-}
+} // namespace http
+} // namespace server
+} // namespace viya

@@ -25,7 +25,7 @@ namespace viya {
 namespace db {
 class Table;
 }
-}
+} // namespace viya
 
 namespace viya {
 namespace codegen {
@@ -92,7 +92,7 @@ private:
   const query::Filter *filter_;
   const std::string var_prefix_;
 };
-}
-}
+} // namespace codegen
+} // namespace viya
 
 #endif // VIYA_CODEGEN_QUERY_FILTER_H_

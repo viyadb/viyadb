@@ -24,12 +24,12 @@ namespace viya {
 namespace cluster {
 class Controller;
 }
-}
+} // namespace viya
 namespace viya {
 namespace util {
 class Config;
 }
-}
+} // namespace viya
 
 namespace viya {
 namespace cluster {

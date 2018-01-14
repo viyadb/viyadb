@@ -49,7 +49,7 @@ private:
   Granularity granularity_;
   util::Duration after_;
 };
-}
-}
+} // namespace db
+} // namespace viya
 
 #endif // VIYA_DB_ROLLUP_H_

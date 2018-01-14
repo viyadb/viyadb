@@ -41,7 +41,7 @@ private:
   const util::Config config_;
   std::unique_ptr<cluster::Worker> worker_;
 };
-}
-}
+} // namespace server
+} // namespace viya
 
 #endif // VIYA_SERVER_VIYAD_H_

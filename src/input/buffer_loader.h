@@ -25,7 +25,7 @@ namespace viya {
 namespace util {
 class Config;
 }
-}
+} // namespace viya
 
 namespace viya {
 namespace input {
@@ -50,7 +50,7 @@ protected:
   const char *buf_;
   size_t buf_size_;
 };
-}
-}
+} // namespace input
+} // namespace viya
 
 #endif // VIYA_INPUT_BUFFER_LOADER_H_

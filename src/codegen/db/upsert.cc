@@ -506,5 +506,5 @@ AfterUpsertFn UpsertGenerator::AfterFunction() {
 UpsertFn UpsertGenerator::Function() {
   return GenerateFunction<UpsertFn>(std::string("viya_upsert_do"));
 }
-}
-}
+} // namespace codegen
+} // namespace viya

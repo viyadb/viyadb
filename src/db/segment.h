@@ -55,7 +55,7 @@ protected:
   size_t capacity_;
   folly::RWSpinLock lock_;
 };
-}
-}
+} // namespace db
+} // namespace viya
 
 #endif // VIYA_DB_SEGMENT_H_

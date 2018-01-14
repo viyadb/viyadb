@@ -400,5 +400,5 @@ BitsetMetric::BitsetMetric(const util::Config &config, size_t index)
       num_type_(max_value_to_uint_type(config.num("max", UINT32_MAX))) {}
 
 void BitsetMetric::Accept(ColumnVisitor &visitor) const { visitor.Visit(this); }
-}
-}
+} // namespace db
+} // namespace viya

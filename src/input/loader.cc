@@ -40,5 +40,5 @@ void Loader::BeforeLoad() { before_upsert_(table_.upsert_ctx()); }
 db::UpsertStats Loader::AfterLoad() {
   return after_upsert_(table_.upsert_ctx());
 }
-}
-}
+} // namespace input
+} // namespace viya

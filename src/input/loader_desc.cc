@@ -92,5 +92,5 @@ void LoaderDesc::InitTupleIdxMap() {
     }
   }
 }
-}
-}
+} // namespace input
+} // namespace viya

@@ -40,7 +40,7 @@ public:
 private:
   const db::Table &table_;
 };
-}
-}
+} // namespace codegen
+} // namespace viya
 
 #endif // VIYA_CODEGEN_DB_METADATA_H_

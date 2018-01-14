@@ -35,7 +35,7 @@ public:
 private:
   Code &code_;
 };
-}
-}
+} // namespace codegen
+} // namespace viya
 
 #endif // VIYA_CODEGEN_QUERY_POST_AGG_H_

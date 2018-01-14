@@ -55,7 +55,7 @@ private:
   folly::RWSpinLock lock_;
   CreateSegmentFn create_segment_;
 };
-}
-}
+} // namespace db
+} // namespace viya
 
 #endif // VIYA_DB_STORE_H_

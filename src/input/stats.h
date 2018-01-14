@@ -26,7 +26,7 @@ namespace viya {
 namespace util {
 class Statsd;
 }
-}
+} // namespace viya
 
 namespace viya {
 namespace input {
@@ -54,7 +54,7 @@ public:
 private:
   cr::steady_clock::time_point begin_work_;
 };
-}
-}
+} // namespace input
+} // namespace viya
 
 #endif // VIYA_INPUT_STATS_H_

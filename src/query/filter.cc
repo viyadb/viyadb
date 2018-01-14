@@ -106,5 +106,23 @@ Filter *FilterFactory::Create(const util::Config &config, bool negate) {
   }
   throw std::invalid_argument("Unsupported filter operataor: " + op);
 }
+
+void ColumnsCollector::Visit(const query::RelOpFilter *filter) {
+  columns_.insert(filter->column());
 }
+
+void ColumnsCollector::Visit(const query::InFilter *filter) {
+  columns_.insert(filter->column());
 }
+
+void ColumnsCollector::Visit(const query::CompositeFilter *filter) {
+  for (auto f : filter->filters()) {
+    f->Accept(*this);
+  }
+}
+
+void ColumnsCollector::Visit(const query::EmptyFilter *filter
+                             __attribute__((unused))) {}
+
+} // namespace query
+} // namespace viya

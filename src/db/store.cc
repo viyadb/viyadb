@@ -33,5 +33,5 @@ SegmentStore::~SegmentStore() {
     delete s;
   }
 }
-}
-}
+} // namespace db
+} // namespace viya

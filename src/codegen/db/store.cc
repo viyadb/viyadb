@@ -339,5 +339,5 @@ db::CreateSegmentFn CreateSegment::Function() {
   return GenerateFunction<db::CreateSegmentFn>(
       std::string("viya_segment_create"));
 }
-}
-}
+} // namespace codegen
+} // namespace viya

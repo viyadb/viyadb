@@ -25,12 +25,12 @@ namespace viya {
 namespace db {
 class Database;
 }
-}
+} // namespace viya
 namespace viya {
 namespace query {
 class RowOutput;
 }
-}
+} // namespace viya
 
 namespace viya {
 namespace sql {

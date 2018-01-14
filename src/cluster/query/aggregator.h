@@ -25,12 +25,12 @@ namespace viya {
 namespace cluster {
 class Controller;
 }
-}
+} // namespace viya
 namespace viya {
 namespace query {
 class RowOutput;
 }
-}
+} // namespace viya
 
 namespace viya {
 namespace cluster {
@@ -64,8 +64,8 @@ private:
   std::string redirect_worker_;
 };
 
-} // query namespace
-} // cluster namespace
-} // viya namespace
+} // namespace query
+} // namespace cluster
+} // namespace viya
 
 #endif // VIYA_CLUSTER_QUERY_AGGREGATOR_H_

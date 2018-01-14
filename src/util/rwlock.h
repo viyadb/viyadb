@@ -402,7 +402,7 @@ template <> struct RWTicketIntTrait<32> {
   }
 #endif
 };
-} // detail
+} // namespace detail
 
 template <size_t kBitWidth, bool kFavorWriter = false> class RWTicketSpinLockT {
   typedef detail::RWTicketIntTrait<kBitWidth> IntTraitType;

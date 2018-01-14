@@ -44,6 +44,6 @@ void WorkersStates::SetFailing(const std::string &worker_id) {
   s.first->second.SetFailing();
 }
 
-} // query namespace
-} // cluster namespace
-} // viya namespace
+} // namespace query
+} // namespace cluster
+} // namespace viya

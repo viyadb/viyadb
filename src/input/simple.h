@@ -24,12 +24,12 @@ namespace viya {
 namespace db {
 class Table;
 }
-}
+} // namespace viya
 namespace viya {
 namespace util {
 class Config;
 }
-}
+} // namespace viya
 
 namespace viya {
 namespace input {
@@ -48,7 +48,7 @@ public:
   void Load(std::vector<std::string> &values) { Loader::Load(values); }
   void LoadData() {}
 };
-}
-}
+} // namespace input
+} // namespace viya
 
 #endif // VIYA_INPUT_SIMPLE_H_

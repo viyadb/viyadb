@@ -24,7 +24,7 @@ namespace viya {
 namespace util {
 class Statsd;
 }
-}
+} // namespace viya
 
 namespace viya {
 namespace query {
@@ -56,7 +56,8 @@ public:
 private:
   cr::steady_clock::time_point begin_work_;
 };
-}
-}
+
+} // namespace query
+} // namespace viya
 
 #endif // VIYA_QUERY_STATS_H_

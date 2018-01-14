@@ -33,5 +33,5 @@ Loader *LoaderFactory::Create(const util::Config &config,
   }
   throw std::invalid_argument("Unsupported input type: " + type);
 }
-}
-}
+} // namespace input
+} // namespace viya

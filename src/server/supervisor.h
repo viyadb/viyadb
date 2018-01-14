@@ -60,7 +60,7 @@ private:
   std::unique_ptr<cluster::Controller> controller_;
   std::jmp_buf jump_;
 };
-}
-}
+} // namespace server
+} // namespace viya
 
 #endif // VIYA_SERVER_SUPERVISOR_H_

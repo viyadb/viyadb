@@ -24,7 +24,7 @@ namespace viya {
 namespace db {
 class Database;
 }
-}
+} // namespace viya
 
 namespace viya {
 namespace server {
@@ -50,8 +50,8 @@ private:
   db::Database &database_;
   HttpServer server_;
 };
-}
-}
-}
+} // namespace http
+} // namespace server
+} // namespace viya
 
 #endif // VIYA_SERVER_HTTP_SERVICE_H_

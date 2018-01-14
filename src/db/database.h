@@ -78,7 +78,7 @@ private:
   input::Watcher watcher_;
   util::Statsd statsd_;
 };
-}
-}
+} // namespace db
+} // namespace viya
 
 #endif // VIYA_DB_DATABASE_H_

@@ -350,5 +350,5 @@ Code FilterComparison::GenerateCode() const {
   filter_->Accept(b);
   return code;
 }
-}
-}
+} // namespace codegen
+} // namespace viya

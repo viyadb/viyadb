@@ -23,13 +23,13 @@ namespace viya {
 namespace db {
 class Database;
 class Table;
-}
-}
+} // namespace db
+} // namespace viya
 namespace viya {
 namespace util {
 class Config;
 }
-}
+} // namespace viya
 
 namespace viya {
 namespace input {
@@ -45,7 +45,7 @@ private:
   std::vector<int> CreateTupleIdxMapping(const util::Config &config,
                                          const db::Table &table);
 };
-}
-}
+} // namespace input
+} // namespace viya
 
 #endif // VIYA_INPUT_LOADER_FACTORY_H_

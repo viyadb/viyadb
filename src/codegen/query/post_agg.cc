@@ -164,5 +164,5 @@ void PostAggVisitor::Visit(query::SearchQuery *query __attribute__((unused))) {
 
   code_ << "output.Flush();\n";
 }
-}
-}
+} // namespace codegen
+} // namespace viya

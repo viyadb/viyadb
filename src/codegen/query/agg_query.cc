@@ -77,5 +77,5 @@ Code AggQueryGenerator::GenerateCode() const {
 query::AggQueryFn AggQueryGenerator::Function() {
   return GenerateFunction<query::AggQueryFn>(std::string("viya_query_agg"));
 }
-}
-}
+} // namespace codegen
+} // namespace viya

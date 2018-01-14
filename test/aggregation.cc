@@ -210,6 +210,21 @@ TEST_F(InappEvents, NoFilterHaving) {
   EXPECT_EQ(expected, actual);
 }
 
+TEST_F(InappEvents, HavingExtraColumn) {
+  LoadEvents();
+
+  query::MemoryRowOutput output;
+  EXPECT_THROW(db.Query(std::move(util::Config(
+                            "{\"type\": \"aggregate\","
+                            " \"table\": \"events\","
+                            " \"dimensions\": [\"event_name\"],"
+                            " \"metrics\": [\"revenue\"],"
+                            " \"having\": {\"op\": \"gt\", \"column\": "
+                            "\"count\", \"value\": \"1\"}}")),
+                        output),
+               std::invalid_argument);
+}
+
 TEST_F(InappEvents, MissingValueEq) {
   LoadEvents();
 

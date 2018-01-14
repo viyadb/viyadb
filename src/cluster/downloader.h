@@ -23,7 +23,7 @@ namespace viya {
 namespace util {
 class Config;
 }
-}
+} // namespace viya
 
 namespace viya {
 namespace cluster {

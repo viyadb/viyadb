@@ -118,6 +118,6 @@ void WorkersClient::Send(const std::vector<std::string> &workers,
 
 void WorkersClient::Await() { event_base_dispatch(event_base_); }
 
-} // query namespace
-} // cluster namespace
-} // viya namespace
+} // namespace query
+} // namespace cluster
+} // namespace viya

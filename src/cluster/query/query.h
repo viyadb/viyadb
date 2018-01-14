@@ -90,8 +90,8 @@ public:
                                               const Controller &controller);
 };
 
-} // query namespace
-} // cluster namespace
-} // viya namespace
+} // namespace query
+} // namespace cluster
+} // namespace viya
 
 #endif // VIYA_CLUSTER_QUERY_QUERY_H_

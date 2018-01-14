@@ -74,5 +74,5 @@ FileLoader::~FileLoader() {
     }
   }
 }
-}
-}
+} // namespace input
+} // namespace viya

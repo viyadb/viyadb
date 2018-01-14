@@ -25,7 +25,7 @@ namespace viya {
 namespace util {
 class Config;
 }
-}
+} // namespace viya
 
 namespace viya {
 namespace input {
@@ -41,7 +41,7 @@ public:
 private:
   int fd_;
 };
-}
-}
+} // namespace input
+} // namespace viya
 
 #endif // VIYA_INPUT_FILE_LOADER_H_

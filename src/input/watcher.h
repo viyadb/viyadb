@@ -27,8 +27,8 @@ namespace db {
 
 class Database;
 class Table;
-}
-}
+} // namespace db
+} // namespace viya
 
 namespace viya {
 namespace input {
@@ -68,7 +68,7 @@ private:
   std::mutex mutex_;
   std::vector<Watch> watches_;
 };
-}
-}
+} // namespace input
+} // namespace viya
 
 #endif // VIYA_INPUT_WATCHER_H_

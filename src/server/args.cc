@@ -107,5 +107,5 @@ util::Config CmdlineArgs::OpenConfig(const std::string &file) {
   util::Config config(buf.str().c_str());
   return config;
 }
-}
-}
+} // namespace server
+} // namespace viya

@@ -43,7 +43,7 @@ private:
 private:
   Code &code_;
 };
-}
-}
+} // namespace codegen
+} // namespace viya
 
 #endif // VIYA_CODEGEN_QUERY_SCAN_H_

@@ -187,5 +187,5 @@ void ScanVisitor::Visit(query::SearchQuery *query) {
 
   code_ << "stats.aggregated_recs = codes.size();\n";
 }
-}
-}
+} // namespace codegen
+} // namespace viya

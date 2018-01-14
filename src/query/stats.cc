@@ -48,5 +48,6 @@ void QueryStats::OnEnd() {
   statsd_.Timing(prefix.str() + "time", query_time);
   statsd_.Count(prefix.str() + "rows", output_recs);
 }
-}
-}
+
+} // namespace query
+} // namespace viya
