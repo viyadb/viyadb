@@ -24,6 +24,10 @@ For more information please visit the official Website: http://viyadb.com
 
 ## Building
 
+In order to pull all third party dependencies, either clone ViyaDB sources using `--recursive` flag, or run this command afterwards:
+
+    git submodule update --init --recursive
+
 The easiest way to build ViyaDB is using `viyadb/devenv` Docker image:
 
     docker run --rm -v $(pwd):/viyadb viyadb/devenv:latest /viyadb/scripts/travis-build.sh
