@@ -54,7 +54,11 @@ public:
 
 protected:
   std::string CreateTempTable(const util::Config &worker_query);
-  util::Config CreateWorkerQuery(const RemoteQuery *cluster_query);
+  util::Config CreateWorkerQuery(const util::Config &cluster_query);
+  void RunAggQuery(const std::vector<std::vector<std::string>> &,
+                   const util::Config &agg_query);
+  void RunSearchQuery(const std::vector<std::vector<std::string>> &,
+                      const util::Config &search_query);
   void ShowWorkers();
 
 private:

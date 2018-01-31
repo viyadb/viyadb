@@ -179,7 +179,7 @@ void ScanVisitor::Visit(query::SearchQuery *query) {
   }
   code_ << " if (check_value.find(term) != std::string::npos) {\n";
   code_ << "   values.push_back(check_value);\n";
-  code_ << "   if (values.size() >= limit) break;\n";
+  code_ << "   if (limit > 0 && values.size() >= limit) break;\n";
   code_ << " }\n";
   code_ << "}\n";
 

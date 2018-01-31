@@ -130,7 +130,7 @@ void AggregateQuery::Accept(QueryVisitor &visitor) { visitor.Visit(this); }
 SearchQuery::SearchQuery(const util::Config &config, db::Table &table)
     : FilterBasedQuery(config.sub("filter", true), table),
       dimension_(table.dimension(config.str("dimension"))),
-      term_(config.str("term")), limit_(config.num("limit")) {}
+      term_(config.str("term")), limit_(config.num("limit", 0)) {}
 
 void SearchQuery::Accept(QueryVisitor &visitor) { visitor.Visit(this); }
 
