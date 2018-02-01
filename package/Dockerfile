@@ -1,13 +1,11 @@
-from ubuntu:zesty
+from ubuntu:artful
 
 MAINTAINER Michael Spector <michael@viyadb.com>
 LABEL Description="ViyaDB is in-memory analytical data store"
 
 ENV TERM=xterm
 
-ADD ubuntu-toolchain-r.list /etc/apt/sources.list.d/ubuntu-toolchain-r.list
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends --allow-unauthenticated \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     libssl1.0.0 \
     curl \
     bsdmainutils \
@@ -15,8 +13,6 @@ RUN apt-get update \
     g++-7 \
   && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 60 --slave /usr/bin/g++ g++ /usr/bin/g++-7 \
   && apt-get purge -y \
-    gcc-5-base \
-    gcc-6-base \
     manpages-dev \
   && apt-get autoremove -y \
   && apt-get clean \

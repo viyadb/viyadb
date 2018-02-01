@@ -1,4 +1,4 @@
-from ubuntu:zesty
+from ubuntu:artful
 
 MAINTAINER Michael Spector <spektom@gmail.com>
 LABEL Description="Build environment for ViyaDB"
@@ -6,6 +6,7 @@ LABEL Description="Build environment for ViyaDB"
 ENV TERM=xterm
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
     autoconf \
     automake \
     binutils-dev \
@@ -21,32 +22,36 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libtool \
     pkg-config \
     python \
-    software-properties-common \
-    valgrind \
-    wget \
+    ca-certificates \
     zlib1g-dev \
     clang-format \
-  && add-apt-repository ppa:ubuntu-toolchain-r/test \
-  && apt-get update && apt-get install -y \
     g++-7 \
   && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 60 --slave /usr/bin/g++ g++ /usr/bin/g++-7 \
-  && apt-get purge -y \
-    gcc-5-base \
-    gcc-6-base \
-  && wget -q https://dl.bintray.com/boostorg/release/1.65.1/source/boost_1_65_1.tar.gz \
-    && tar xfz boost_1_65_1.tar.gz \
-    && rm boost_1_65_1.tar.gz \
+  && curl -sS -L https://cmake.org/files/v3.10/cmake-3.10.0-Linux-x86_64.sh -o cmake-install.sh \
+    && sh ./cmake-install.sh --prefix=/usr/local --skip-license \
+    && rm -f ./cmake-install.sh \
+  && curl -sS -L https://dl.bintray.com/boostorg/release/1.65.1/source/boost_1_65_1.tar.gz | tar -zxf - \
     && cd boost_1_65_1 \
     && ./bootstrap.sh \
     && ./b2 --without-python -j 4 link=static runtime-link=shared install \
     && cd .. \
     && rm -rf boost_1_65_1 \
-  && wget -q https://cmake.org/files/v3.10/cmake-3.10.0-Linux-x86_64.sh -O cmake-install.sh \
-    && sh ./cmake-install.sh --prefix=/usr/local --skip-license \
   && ldconfig \
+  && apt-get purge -y \
+    manpages-dev \
   && apt-get autoremove -y \
   && apt-get clean \
   && rm -rf \
+    /usr/local/doc \
+    /usr/local/man \
+    /usr/local/share/man \
+    /usr/local/bin/cmake-gui \
+    /usr/local/bin/cpack \
+    /usr/local/bin/ctest \
+    /usr/local/bin/ccmake \
+    /usr/share/doc* \
+    /usr/share/man \
+    /usr/share/info \
     /var/lib/apt/lists/* \
     /var/tmp/* \
     /tmp/*
@@ -55,4 +60,3 @@ RUN mkdir /viyadb
 VOLUME /viyadb
 
 CMD bash
-

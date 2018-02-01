@@ -1,8 +1,34 @@
 
-These utilities allow setting up Linux development environment on dev-unfriendly systems, such as Mac OS X.
+Development environment vased on Docker.
 
-## Contents
+## Prerequisites
 
- * [docker](docker) - Docker based development environment
- * [vagrant](vagrant) - Vargrant based development environment
+ * [Docker](https://www.docker.com)
+
+## Preparing development environment
+
+You can either build your own Docker image, or pull a ready one from Docker Hub repository.
+
+To pull the latest Docker image containing the build environment, run:
+
+    docker pull viyadb/devenv:latest
+
+Otherwise, to build your own Docker image containing the devenv, run:
+
+    ./prepare.sh
+
+After running this command, docker image containing everything needed for compiling and running ViyaDB
+will be created.
+
+## Entering Docker container shell
+
+    ./run.sh
+
+## Building ViyaDB
+
+    cd /viyadb
+    mkdir build
+    cd build
+    cmake ..
+    make -j8
 
