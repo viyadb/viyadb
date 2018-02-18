@@ -95,8 +95,9 @@ statement: select_statement
 
 select_statement: SELECT select_cols FROM table_name filter_opt having_opt orderby_opt limit_opt {
                     $$ = new Statement(Statement::Type::QUERY);
-                    auto& d = $$->descriptor();
+                    auto& d = $$->descriptor_;
                     d["type"] = "aggregate";
+                    d["header"] = driver.add_header();
                     d["table"] = $4; delete[] $4;
                     d["select"] = *$2; delete $2;
                     if ($5 != nullptr) { d["filter"] = *$5; delete $5; }
@@ -106,8 +107,9 @@ select_statement: SELECT select_cols FROM table_name filter_opt having_opt order
                   }
                 | SELECT SEARCH '(' column_name ',' string_literal ')' FROM table_name filter_opt limit_opt {
                     $$ = new Statement(Statement::Type::QUERY);
-                    auto& d = $$->descriptor();
+                    auto& d = $$->descriptor_;
                     d["type"] = "search";
+                    d["header"] = driver.add_header();
                     d["dimension"] = $4; delete[] $4;
                     d["term"] = $6; delete[] $6;
                     d["table"] = $9; delete[] $9;
@@ -118,8 +120,9 @@ select_statement: SELECT select_cols FROM table_name filter_opt having_opt order
 
 show_statement: SHOW show_what {
                   $$ = new Statement(Statement::Type::QUERY);
-                  auto& d = $$->descriptor();
+                  auto& d = $$->descriptor_;
                   d["type"] = "show";
+                  d["header"] = driver.add_header();
                   d["what"] = $2;
                   delete[] $2;
                 }
@@ -131,7 +134,7 @@ show_what: TABLES  { $$ = dup("tables"); }
 
 copy_statement: COPY table_name copy_cols_opt FROM copy_source copy_opts_opt {
                   $$ = new Statement(Statement::Type::LOAD);
-                  auto& d = $$->descriptor();
+                  auto& d = $$->descriptor_;
                   d["table"] = $2; delete[] $2;
                   if ($3 != nullptr) {
                     d["columns"] = *$3; delete $3;

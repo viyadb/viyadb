@@ -15,13 +15,25 @@
  */
 
 #include "cluster/partitioning.h"
+#include <nlohmann/json.hpp>
 
 namespace viya {
 namespace cluster {
 
+Partitioning::Partitioning(const json &json) {
+  mapping_ = json["mapping"].get<std::vector<uint32_t>>();
+  total_ = json["total"].get<size_t>();
+  columns_ = json["columns"].get<std::vector<std::string>>();
+}
+
 Partitioning::Partitioning(const std::vector<uint32_t> &mapping, size_t total,
                            const std::vector<std::string> &columns)
     : mapping_(mapping), total_(total), columns_(columns) {}
+
+json Partitioning::ToJson() const {
+  return json(
+      {{"mapping", mapping_}, {"total", total_}, {"columns", columns_}});
+}
 
 } // namespace cluster
 } // namespace viya

@@ -28,7 +28,8 @@ namespace util = viya::util;
 
 Code TableMetadata::GenerateCode() const {
   Code code;
-  code.AddHeaders({"db/table.h", "db/store.h", "db/dictionary.h", "json.hpp"});
+  code.AddHeaders(
+      {"db/table.h", "db/store.h", "db/dictionary.h", "nlohmann/json.hpp"});
 
   StoreDefs store_defs(table_);
   code << store_defs.GenerateCode();

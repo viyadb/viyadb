@@ -35,7 +35,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cmake)
 include_directories(
   ${PROJECT_SOURCE_DIR}/third_party
   ${PROJECT_SOURCE_DIR}/third_party/fmt
-  ${PROJECT_SOURCE_DIR}/third_party/json/src
+  ${PROJECT_SOURCE_DIR}/third_party/json/include
   ${PROJECT_SOURCE_DIR}/third_party/Simple-Web-Server
   ${PROJECT_SOURCE_DIR}/third_party/CRoaring/cpp
   ${PROJECT_SOURCE_DIR}/third_party/CRoaring/include

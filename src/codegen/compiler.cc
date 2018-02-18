@@ -48,7 +48,7 @@ Compiler::Compiler(const util::Config &config) {
     "-L./src/util",
     "-I../third_party",
     "-I../third_party/fmt",
-    "-I../third_party/json/src",
+    "-I../third_party/json/include",
     "-I../third_party/CRoaring/cpp",
     "-I../third_party/CRoaring/include",
     "-L./third_party/CRoaring/src",

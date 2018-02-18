@@ -28,15 +28,16 @@ TEST_F(InappEvents, FilterNot) {
   LoadEvents();
 
   query::MemoryRowOutput output;
-  db.Query(
-      std::move(util::Config("{\"type\": \"aggregate\","
-                             " \"table\": \"events\","
-                             " \"dimensions\": [\"event_name\", \"country\"],"
-                             " \"metrics\": [\"revenue\"],"
-                             " \"filter\": {\"op\": \"not\", \"filter\":"
-                             "              {\"op\": \"ne\", \"column\": "
-                             "\"country\", \"value\": \"US\"}}}")),
-      output);
+  db.Query(std::move(util::Config(json{
+               {"type", "aggregate"},
+               {"table", "events"},
+               {"dimensions", {"event_name", "country"}},
+               {"metrics", {"revenue"}},
+               {"filter",
+                {{"op", "not"},
+                 {"filter",
+                  {{"op", "ne"}, {"column", "country"}, {"value", "US"}}}}}})),
+           output);
 
   std::vector<query::MemoryRowOutput::Row> expected = {
       {"purchase", "US", "1.2"}, {"donate", "US", "5"}};
@@ -52,18 +53,21 @@ TEST_F(InappEvents, FilterNotOrNe) {
   LoadSortEvents();
 
   query::MemoryRowOutput output;
-  db.Query(
-      std::move(util::Config("{\"type\": \"aggregate\","
-                             " \"table\": \"events\","
-                             " \"dimensions\": [\"event_name\", \"country\"],"
-                             " \"metrics\": [\"revenue\"],"
-                             " \"filter\": {\"op\": \"not\", \"filter\":"
-                             "              {\"op\": \"or\", \"filters\": ["
-                             "               {\"op\": \"ne\", \"column\": "
-                             "\"country\", \"value\": \"CH\"},"
-                             "               {\"op\": \"ne\", \"column\": "
-                             "\"event_name\", \"value\": \"refund\"}]}}}")),
-      output);
+  db.Query(std::move(util::Config(json{
+               {"type", "aggregate"},
+               {"table", "events"},
+               {"dimensions", {"event_name", "country"}},
+               {"metrics", {"revenue"}},
+               {"filter",
+                {{"op", "not"},
+                 {"filter",
+                  {{"op", "or"},
+                   {"filters",
+                    {{{"op", "ne"}, {"column", "country"}, {"value", "CH"}},
+                     {{"op", "ne"},
+                      {"column", "event_name"},
+                      {"value", "refund"}}}}}}}}})),
+           output);
 
   std::vector<query::MemoryRowOutput::Row> expected = {{"refund", "CH", "1.1"}};
   std::sort(expected.begin(), expected.end());
@@ -79,16 +83,18 @@ TEST_F(InappEvents, FilterNotPeriod) {
 
   query::MemoryRowOutput output;
   db.Query(
-      std::move(util::Config("{\"type\": \"aggregate\","
-                             " \"table\": \"events\","
-                             " \"dimensions\": [\"event_name\", \"country\"],"
-                             " \"metrics\": [\"revenue\"],"
-                             " \"filter\": {\"op\": \"not\", \"filter\":"
-                             "              {\"op\": \"and\", \"filters\": ["
-                             "               {\"op\": \"gt\", \"column\": "
-                             "\"revenue\", \"value\": \"0.1\"},"
-                             "               {\"op\": \"lt\", \"column\": "
-                             "\"revenue\", \"value\": \"2\"}]}}}")),
+      std::move(util::Config(json{
+          {"type", "aggregate"},
+          {"table", "events"},
+          {"dimensions", {"event_name", "country"}},
+          {"metrics", {"revenue"}},
+          {"filter",
+           {{"op", "not"},
+            {"filter",
+             {{"op", "and"},
+              {"filters",
+               {{{"op", "gt"}, {"column", "revenue"}, {"value", "0.1"}},
+                {{"op", "lt"}, {"column", "revenue"}, {"value", "2"}}}}}}}}})),
       output);
 
   std::vector<query::MemoryRowOutput::Row> expected = {
@@ -105,15 +111,18 @@ TEST_F(InappEvents, FilterNotIn) {
   LoadSortEvents();
 
   query::MemoryRowOutput output;
-  db.Query(std::move(util::Config(
-               "{\"type\": \"aggregate\","
-               " \"table\": \"events\","
-               " \"dimensions\": [\"event_name\", \"country\"],"
-               " \"metrics\": [\"revenue\"],"
-               " \"filter\": {\"op\": \"not\", \"filter\":"
-               "              {\"op\": \"in\", \"column\": \"event_name\", "
-               "\"values\": [\"refund\", \"purchase\"]}}}")),
-           output);
+  db.Query(
+      std::move(util::Config(json{{"type", "aggregate"},
+                                  {"table", "events"},
+                                  {"dimensions", {"event_name", "country"}},
+                                  {"metrics", {"revenue"}},
+                                  {"filter",
+                                   {{"op", "not"},
+                                    {"filter",
+                                     {{"op", "in"},
+                                      {"column", "event_name"},
+                                      {"values", {"refund", "purchase"}}}}}}})),
+      output);
 
   std::vector<query::MemoryRowOutput::Row> expected = {{"donate", "RU", "1"},
                                                        {"review", "KZ", "5"}};

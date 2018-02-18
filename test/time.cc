@@ -28,25 +28,26 @@ namespace query = viya::query;
 class IngestFormat : public testing::Test {
 protected:
   IngestFormat()
-      : query_conf(std::move(
-            util::Config("{\"type\": \"aggregate\","
-                         " \"table\": \"events\","
-                         " \"dimensions\": [\"country\", \"install_time\"],"
-                         " \"metrics\": [\"count\"],"
-                         " \"filter\": {\"op\": \"gt\", \"column\": \"count\", "
-                         "\"value\": \"0\"}}"))) {}
+      : query_conf(std::move(util::Config(
+            json{{"type", "aggregate"},
+                 {"table", "events"},
+                 {"dimensions", {"country", "install_time"}},
+                 {"metrics", {"count"}},
+                 {"filter",
+                  {{"op", "gt"}, {"column", "count"}, {"value", "0"}}}}))) {}
   util::Config query_conf;
 };
 
 TEST_F(IngestFormat, ParseInputFormat) {
   db::Database db(std::move(util::Config(
-      "{\"tables\": [{\"name\": \"events\","
-      "               \"dimensions\": [{\"name\": \"country\"},"
-      "                                {\"name\": \"install_time\","
-      "                                 \"type\": \"time\","
-      "                                 \"format\": \"%Y-%m-%d %T\"}],"
-      "               \"metrics\": [{\"name\": \"count\", \"type\": "
-      "\"count\"}]}]}")));
+      json{{"tables",
+            {{{"name", "events"},
+              {"dimensions",
+               {{{"name", "country"}},
+                {{"name", "install_time"},
+                 {"type", "time"},
+                 {"format", "%Y-%m-%d %T"}}}},
+              {"metrics", {{{"name", "count"}, {"type", "count"}}}}}}}})));
 
   auto table = db.GetTable("events");
   input::SimpleLoader loader(*table);
@@ -67,12 +68,12 @@ TEST_F(IngestFormat, ParseInputFormat) {
 
 TEST_F(IngestFormat, ParseTime) {
   db::Database db(std::move(util::Config(
-      "{\"tables\": [{\"name\": \"events\","
-      "               \"dimensions\": [{\"name\": \"country\"},"
-      "                                {\"name\": \"install_time\","
-      "                                 \"type\": \"time\"}],"
-      "               \"metrics\": [{\"name\": \"count\", \"type\": "
-      "\"count\"}]}]}")));
+      json{{"tables",
+            {{{"name", "events"},
+              {"dimensions",
+               {{{"name", "country"}},
+                {{"name", "install_time"}, {"type", "time"}}}},
+              {"metrics", {{{"name", "count"}, {"type", "count"}}}}}}}})));
 
   auto table = db.GetTable("events");
   input::SimpleLoader loader(*table);
@@ -92,14 +93,13 @@ TEST_F(IngestFormat, ParseTime) {
 }
 
 TEST_F(IngestFormat, ParsePosixTime) {
-  db::Database db(std::move(util::Config(
-      "{\"tables\": [{\"name\": \"events\","
-      "               \"dimensions\": [{\"name\": \"country\"},"
-      "                                {\"name\": \"install_time\","
-      "                                 \"type\": \"time\","
-      "                                 \"format\": \"posix\"}],"
-      "               \"metrics\": [{\"name\": \"count\", \"type\": "
-      "\"count\"}]}]}")));
+  db::Database db(std::move(util::Config(json{
+      {"tables",
+       {{{"name", "events"},
+         {"dimensions",
+          {{{"name", "country"}},
+           {{"name", "install_time"}, {"type", "time"}, {"format", "posix"}}}},
+         {"metrics", {{{"name", "count"}, {"type", "count"}}}}}}}})));
 
   auto table = db.GetTable("events");
   input::SimpleLoader loader(*table);
@@ -119,14 +119,13 @@ TEST_F(IngestFormat, ParsePosixTime) {
 }
 
 TEST_F(IngestFormat, ParseMillisTime) {
-  db::Database db(std::move(util::Config(
-      "{\"tables\": [{\"name\": \"events\","
-      "               \"dimensions\": [{\"name\": \"country\"},"
-      "                                {\"name\": \"install_time\","
-      "                                 \"type\": \"time\","
-      "                                 \"format\": \"millis\"}],"
-      "               \"metrics\": [{\"name\": \"count\", \"type\": "
-      "\"count\"}]}]}")));
+  db::Database db(std::move(util::Config(json{
+      {"tables",
+       {{{"name", "events"},
+         {"dimensions",
+          {{{"name", "country"}},
+           {{"name", "install_time"}, {"type", "time"}, {"format", "millis"}}}},
+         {"metrics", {{{"name", "count"}, {"type", "count"}}}}}}}})));
 
   auto table = db.GetTable("events");
   input::SimpleLoader loader(*table);
@@ -146,14 +145,13 @@ TEST_F(IngestFormat, ParseMillisTime) {
 }
 
 TEST_F(IngestFormat, ParseMicrosTime) {
-  db::Database db(std::move(util::Config(
-      "{\"tables\": [{\"name\": \"events\","
-      "               \"dimensions\": [{\"name\": \"country\"},"
-      "                                {\"name\": \"install_time\","
-      "                                 \"type\": \"time\","
-      "                                 \"format\": \"micros\"}],"
-      "               \"metrics\": [{\"name\": \"count\", \"type\": "
-      "\"count\"}]}]}")));
+  db::Database db(std::move(util::Config(json{
+      {"tables",
+       {{{"name", "events"},
+         {"dimensions",
+          {{{"name", "country"}},
+           {{"name", "install_time"}, {"type", "time"}, {"format", "micros"}}}},
+         {"metrics", {{{"name", "count"}, {"type", "count"}}}}}}}})));
 
   auto table = db.GetTable("events");
   input::SimpleLoader loader(*table);
@@ -174,13 +172,14 @@ TEST_F(IngestFormat, ParseMicrosTime) {
 
 TEST_F(IngestFormat, ParsePosixMicrotime) {
   db::Database db(std::move(util::Config(
-      "{\"tables\": [{\"name\": \"events\","
-      "               \"dimensions\": [{\"name\": \"country\"},"
-      "                                {\"name\": \"install_time\","
-      "                                 \"type\": \"microtime\","
-      "                                 \"format\": \"posix\"}],"
-      "               \"metrics\": [{\"name\": \"count\", \"type\": "
-      "\"count\"}]}]}")));
+      json{{"tables",
+            {{{"name", "events"},
+              {"dimensions",
+               {{{"name", "country"}},
+                {{"name", "install_time"},
+                 {"type", "microtime"},
+                 {"format", "posix"}}}},
+              {"metrics", {{{"name", "count"}, {"type", "count"}}}}}}}})));
 
   auto table = db.GetTable("events");
   input::SimpleLoader loader(*table);
@@ -201,13 +200,14 @@ TEST_F(IngestFormat, ParsePosixMicrotime) {
 
 TEST_F(IngestFormat, ParseMillisMicrotime) {
   db::Database db(std::move(util::Config(
-      "{\"tables\": [{\"name\": \"events\","
-      "               \"dimensions\": [{\"name\": \"country\"},"
-      "                                {\"name\": \"install_time\","
-      "                                 \"type\": \"microtime\","
-      "                                 \"format\": \"millis\"}],"
-      "               \"metrics\": [{\"name\": \"count\", \"type\": "
-      "\"count\"}]}]}")));
+      json{{"tables",
+            {{{"name", "events"},
+              {"dimensions",
+               {{{"name", "country"}},
+                {{"name", "install_time"},
+                 {"type", "microtime"},
+                 {"format", "millis"}}}},
+              {"metrics", {{{"name", "count"}, {"type", "count"}}}}}}}})));
 
   auto table = db.GetTable("events");
   input::SimpleLoader loader(*table);
@@ -228,13 +228,14 @@ TEST_F(IngestFormat, ParseMillisMicrotime) {
 
 TEST_F(IngestFormat, ParseMicrosMicrotime) {
   db::Database db(std::move(util::Config(
-      "{\"tables\": [{\"name\": \"events\","
-      "               \"dimensions\": [{\"name\": \"country\"},"
-      "                                {\"name\": \"install_time\","
-      "                                 \"type\": \"microtime\","
-      "                                 \"format\": \"micros\"}],"
-      "               \"metrics\": [{\"name\": \"count\", \"type\": "
-      "\"count\"}]}]}")));
+      json{{"tables",
+            {{{"name", "events"},
+              {"dimensions",
+               {{{"name", "country"}},
+                {{"name", "install_time"},
+                 {"type", "microtime"},
+                 {"format", "micros"}}}},
+              {"metrics", {{{"name", "count"}, {"type", "count"}}}}}}}})));
 
   auto table = db.GetTable("events");
   input::SimpleLoader loader(*table);
@@ -255,12 +256,12 @@ TEST_F(IngestFormat, ParseMicrosMicrotime) {
 
 TEST_F(IngestFormat, ParseMicrotime) {
   db::Database db(std::move(util::Config(
-      "{\"tables\": [{\"name\": \"events\","
-      "               \"dimensions\": [{\"name\": \"country\"},"
-      "                                {\"name\": \"install_time\","
-      "                                 \"type\": \"microtime\"}],"
-      "               \"metrics\": [{\"name\": \"count\", \"type\": "
-      "\"count\"}]}]}")));
+      json{{"tables",
+            {{{"name", "events"},
+              {"dimensions",
+               {{{"name", "country"}},
+                {{"name", "install_time"}, {"type", "microtime"}}}},
+              {"metrics", {{{"name", "count"}, {"type", "count"}}}}}}}})));
 
   auto table = db.GetTable("events");
   input::SimpleLoader loader(*table);
@@ -281,15 +282,15 @@ TEST_F(IngestFormat, ParseMicrotime) {
 
 TEST(IngestGranularity, TruncateToDay) {
   db::Database db(std::move(util::Config(
-      "{\"tables\": [{\"name\": \"events\","
-
-      "               \"dimensions\": [{\"name\": \"country\"},"
-      "                                {\"name\": \"install_time\","
-      "                                 \"type\": \"time\","
-      "                                 \"format\": \"%Y-%m-%d %T\","
-      "                                 \"granularity\": \"day\"}],"
-      "               \"metrics\": [{\"name\": \"count\", \"type\": "
-      "\"count\"}]}]}")));
+      json{{"tables",
+            {{{"name", "events"},
+              {"dimensions",
+               {{{"name", "country"}},
+                {{"name", "install_time"},
+                 {"type", "time"},
+                 {"format", "%Y-%m-%d %T"},
+                 {"granularity", "day"}}}},
+              {"metrics", {{{"name", "count"}, {"type", "count"}}}}}}}})));
 
   auto table = db.GetTable("events");
   input::SimpleLoader loader(*table);
@@ -297,12 +298,12 @@ TEST(IngestGranularity, TruncateToDay) {
 
   query::MemoryRowOutput output;
   db.Query(
-      std::move(util::Config("{\"type\": \"aggregate\","
-                             " \"table\": \"events\","
-                             " \"dimensions\": [\"country\", \"install_time\"],"
-                             " \"metrics\": [\"count\"],"
-                             " \"filter\": {\"op\": \"gt\", \"column\": "
-                             "\"count\", \"value\": \"0\"}}")),
+      std::move(util::Config(json{
+          {"type", "aggregate"},
+          {"table", "events"},
+          {"dimensions", {"country", "install_time"}},
+          {"metrics", {"count"}},
+          {"filter", {{"op", "gt"}, {"column", "count"}, {"value", "0"}}}})),
       output);
 
   std::vector<query::MemoryRowOutput::Row> expected = {
@@ -319,19 +320,16 @@ TEST(DynamicRollup, TimestampIngestion) {
   setenv("VIYA_TEST_ROLLUP_TS", "1496570140L", 1);
 
   db::Database db(std::move(util::Config(
-      "{\"tables\": [{\"name\": \"events\","
-      "               \"dimensions\": [{\"name\": \"install_time\","
-      "                                 \"type\": \"time\","
-      "                                 \"rollup_rules\": ["
-      "                                   {\"granularity\": \"hour\",  "
-      "\"after\": \"1 days\"},"
-      "                                   {\"granularity\": \"day\",   "
-      "\"after\": \"1 weeks\"},"
-      "                                   {\"granularity\": \"month\", "
-      "\"after\": \"1 years\"}"
-      "                                ]}],"
-      "               \"metrics\": [{\"name\": \"count\", \"type\": "
-      "\"count\"}]}]}")));
+      json{{"tables",
+            {{{"name", "events"},
+              {"dimensions",
+               {{{"name", "install_time"},
+                 {"type", "time"},
+                 {"rollup_rules",
+                  {{{"granularity", "hour"}, {"after", "1 days"}},
+                   {{"granularity", "day"}, {"after", "1 weeks"}},
+                   {{"granularity", "month"}, {"after", "1 years"}}}}}}},
+              {"metrics", {{{"name", "count"}, {"type", "count"}}}}}}}})));
 
   auto table = db.GetTable("events");
 
@@ -363,13 +361,14 @@ TEST(DynamicRollup, TimestampIngestion) {
   expected.push_back({"1459468800", "1"});
 
   query::MemoryRowOutput output;
-  db.Query(std::move(util::Config("{\"type\": \"aggregate\","
-                                  " \"table\": \"events\","
-                                  " \"dimensions\": [\"install_time\"],"
-                                  " \"metrics\": [\"count\"],"
-                                  " \"filter\": {\"op\": \"gt\", \"column\": "
-                                  "\"count\", \"value\": \"0\"}}")),
-           output);
+  db.Query(
+      std::move(util::Config(json{
+          {"type", "aggregate"},
+          {"table", "events"},
+          {"dimensions", {"install_time"}},
+          {"metrics", {"count"}},
+          {"filter", {{"op", "gt"}, {"column", "count"}, {"value", "0"}}}})),
+      output);
 
   auto actual = output.rows();
   std::sort(expected.begin(), expected.end());
@@ -384,19 +383,16 @@ TEST(DynamicRollup, TimestampMicroIngestion) {
   setenv("VIYA_TEST_ROLLUP_TS", "1496570140L", 1);
 
   db::Database db(std::move(util::Config(
-      "{\"tables\": [{\"name\": \"events\","
-      "               \"dimensions\": [{\"name\": \"install_time\","
-      "                                 \"type\": \"microtime\","
-      "                                 \"rollup_rules\": ["
-      "                                   {\"granularity\": \"hour\",  "
-      "\"after\": \"1 days\"},"
-      "                                   {\"granularity\": \"day\",   "
-      "\"after\": \"1 weeks\"},"
-      "                                   {\"granularity\": \"month\", "
-      "\"after\": \"1 years\"}"
-      "                                ]}],"
-      "               \"metrics\": [{\"name\": \"count\", \"type\": "
-      "\"count\"}]}]}")));
+      json{{"tables",
+            {{{"name", "events"},
+              {"dimensions",
+               {{{"name", "install_time"},
+                 {"type", "microtime"},
+                 {"rollup_rules",
+                  {{{"granularity", "hour"}, {"after", "1 days"}},
+                   {{"granularity", "day"}, {"after", "1 weeks"}},
+                   {{"granularity", "month"}, {"after", "1 years"}}}}}}},
+              {"metrics", {{{"name", "count"}, {"type", "count"}}}}}}}})));
 
   auto table = db.GetTable("events");
 
@@ -432,13 +428,14 @@ TEST(DynamicRollup, TimestampMicroIngestion) {
   expected.push_back({"1459468800000000", "1"});
 
   query::MemoryRowOutput output;
-  db.Query(std::move(util::Config("{\"type\": \"aggregate\","
-                                  " \"table\": \"events\","
-                                  " \"dimensions\": [\"install_time\"],"
-                                  " \"metrics\": [\"count\"],"
-                                  " \"filter\": {\"op\": \"gt\", \"column\": "
-                                  "\"count\", \"value\": \"0\"}}")),
-           output);
+  db.Query(
+      std::move(util::Config(json{
+          {"type", "aggregate"},
+          {"table", "events"},
+          {"dimensions", {"install_time"}},
+          {"metrics", {"count"}},
+          {"filter", {{"op", "gt"}, {"column", "count"}, {"value", "0"}}}})),
+      output);
 
   auto actual = output.rows();
   std::sort(expected.begin(), expected.end());
@@ -453,20 +450,17 @@ TEST(DynamicRollup, FormatIngestion) {
   setenv("VIYA_TEST_ROLLUP_TS", "1496570140L", 1);
 
   db::Database db(std::move(util::Config(
-      "{\"tables\": [{\"name\": \"events\","
-      "               \"dimensions\": [{\"name\": \"install_time\","
-      "                                 \"type\": \"time\","
-      "                                 \"format\": \"%Y-%m-%d %T\","
-      "                                 \"rollup_rules\": ["
-      "                                   {\"granularity\": \"hour\",  "
-      "\"after\": \"1 days\"},"
-      "                                   {\"granularity\": \"day\",   "
-      "\"after\": \"1 weeks\"},"
-      "                                   {\"granularity\": \"month\", "
-      "\"after\": \"1 years\"}"
-      "                                ]}],"
-      "               \"metrics\": [{\"name\": \"count\", \"type\": "
-      "\"count\"}]}]}")));
+      json{{"tables",
+            {{{"name", "events"},
+              {"dimensions",
+               {{{"name", "install_time"},
+                 {"type", "time"},
+                 {"format", "%Y-%m-%d %T"},
+                 {"rollup_rules",
+                  {{{"granularity", "hour"}, {"after", "1 days"}},
+                   {{"granularity", "day"}, {"after", "1 weeks"}},
+                   {{"granularity", "month"}, {"after", "1 years"}}}}}}},
+              {"metrics", {{{"name", "count"}, {"type", "count"}}}}}}}})));
 
   auto table = db.GetTable("events");
 
@@ -507,13 +501,13 @@ TEST(DynamicRollup, FormatIngestion) {
 
   query::MemoryRowOutput output;
   db.Query(
-      std::move(util::Config("{\"type\": \"aggregate\","
-                             " \"table\": \"events\","
-                             " \"select\": [{\"column\": \"install_time\", "
-                             "\"format\": \"%Y-%m-%d %T\"},"
-                             "              {\"column\": \"count\"}],"
-                             " \"filter\": {\"op\": \"gt\", \"column\": "
-                             "\"count\", \"value\": \"0\"}}")),
+      std::move(util::Config(json{
+          {"type", "aggregate"},
+          {"table", "events"},
+          {"select",
+           {{{"column", "install_time"}, {"format", "%Y-%m-%d %T"}},
+            {{"column", "count"}}}},
+          {"filter", {{"op", "gt"}, {"column", "count"}, {"value", "0"}}}})),
       output);
 
   auto actual = output.rows();
@@ -530,14 +524,14 @@ TEST_F(TimeEvents, OutputFormat) {
 
   query::MemoryRowOutput output;
   db.Query(
-      std::move(util::Config("{\"type\": \"aggregate\","
-                             " \"table\": \"events\","
-                             " \"select\": [{\"column\": \"country\"},"
-                             "              {\"column\": \"install_time\", "
-                             "\"format\": \"%Y-%m-%d %T\"},"
-                             "              {\"column\": \"count\"}],"
-                             " \"filter\": {\"op\": \"gt\", \"column\": "
-                             "\"count\", \"value\": \"0\"}}")),
+      std::move(util::Config(json{
+          {"type", "aggregate"},
+          {"table", "events"},
+          {"select",
+           {{{"column", "country"}},
+            {{"column", "install_time"}, {"format", "%Y-%m-%d %T"}},
+            {{"column", "count"}}}},
+          {"filter", {{"op", "gt"}, {"column", "count"}, {"value", "0"}}}})),
       output);
 
   std::vector<query::MemoryRowOutput::Row> expected = {
@@ -557,16 +551,18 @@ TEST_F(TimeEvents, QueryGranularity) {
   LoadEvents();
 
   query::MemoryRowOutput output;
-  db.Query(std::move(util::Config("{\"type\": \"aggregate\","
-                                  " \"table\": \"events\","
-                                  " \"select\": [{\"column\": \"country\"},"
-                                  "              {\"column\": "
-                                  "\"install_time\", \"format\": \"%Y-%m-%d "
-                                  "%T\", \"granularity\": \"month\"},"
-                                  "              {\"column\": \"count\"}],"
-                                  " \"filter\": {\"op\": \"gt\", \"column\": "
-                                  "\"count\", \"value\": \"0\"}}")),
-           output);
+  db.Query(
+      std::move(util::Config(json{
+          {"type", "aggregate"},
+          {"table", "events"},
+          {"select",
+           {{{"column", "country"}},
+            {{"column", "install_time"},
+             {"format", "%Y-%m-%d %T"},
+             {"granularity", "month"}},
+            {{"column", "count"}}}},
+          {"filter", {{"op", "gt"}, {"column", "count"}, {"value", "0"}}}})),
+      output);
 
   std::vector<query::MemoryRowOutput::Row> expected = {
       {"IL", "2015-01-01 00:00:00", "1"},

@@ -14,37 +14,50 @@
  * limitations under the License.
  */
 
-#ifndef VIYA_CLUSTER_CONSUL_WATCH_H_
-#define VIYA_CLUSTER_CONSUL_WATCH_H_
+#ifndef VIYA_CLUSTER_QUERY_LOCAL_RUNNER_H_
+#define VIYA_CLUSTER_QUERY_LOCAL_RUNNER_H_
 
-#include <memory>
-#include <nlohmann/json.hpp>
+#include "cluster/query/query.h"
 
 namespace viya {
 namespace cluster {
-namespace consul {
 
-using json = nlohmann::json;
+class Controller;
 
-class Consul;
-
-class Watch {
-public:
-  Watch(const Consul &consul, const std::string &key, bool recurse = false);
-  Watch(const Watch &other) = delete;
-
-  std::unique_ptr<json> LastChanges(int32_t timeout = 86400000L);
-
-private:
-  const Consul &consul_;
-  const std::string key_;
-  bool recurse_;
-  const std::string url_;
-  long index_;
-};
-
-} // namespace consul
 } // namespace cluster
 } // namespace viya
 
-#endif // VIYA_CLUSTER_CONSUL_WATCH_H_
+namespace viya {
+namespace query {
+
+class RowOutput;
+
+} // namespace query
+} // namespace viya
+
+namespace viya {
+namespace cluster {
+namespace query {
+
+namespace util = viya::util;
+namespace query = viya::query;
+
+class LocalQueryRunner {
+public:
+  LocalQueryRunner(Controller &controller, query::RowOutput &output);
+
+  void Run(const LocalQuery *query);
+
+protected:
+  void ShowWorkers();
+
+private:
+  Controller &controller_;
+  query::RowOutput &output_;
+};
+
+} // namespace query
+} // namespace cluster
+} // namespace viya
+
+#endif // VIYA_CLUSTER_QUERY_LOCAL_RUNNER_H_

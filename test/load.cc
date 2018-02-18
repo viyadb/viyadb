@@ -45,11 +45,10 @@ TEST_F(InappEvents, LoadFromTsv) {
   out << "IL\tpurchase\t20141112\t0.0\n";
   out.close();
 
-  util::Config load_conf("{\"file\": \"" + fname + "\","
-                                                   " \"type\": \"file\","
-                                                   " \"format\": \"tsv\","
-                                                   " \"table\": \"" +
-                         table->name() + "\"}");
+  util::Config load_conf(json{{"file", fname},
+                              {"type", "file"},
+                              {"format", "tsv"},
+                              {"table", table->name()}});
   db.Load(load_conf);
   unlink(fname.c_str());
 
@@ -57,13 +56,14 @@ TEST_F(InappEvents, LoadFromTsv) {
   EXPECT_EQ(3, table->store()->segments()[0]->size());
 
   query::MemoryRowOutput output;
-  db.Query(std::move(util::Config("{\"type\": \"aggregate\","
-                                  " \"table\": \"events\","
-                                  " \"dimensions\": [\"country\"],"
-                                  " \"metrics\": [\"revenue\"],"
-                                  " \"filter\": {\"op\": \"ne\", \"column\": "
-                                  "\"country\", \"value\": \"IL\"}}")),
-           output);
+  db.Query(
+      std::move(util::Config(json{
+          {"type", "aggregate"},
+          {"table", "events"},
+          {"dimensions", {"country"}},
+          {"metrics", {"revenue"}},
+          {"filter", {{"op", "ne"}, {"column", "country"}, {"value", "IL"}}}})),
+      output);
 
   std::vector<query::MemoryRowOutput::Row> expected = {{"US", "1.5"}};
   EXPECT_EQ(expected, output.rows());
@@ -79,14 +79,13 @@ TEST_F(InappEvents, LoadFromTsvCols) {
   out << "purchase\tIL\t20141112\t5\t0.0";
   out.close();
 
-  util::Config load_conf("{\"file\": \"" + fname +
-                         "\","
-                         " \"type\": \"file\","
-                         " \"columns\": [\"event_name\", \"country\", "
-                         "\"install_time\", \"index\", \"revenue\"],"
-                         " \"format\": \"tsv\","
-                         " \"table\": \"" +
-                         table->name() + "\"}");
+  util::Config load_conf(
+      json{{"file", fname},
+           {"type", "file"},
+           {"columns",
+            {"event_name", "country", "install_time", "index", "revenue"}},
+           {"format", "tsv"},
+           {"table", table->name()}});
   db.Load(load_conf);
   unlink(fname.c_str());
 
@@ -94,13 +93,14 @@ TEST_F(InappEvents, LoadFromTsvCols) {
   EXPECT_EQ(3, table->store()->segments()[0]->size());
 
   query::MemoryRowOutput output;
-  db.Query(std::move(util::Config("{\"type\": \"aggregate\","
-                                  " \"table\": \"events\","
-                                  " \"dimensions\": [\"country\"],"
-                                  " \"metrics\": [\"revenue\"],"
-                                  " \"filter\": {\"op\": \"ne\", \"column\": "
-                                  "\"country\", \"value\": \"IL\"}}")),
-           output);
+  db.Query(
+      std::move(util::Config(json{
+          {"type", "aggregate"},
+          {"table", "events"},
+          {"dimensions", {"country"}},
+          {"metrics", {"revenue"}},
+          {"filter", {{"op", "ne"}, {"column", "country"}, {"value", "IL"}}}})),
+      output);
 
   std::vector<query::MemoryRowOutput::Row> expected = {{"US", "1.5"}};
   EXPECT_EQ(expected, output.rows());
@@ -115,37 +115,40 @@ TEST_F(InappEvents, LoadFromTsvColsMapping) {
   out << "purchase\tIL\t20141112\t5\t0.0\n";
   out.close();
 
-  db::Database db(std::move(util::Config(
-      "{\"tables\": [{\"name\": \"events\","
-      "               \"dimensions\": [{\"name\": \"country\"},"
-      "                                {\"name\": \"install_time\","
-      "                                 \"type\": \"time\"}],"
-      "               \"metrics\": [{\"name\": \"count\", \"type\": \"count\"},"
-      "                             {\"name\": \"revenue_sum\", \"type\": "
-      "\"double_sum\", \"field\": \"revenue\"},"
-      "                             {\"name\": \"revenue_max\", \"type\": "
-      "\"double_max\", \"field\": \"revenue\"}]}]}")));
+  db::Database db(std::move(
+      util::Config(json{{"tables",
+                         {{{"name", "events"},
+                           {"dimensions",
+                            {{{"name", "country"}},
+                             {{"name", "install_time"}, {"type", "time"}}}},
+                           {"metrics",
+                            {{{"name", "count"}, {"type", "count"}},
+                             {{"name", "revenue_sum"},
+                              {"type", "double_sum"},
+                              {"field", "revenue"}},
+                             {{"name", "revenue_max"},
+                              {"type", "double_max"},
+                              {"field", "revenue"}}}}}}}})));
   auto table = db.GetTable("events");
 
-  util::Config load_conf("{\"file\": \"" + fname +
-                         "\","
-                         " \"type\": \"file\","
-                         " \"columns\": [\"event_name\", \"country\", "
-                         "\"install_time\", \"index\", \"revenue\"],"
-                         " \"format\": \"tsv\","
-                         " \"table\": \"" +
-                         table->name() + "\"}");
+  util::Config load_conf(
+      json{{"file", fname},
+           {"type", "file"},
+           {"columns",
+            {"event_name", "country", "install_time", "index", "revenue"}},
+           {"format", "tsv"},
+           {"table", table->name()}});
   db.Load(load_conf);
   unlink(fname.c_str());
 
   query::MemoryRowOutput output;
   db.Query(
-      std::move(util::Config("{\"type\": \"aggregate\","
-                             " \"table\": \"events\","
-                             " \"dimensions\": [\"country\"],"
-                             " \"metrics\": [\"revenue_sum\", \"revenue_max\"],"
-                             " \"filter\": {\"op\": \"ne\", \"column\": "
-                             "\"country\", \"value\": \"IL\"}}")),
+      std::move(util::Config(json{
+          {"type", "aggregate"},
+          {"table", "events"},
+          {"dimensions", {"country"}},
+          {"metrics", {"revenue_sum", "revenue_max"}},
+          {"filter", {{"op", "ne"}, {"column", "country"}, {"value", "IL"}}}})),
       output);
 
   std::vector<query::MemoryRowOutput::Row> expected = {{"US", "1.5", "1.1"}};

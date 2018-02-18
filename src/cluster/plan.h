@@ -18,8 +18,8 @@
 #define VIYA_CLUSTER_PLAN_H_
 
 #include "util/config.h"
-#include <json.hpp>
 #include <map>
+#include <nlohmann/json_fwd.hpp>
 #include <vector>
 
 namespace viya {
@@ -81,14 +81,11 @@ private:
 
 class PlanGenerator {
 public:
-  PlanGenerator(const util::Config &cluster_config);
+  PlanGenerator() {}
   PlanGenerator(const PlanGenerator &other) = delete;
 
-  Plan Generate(size_t partitions_num,
+  Plan Generate(size_t partitions_num, size_t replication_factor,
                 const std::map<std::string, util::Config> &workers_configs);
-
-private:
-  const util::Config &cluster_config_;
 };
 
 } // namespace cluster

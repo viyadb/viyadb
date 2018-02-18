@@ -17,16 +17,20 @@
 #ifndef VIYA_UTIL_CONFIG_H_
 #define VIYA_UTIL_CONFIG_H_
 
+#include <nlohmann/json_fwd.hpp>
 #include <string>
 #include <vector>
 
 namespace viya {
 namespace util {
 
+using json = nlohmann::json;
+
 class Config {
 public:
   Config();
-  Config(void *conf);
+  Config(json *conf);
+  Config(const json &conf);
   Config(const std::string &content);
   Config(const Config &other);
   Config(Config &&other);
@@ -62,14 +66,14 @@ public:
   void set_boolean(const char *key, bool value);
 
   std::string dump() const;
-  void *json_ptr() const;
+  json *json_ptr() const;
   void MergeFrom(const Config &other);
 
 private:
   void ValidateKey(const char *key) const;
 
 private:
-  void *conf_;
+  json *conf_;
 };
 
 } // namespace util

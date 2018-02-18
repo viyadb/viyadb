@@ -16,10 +16,10 @@
 
 #include "cluster/http/service.h"
 #include "cluster/controller.h"
-#include "cluster/query/aggregator.h"
 #include "cluster/query/query.h"
 #include "server/http/output.h"
 #include "sql/driver.h"
+#include "sql/statement.h"
 #include <algorithm>
 #include <glog/logging.h>
 
@@ -29,9 +29,9 @@ namespace http {
 
 namespace sql = viya::sql;
 namespace server = viya::server;
-namespace query = viya::cluster::query;
 
-Service::Service(Controller &controller) : controller_(controller) {
+Service::Service(Controller &controller)
+    : controller_(controller), query_runner_(controller) {
   server_.config.port = controller.cluster_config().num("http_port", 5555);
   server_.config.reuse_address = true;
 }
@@ -43,21 +43,14 @@ void Service::SendError(ResponsePtr response, const std::string &error) {
             << error;
 }
 
-void Service::ProcessQuery(util::Config &query, ResponsePtr response,
+void Service::ProcessQuery(const util::Config &query, ResponsePtr response,
                            RequestPtr request) {
-  auto params = request->parse_query_string();
-  if (params.find("header") != params.end()) {
-    query.set_boolean("header", true);
-  }
 
   auto cluster_query = query::ClusterQueryFactory::Create(query, controller_);
 
-  server::http::ChunkedTsvOutput output(*response);
-  query::Aggregator aggregator(controller_, workers_states_, output);
-  cluster_query->Accept(aggregator);
-
-  auto &redirect_worker = aggregator.redirect_worker();
+  auto redirect_worker = cluster_query->GetRedirectWorker();
   if (!redirect_worker.empty()) {
+
     std::ostringstream worker_url;
     worker_url << "http://" << redirect_worker << request->path;
     if (!request->query_string.empty()) {
@@ -66,6 +59,9 @@ void Service::ProcessQuery(util::Config &query, ResponsePtr response,
     *response << "HTTP/1.1 307 Temporary Redirect\r\n"
               << "Content-Length: 0\r\nLocation: " << worker_url.str()
               << "\r\n\r\n";
+  } else {
+    server::http::ChunkedTsvOutput output(*response);
+    query_runner_.Run(*cluster_query, output);
   }
 }
 
@@ -80,16 +76,31 @@ void Service::Start() {
     }
   };
 
+  server_.resource["^/load$"]["POST"] = [&](ResponsePtr response,
+                                            RequestPtr request) {
+    try {
+      util::Config load_conf(request->content.string());
+      controller_.feeder().LoadData(load_conf);
+      *response << "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n";
+    } catch (std::exception &e) {
+      SendError(response, std::string(e.what()));
+    }
+  };
+
   server_.resource["^/sql(\\?.*)?$"]["POST"] = [&](ResponsePtr response,
                                                    RequestPtr request) {
     try {
-      sql::Driver sql_driver(controller_.db());
+      auto params = request->parse_query_string();
+      bool add_header = params.find("header") != params.end();
+      sql::Driver sql_driver(controller_.db(), add_header);
       std::istringstream is(request->content.string());
-      auto queries = std::move(sql_driver.ParseQueries(is));
-      if (queries.size() == 1) {
-        ProcessQuery(queries[0], response, request);
-      } else if (queries.size() > 1) {
-        SendError(response, "multiple queries are not supported");
+
+      auto stmts = sql_driver.ParseStatements(is);
+      if (stmts.size() == 1) {
+        util::Config query(stmts.at(0).descriptor());
+        ProcessQuery(query, response, request);
+      } else if (stmts.size() > 1) {
+        SendError(response, "multiple SQL statements are not supported");
       }
     } catch (std::exception &e) {
       SendError(response, std::string(e.what()));

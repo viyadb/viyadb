@@ -29,9 +29,7 @@ namespace util = viya::util;
 class ClusterQuery : public testing::Test {
 protected:
   ClusterQuery(int replicas = 1, int partitions = 8)
-      : cluster_config("{\"replication_factor\": " + std::to_string(replicas) +
-                       "}"),
-        worker_configs{{"host1:5000",
+      : worker_configs{{"host1:5000",
                         util::Config("{\"hostname\": \"host1\", \"rack_id\": "
                                      "\"1\", \"http_port\": 5000}")},
                        {"host1:5001",
@@ -56,8 +54,8 @@ protected:
                         util::Config("{\"hostname\": \"host4\", \"rack_id\": "
                                      "\"2\", \"http_port\": 5001}")}},
         partitions_num(partitions), partition_mapping(partitions),
-        plan(cluster::PlanGenerator(cluster_config)
-                 .Generate(partitions_num, worker_configs)) {
+        plan(cluster::PlanGenerator().Generate(partitions_num, replicas,
+                                               worker_configs)) {
     for (int i = 0; i < partitions_num; ++i) {
       partition_mapping[i] = i;
     }
@@ -72,7 +70,6 @@ protected:
   }
 
   std::vector<uint32_t> partition_mapping;
-  util::Config cluster_config;
   std::map<std::string, util::Config> worker_configs;
   size_t partitions_num;
   cluster::Plan plan;

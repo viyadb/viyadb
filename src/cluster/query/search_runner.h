@@ -14,45 +14,51 @@
  * limitations under the License.
  */
 
-#ifndef VIYA_CLUSTER_CONFIGURATOR_H_
-#define VIYA_CLUSTER_CONFIGURATOR_H_
+#ifndef VIYA_CLUSTER_QUERY_SEARCH_RUNNER_H_
+#define VIYA_CLUSTER_QUERY_SEARCH_RUNNER_H_
 
-#include <cstdint>
-#include <string>
+#include "cluster/query/query.h"
 
-namespace viya {
-namespace util {
-class Config;
-}
-} // namespace viya
 namespace viya {
 namespace cluster {
+
 class Controller;
-}
-} // namespace viya
-
-namespace viya {
-namespace cluster {
-
-/**
- * Configures workers on this node
- */
-class Configurator {
-public:
-  Configurator(const Controller &controller);
-  Configurator(const Configurator &other) = delete;
-
-  void ConfigureWorkers();
-
-protected:
-  void CreateTable(const util::Config &table_config,
-                   const std::string &hostname, uint16_t port);
-
-private:
-  const Controller &controller_;
-};
 
 } // namespace cluster
 } // namespace viya
 
-#endif // VIYA_CLUSTER_CONFIGURATOR_H_
+namespace viya {
+namespace query {
+
+class RowOutput;
+
+} // namespace query
+} // namespace viya
+
+namespace viya {
+namespace cluster {
+namespace query {
+
+class WorkersStates;
+
+namespace util = viya::util;
+namespace query = viya::query;
+
+class SearchQueryRunner {
+public:
+  SearchQueryRunner(Controller &controller, WorkersStates &workers_states,
+                    query::RowOutput &output);
+
+  void Run(const RemoteQuery *query);
+
+private:
+  Controller &controller_;
+  WorkersStates &workers_states_;
+  query::RowOutput &output_;
+};
+
+} // namespace query
+} // namespace cluster
+} // namespace viya
+
+#endif // VIYA_CLUSTER_QUERY_SEARCH_RUNNER_H_

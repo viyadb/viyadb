@@ -27,9 +27,9 @@ namespace sql {
 
 namespace util = viya::util;
 
-Driver::Driver(db::Database &db)
-    : db_(db), scanner_(new Scanner()), parser_(new Parser(*this)),
-      location_(new location()) {}
+Driver::Driver(db::Database &db, bool add_header)
+    : db_(db), add_header_(add_header), scanner_(new Scanner()),
+      parser_(new Parser(*this)), location_(new location()) {}
 
 Driver::~Driver() {
   for (auto *stmt : stmts_) {
@@ -62,13 +62,11 @@ void Driver::Parse(std::istream &stream) {
   }
 }
 
-void Driver::Run(std::istream &stream, query::RowOutput *output, bool header) {
+void Driver::Run(std::istream &stream, query::RowOutput *output) {
   Parse(stream);
 
   for (auto stmt : stmts_) {
-    stmt->descriptor()["header"] = header;
-    util::Config desc(new json(stmt->descriptor()));
-    // std::cout<<desc.dump()<<std::endl;
+    util::Config desc(stmt->descriptor());
     switch (stmt->type()) {
     case Statement::Type::QUERY:
       if (stmts_.size() != 1) {
@@ -89,15 +87,13 @@ void Driver::Run(std::istream &stream, query::RowOutput *output, bool header) {
   }
 }
 
-std::vector<util::Config> Driver::ParseQueries(std::istream &stream) {
+std::vector<Statement> Driver::ParseStatements(std::istream &stream) {
   Parse(stream);
-  std::vector<util::Config> queries;
+  std::vector<Statement> stmts;
   for (auto stmt : stmts_) {
-    if (stmt->type() == Statement::Type::QUERY) {
-      queries.emplace_back(new json(stmt->descriptor()));
-    }
+    stmts.emplace_back(*stmt);
   }
-  return std::move(queries);
+  return std::move(stmts);
 }
 
 void Driver::AddStatement(Statement *stmt) { stmts_.push_back(stmt); }

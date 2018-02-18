@@ -21,25 +21,28 @@
 #include "input/simple.h"
 #include "util/config.h"
 #include <gtest/gtest.h>
+#include <nlohmann/json.hpp>
+#include <utility>
 
 namespace db = viya::db;
 namespace util = viya::util;
 namespace input = viya::input;
 
+using json = nlohmann::json;
+
 class InappEvents : public testing::Test {
 protected:
   InappEvents()
       : db(std::move(util::Config(
-            "{\"tables\": [{\"name\": \"events\","
-            "               \"dimensions\": [{\"name\": \"country\"},"
-            "                                {\"name\": \"event_name\", "
-            "\"length\": 20},"
-            "                                {\"name\": \"install_time\", "
-            "\"type\": \"uint\"}],"
-            "               \"metrics\": [{\"name\": \"count\", \"type\": "
-            "\"count\"},"
-            "                             {\"name\": \"revenue\", \"type\": "
-            "\"double_sum\"}]}]}"))) {}
+            json{{"tables",
+                  {{{"name", "events"},
+                    {"dimensions",
+                     {{{"name", "country"}},
+                      {{"name", "event_name"}, {"length", 20}},
+                      {{"name", "install_time"}, {"type", "uint"}}}},
+                    {"metrics",
+                     {{{"name", "count"}, {"type", "count"}},
+                      {{"name", "revenue"}, {"type", "double_sum"}}}}}}}}))) {}
 
   void LoadEvents() {
     auto table = db.GetTable("events");
@@ -77,29 +80,21 @@ protected:
 class NumericDimensions : public testing::Test {
 protected:
   NumericDimensions()
-      : db(std::move(util::Config("{\"tables\": [{\"name\": \"events\","
-                                  "               \"dimensions\": [{\"name\": "
-                                  "\"byte\", \"type\": \"byte\"},"
-                                  "                                {\"name\": "
-                                  "\"ubyte\", \"type\": \"ubyte\"},"
-                                  "                                {\"name\": "
-                                  "\"short\", \"type\": \"short\"},"
-                                  "                                {\"name\": "
-                                  "\"ushort\", \"type\": \"ushort\"},"
-                                  "                                {\"name\": "
-                                  "\"int\", \"type\": \"int\"},"
-                                  "                                {\"name\": "
-                                  "\"uint\", \"type\": \"uint\"},"
-                                  "                                {\"name\": "
-                                  "\"long\", \"type\": \"long\"},"
-                                  "                                {\"name\": "
-                                  "\"ulong\", \"type\": \"ulong\"},"
-                                  "                                {\"name\": "
-                                  "\"float\", \"type\": \"float\"},"
-                                  "                                {\"name\": "
-                                  "\"double\", \"type\": \"double\"}],"
-                                  "               \"metrics\": [{\"name\": "
-                                  "\"count\", \"type\": \"count\"}]}]}"))) {}
+      : db(std::move(util::Config(json{
+            {"tables",
+             {{{"name", "events"},
+               {"dimensions",
+                {{{"name", "byte"}, {"type", "byte"}},
+                 {{"name", "ubyte"}, {"type", "ubyte"}},
+                 {{"name", "short"}, {"type", "short"}},
+                 {{"name", "ushort"}, {"type", "ushort"}},
+                 {{"name", "int"}, {"type", "int"}},
+                 {{"name", "uint"}, {"type", "uint"}},
+                 {{"name", "long"}, {"type", "long"}},
+                 {{"name", "ulong"}, {"type", "ulong"}},
+                 {{"name", "float"}, {"type", "float"}},
+                 {{"name", "double"}, {"type", "double"}}}},
+               {"metrics", {{{"name", "count"}, {"type", "count"}}}}}}}}))) {}
 
   void LoadEvents() {
     auto table = db.GetTable("events");
@@ -120,14 +115,15 @@ protected:
 class UserEvents : public testing::Test {
 protected:
   UserEvents()
-      : db(std::move(util::Config(
-            "{\"tables\": [{\"name\": \"events\","
-            "               \"dimensions\": [{\"name\": \"country\"},"
-            "                                {\"name\": \"event_name\"},"
-            "                                {\"name\": \"time\", \"type\": "
-            "\"uint\"}],"
-            "               \"metrics\": [{\"name\": \"user_id\", \"type\": "
-            "\"bitset\"}]}]}"))) {}
+      : db(std::move(util::Config(json{
+            {"tables",
+             {{{"name", "events"},
+               {"dimensions",
+                {{{"name", "country"}},
+                 {{"name", "event_name"}},
+                 {{"name", "time"}, {"type", "uint"}}}},
+               {"metrics", {{{"name", "user_id"}, {"type", "bitset"}}}}}}}}))) {
+  }
 
   void LoadEvents() {
     auto table = db.GetTable("events");
@@ -150,14 +146,14 @@ protected:
 class TimeEvents : public testing::Test {
 protected:
   TimeEvents()
-      : db(std::move(util::Config(
-            "{\"tables\": [{\"name\": \"events\","
-            "               \"dimensions\": [{\"name\": \"country\"},"
-            "                                {\"name\": \"event_name\"},"
-            "                                {\"name\": \"install_time\","
-            "                                 \"type\": \"time\"}],"
-            "               \"metrics\": [{\"name\": \"count\", \"type\": "
-            "\"count\"}]}]}"))) {}
+      : db(std::move(util::Config(json{
+            {"tables",
+             {{{"name", "events"},
+               {"dimensions",
+                {{{"name", "country"}},
+                 {{"name", "event_name"}},
+                 {{"name", "install_time"}, {"type", "time"}}}},
+               {"metrics", {{{"name", "count"}, {"type", "count"}}}}}}}}))) {}
 
   void LoadEvents() {
     auto table = db.GetTable("events");
@@ -181,16 +177,16 @@ class MultiTenantEvents : public testing::Test {
 protected:
   MultiTenantEvents()
       : db(std::move(util::Config(
-            "{\"tables\": [{\"name\": \"events\","
-            "               \"dimensions\": [{\"name\": \"app_id\"},"
-            "                                {\"name\": \"country\"},"
-            "                                {\"name\": \"event_name\"},"
-            "                                {\"name\": \"time\", \"type\": "
-            "\"uint\"}],"
-            "               \"metrics\": [{\"name\": \"value\", \"type\": "
-            "\"long_sum\"},"
-            "                             {\"name\": \"count\", \"type\": "
-            "\"count\"}]}]}"))) {}
+            json{{"tables",
+                  {{{"name", "events"},
+                    {"dimensions",
+                     {{{"name", "app_id"}},
+                      {{"name", "country"}},
+                      {{"name", "event_name"}},
+                      {{"name", "time"}, {"type", "uint"}}}},
+                    {"metrics",
+                     {{{"name", "value"}, {"type", "long_sum"}},
+                      {{"name", "count"}, {"type", "count"}}}}}}}}))) {}
 
   void LoadEvents(const util::Config &load_desc) {
     auto table = db.GetTable("events");

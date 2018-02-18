@@ -14,33 +14,38 @@
  * limitations under the License.
  */
 
-#ifndef VIYA_SQL_STATEMENT_H_
-#define VIYA_SQL_STATEMENT_H_
+#ifndef VIYA_CLUSTER_QUERY_LOAD_RUNNER_H_
+#define VIYA_CLUSTER_QUERY_LOAD_RUNNER_H_
 
-#include <nlohmann/json.hpp>
+#include "cluster/query/query.h"
 
 namespace viya {
-namespace sql {
+namespace cluster {
 
-using json = nlohmann::json;
+class Controller;
 
-class Statement {
-public:
-  enum Type { QUERY, LOAD };
-
-  Statement(Type type) : type_(type) {}
-
-  Type type() const { return type_; }
-  const json &descriptor() const { return descriptor_; }
-
-private:
-  Type type_;
-  json descriptor_;
-
-  friend class Parser;
-};
-
-} // namespace sql
+} // namespace cluster
 } // namespace viya
 
-#endif // VIYA_SQL_DRIVER_H_
+namespace viya {
+namespace cluster {
+namespace query {
+
+class WorkersStates;
+
+class LoadQueryRunner {
+public:
+  LoadQueryRunner(Controller &controller, WorkersStates &workers_states);
+
+  void Run(const LoadQuery *query);
+
+private:
+  Controller &controller_;
+  WorkersStates &workers_states_;
+};
+
+} // namespace query
+} // namespace cluster
+} // namespace viya
+
+#endif // VIYA_CLUSTER_QUERY_LOAD_RUNNER_H_

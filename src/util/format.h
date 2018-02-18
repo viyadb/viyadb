@@ -20,7 +20,7 @@
 #define FMT_HEADER_ONLY
 #include <cstdio>
 #include <ctime>
-#include <fmt/string.h>
+#include <fmt/format.h>
 
 namespace viya {
 namespace util {

@@ -17,7 +17,7 @@
 #ifndef VIYA_CLUSTER_HTTP_SERVICE_H_
 #define VIYA_CLUSTER_HTTP_SERVICE_H_
 
-#include "cluster/query/worker_state.h"
+#include "cluster/query/runner.h"
 #include <server_http.hpp>
 
 namespace viya {
@@ -50,13 +50,17 @@ public:
 
 private:
   void SendError(ResponsePtr response, const std::string &error);
-  void ProcessQuery(util::Config &query, ResponsePtr response,
+
+  void ProcessQuery(const util::Config &query, ResponsePtr response,
                     RequestPtr request);
+
+  void ProcessLoad(const util::Config &desc, ResponsePtr response,
+                   RequestPtr request);
 
 private:
   Controller &controller_;
   HttpServer server_;
-  query::WorkersStates workers_states_;
+  query::ClusterQueryRunner query_runner_;
 };
 
 } // namespace http

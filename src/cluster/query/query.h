@@ -43,8 +43,9 @@ public:
   virtual ~ClusterQuery() {}
 
   const util::Config &query() const { return query_; }
+  virtual std::string GetRedirectWorker() const { return std::string(); }
 
-  virtual void Accept(class ClusterQueryVisitor &visitor) = 0;
+  virtual void Accept(class ClusterQueryVisitor &visitor) const = 0;
 
 protected:
   const util::Config &query_;
@@ -60,7 +61,9 @@ public:
     return target_workers_;
   }
 
-  void Accept(class ClusterQueryVisitor &visitor);
+  std::string GetRedirectWorker() const override;
+
+  void Accept(class ClusterQueryVisitor &visitor) const;
 
 private:
   void FindTargetWorkers();
@@ -75,13 +78,21 @@ class LocalQuery : public ClusterQuery {
 public:
   LocalQuery(const util::Config &query) : ClusterQuery(query) {}
 
-  void Accept(class ClusterQueryVisitor &visitor);
+  void Accept(class ClusterQueryVisitor &visitor) const;
+};
+
+class LoadQuery : public ClusterQuery {
+public:
+  LoadQuery(const util::Config &query) : ClusterQuery(query) {}
+
+  void Accept(class ClusterQueryVisitor &visitor) const;
 };
 
 class ClusterQueryVisitor {
 public:
-  virtual void Visit(const RemoteQuery *query __attribute__((unused))){};
-  virtual void Visit(const LocalQuery *query __attribute__((unused))){};
+  virtual void Visit(const RemoteQuery *query __attribute__((unused))) const {};
+  virtual void Visit(const LocalQuery *query __attribute__((unused))) const {};
+  virtual void Visit(const LoadQuery *query __attribute__((unused))) const {};
 };
 
 class ClusterQueryFactory {

@@ -15,7 +15,7 @@
  */
 
 #include "cluster/batch_info.h"
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 #include <set>
 
 namespace viya {

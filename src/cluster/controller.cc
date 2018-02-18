@@ -49,25 +49,6 @@ void Controller::ReadClusterConfig() {
       util::Config(consul_.GetKey("clusters/" + cluster_id_ + "/config"));
   LOG(INFO) << "Using cluster configuration: " << cluster_config_.dump();
 
-  tables_configs_.clear();
-  for (auto &table : cluster_config_.strlist("tables", {})) {
-    auto &table_conf =
-        tables_configs_
-            .emplace(table, consul_.GetKey("tables/" + table + "/config"))
-            .first->second;
-
-    // Adapt metrics:
-    json *raw_config = reinterpret_cast<json *>(table_conf.json_ptr());
-    for (auto &metric : (*raw_config)["metrics"]) {
-      if (metric["type"] == "count") {
-        metric["type"] = "long_sum";
-      }
-    }
-
-    db_.CreateTable(table_conf);
-  }
-  LOG(INFO) << "Read " << tables_configs_.size() << " tables configurations";
-
   indexers_configs_.clear();
   for (auto &indexer_id : cluster_config_.strlist("indexers", {})) {
     indexers_configs_.emplace(
@@ -75,6 +56,27 @@ void Controller::ReadClusterConfig() {
   }
   LOG(INFO) << "Read " << indexers_configs_.size()
             << " indexers configurations";
+
+  tables_configs_.clear();
+  for (auto &table : cluster_config_.strlist("tables", {})) {
+    auto &table_conf =
+        tables_configs_
+            .emplace(table, consul_.GetKey("tables/" + table + "/config"))
+            .first->second;
+
+    if (!FindIndexerForTable(table).empty()) {
+      // Adapt metrics for indexers output:
+      json *raw_config = reinterpret_cast<json *>(table_conf.json_ptr());
+      for (auto &metric : (*raw_config)["metrics"]) {
+        if (metric["type"] == "count") {
+          metric["type"] = "long_sum";
+        }
+      }
+    }
+
+    db_.CreateTable(table_conf);
+  }
+  LOG(INFO) << "Read " << tables_configs_.size() << " tables configurations";
 }
 
 bool Controller::ReadWorkersConfigs(
@@ -83,8 +85,7 @@ bool Controller::ReadWorkersConfigs(
 
   auto active_workers =
       consul_.ListKeys("clusters/" + cluster_id_ + "/nodes/workers");
-  auto workers_num =
-      (size_t)cluster_config_.num("workers", config_.num("workers"));
+  auto workers_num = (size_t)cluster_config_.num("workers", 0);
 
   if (workers_num > 0 && active_workers.size() < workers_num) {
     LOG(INFO) << "Number of active workers is less than the expected number of "
@@ -105,15 +106,11 @@ bool Controller::ReadWorkersConfigs(
 }
 
 void Controller::Initialize() {
-  FetchLatestBatchInfo();
-
-  InitializePartitioning();
-
   InitializePlan();
 
   std::string load_prefix = config_.str("state_dir") + "/input";
 
-  Configurator configurator(*this, load_prefix);
+  Configurator configurator(*this);
   configurator.ConfigureWorkers();
 
   feeder_ = std::make_unique<Feeder>(*this, load_prefix);
@@ -136,7 +133,23 @@ void Controller::FetchLatestBatchInfo() {
             << " batches from indexers notifiers";
 }
 
-void Controller::InitializePartitioning() {
+std::string Controller::FindIndexerForTable(const std::string &table_name) {
+  for (auto &indexer_it : indexers_configs_) {
+    auto indexer_tables = indexer_it.second.strlist("tables");
+    if (std::find(indexer_tables.begin(), indexer_tables.end(), table_name) !=
+        indexer_tables.end()) {
+      return indexer_it.first;
+    }
+  }
+  return std::string();
+}
+
+void Controller::InitializePartitioning(
+    size_t replication_factor,
+    const std::map<std::string, util::Config> &workers_configs) {
+
+  FetchLatestBatchInfo();
+
   tables_partitioning_.clear();
 
   if (indexers_batches_.empty()) {
@@ -152,34 +165,36 @@ void Controller::InitializePartitioning() {
         partitioning = table_conf.sub("partitioning");
       } else {
         // Take partitioning config from indexer responsible for that table:
-        for (auto &indexer_it : indexers_configs_) {
-          auto indexer_tables = indexer_it.second.strlist("tables");
-          if (std::find(indexer_tables.begin(), indexer_tables.end(),
-                        table_name) != indexer_tables.end()) {
-            auto batch_conf = indexer_it.second.sub("batch");
-            if (batch_conf.exists("partitioning")) {
-              partitioning = batch_conf.sub("partitioning");
-            }
-            break;
+        auto indexer_id = FindIndexerForTable(table_name);
+        if (!indexer_id.empty()) {
+          auto batch_conf = indexers_configs_.at(indexer_id).sub("batch");
+          if (batch_conf.exists("partitioning")) {
+            partitioning = batch_conf.sub("partitioning");
           }
         }
       }
 
-      if (partitioning.exists("columns")) {
-        size_t total_partitions = partitioning.num("partitions");
-        // Every key value goes to a partition:
-        std::vector<uint32_t> mapping;
-        mapping.resize(total_partitions);
-        for (uint32_t v = 0; v < total_partitions; ++v) {
-          mapping[v] = v;
-        }
-        tables_partitioning_.emplace(
-            std::piecewise_construct, std::forward_as_tuple(table_name),
-            std::forward_as_tuple(mapping, total_partitions,
-                                  partitioning.strlist("columns")));
-      } else {
-        // TODO: generate default partitioning based on workers number
+      if (!partitioning.exists("columns")) {
+        throw std::runtime_error("Table partitioning must present in either "
+                                 "table or indexer configuration!");
       }
+
+      size_t default_partitions_num =
+          workers_configs.size() / replication_factor;
+
+      size_t total_partitions =
+          partitioning.num("partitions", default_partitions_num);
+
+      // Every key value goes to a partition:
+      std::vector<uint32_t> mapping;
+      mapping.resize(total_partitions);
+      for (uint32_t v = 0; v < total_partitions; ++v) {
+        mapping[v] = v;
+      }
+      tables_partitioning_.emplace(
+          std::piecewise_construct, std::forward_as_tuple(table_name),
+          std::forward_as_tuple(mapping, total_partitions,
+                                partitioning.strlist("columns")));
     }
   } else {
     for (auto &batches_it : indexers_batches_) {
@@ -219,18 +234,24 @@ void Controller::InitializePlan() {
 }
 
 bool Controller::ReadPlan() {
-  json existing_plan = json::parse(
+  json cache = json::parse(
       consul_.GetKey("clusters/" + cluster_id_ + "/plan", false, "{}"));
-  if (existing_plan.empty()) {
+  if (cache.empty()) {
     return false;
   }
 
   LOG(INFO) << "Reading cached plan from Consul";
-  tables_plans_.clear();
 
-  json tables_plans = existing_plan["plan"];
+  tables_plans_.clear();
+  json tables_plans = cache["plan"];
   for (auto it = tables_plans.begin(); it != tables_plans.end(); ++it) {
     tables_plans_.emplace(it.key(), it.value());
+  }
+
+  tables_partitioning_.clear();
+  json tables_part = cache["partitioning"];
+  for (auto it = tables_part.begin(); it != tables_part.end(); ++it) {
+    tables_partitioning_.emplace(it.key(), it.value());
   }
   return true;
 }
@@ -241,20 +262,33 @@ bool Controller::GeneratePlan() {
     std::this_thread::sleep_for(std::chrono::seconds(10));
   }
 
+  size_t replication_factor = cluster_config_.num("replication_factor", 3);
+
+  LOG(INFO) << "Initializing table partitioning";
+  InitializePartitioning(replication_factor, configs);
+
   LOG(INFO) << "Generating partitioning plan";
-  PlanGenerator plan_generator(cluster_config_);
+  PlanGenerator plan_generator;
   tables_plans_.clear();
 
   for (auto &it : tables_partitioning_) {
-    tables_plans_.emplace(it.first, std::move(plan_generator.Generate(
-                                        it.second.total(), configs)));
+    tables_plans_.emplace(it.first,
+                          std::move(plan_generator.Generate(
+                              it.second.total(), replication_factor, configs)));
   }
 
-  LOG(INFO) << "Storing partitioning plan to Consul";
-  json cache = json({});
+  LOG(INFO) << "Storing plan to Consul";
+
+  json cached_plan = json({});
   for (auto &it : tables_plans_) {
-    cache[it.first] = it.second.ToJson();
+    cached_plan[it.first] = it.second.ToJson();
   }
+  json cached_partitioning = json({});
+  for (auto &it : tables_partitioning_) {
+    cached_partitioning[it.first] = it.second.ToJson();
+  }
+  json cache =
+      json({{"plan", cached_plan}, {"partitioning", cached_partitioning}});
   return session_->EphemeralKey("clusters/" + cluster_id_ + "/plan",
                                 cache.dump());
 }

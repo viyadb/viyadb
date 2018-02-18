@@ -17,7 +17,7 @@
 #include "cluster/consul/consul.h"
 #include <cpr/cpr.h>
 #include <glog/logging.h>
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 #include <stdexcept>
 
 namespace viya {

@@ -30,8 +30,9 @@ public:
   ScopeGuard(ScopeGuard &&other) : f(std::move(other.f)) { other.f = nullptr; }
 
   ~ScopeGuard() {
-    if (f)
+    if (f) {
       f(); // must not throw
+    }
   }
 
   void dismiss() noexcept { f = nullptr; }

@@ -14,62 +14,56 @@
  * limitations under the License.
  */
 
-#ifndef VIYA_CLUSTER_QUERY_AGGREGATOR_H_
-#define VIYA_CLUSTER_QUERY_AGGREGATOR_H_
+#ifndef VIYA_CLUSTER_QUERY_AGG_RUNNER_H_
+#define VIYA_CLUSTER_QUERY_AGG_RUNNER_H_
 
 #include "cluster/query/query.h"
 #include "util/config.h"
-#include <vector>
 
 namespace viya {
 namespace cluster {
+
 class Controller;
-}
+
+} // namespace cluster
 } // namespace viya
+
 namespace viya {
 namespace query {
+
 class RowOutput;
-}
+
+} // namespace query
 } // namespace viya
 
 namespace viya {
 namespace cluster {
 namespace query {
 
-class ClusterQuery;
 class WorkersStates;
 
 namespace util = viya::util;
 namespace query = viya::query;
 
-class Aggregator : public ClusterQueryVisitor {
+class AggQueryRunner {
 public:
-  Aggregator(Controller &controller, WorkersStates &workers_states,
-             query::RowOutput &output);
+  AggQueryRunner(Controller &controller, WorkersStates &workers_states,
+                 query::RowOutput &output);
 
-  void Visit(const RemoteQuery *query);
-  void Visit(const LocalQuery *query);
-
-  const std::string &redirect_worker() const { return redirect_worker_; }
+  void Run(const RemoteQuery *query);
 
 protected:
   std::string CreateTempTable(const util::Config &worker_query);
   util::Config CreateWorkerQuery(const util::Config &cluster_query);
-  void RunAggQuery(const std::vector<std::vector<std::string>> &,
-                   const util::Config &agg_query);
-  void RunSearchQuery(const std::vector<std::vector<std::string>> &,
-                      const util::Config &search_query);
-  void ShowWorkers();
 
 private:
   Controller &controller_;
   WorkersStates &workers_states_;
   query::RowOutput &output_;
-  std::string redirect_worker_;
 };
 
 } // namespace query
 } // namespace cluster
 } // namespace viya
 
-#endif // VIYA_CLUSTER_QUERY_AGGREGATOR_H_
+#endif // VIYA_CLUSTER_QUERY_AGG_RUNNER_H_

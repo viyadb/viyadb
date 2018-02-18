@@ -20,18 +20,16 @@
 #include "cluster/batch_info.h"
 #include "cluster/loader.h"
 #include "cluster/notifier.h"
+#include "util/config.h"
 #include <map>
 #include <vector>
 
 namespace viya {
-namespace util {
-class Config;
-}
-} // namespace viya
-namespace viya {
 namespace cluster {
+
 class Controller;
-}
+
+} // namespace cluster
 } // namespace viya
 
 namespace viya {
@@ -45,14 +43,23 @@ public:
 
   bool ProcessMessage(const std::string &indexer_id, const Message &message);
   void ReloadWorker(const std::string &worker_id);
+  void LoadData(const util::Config &load_desc,
+                const std::string &worker_id = std::string());
 
 protected:
   void Start();
+
   bool IsNewMicroBatch(const std::string &indexer_id,
                        const MicroBatchInfo &mb_info);
-  void LoadHistoricalData(const std::string &target_worker = "");
+
+  void LoadHistoricalData(const std::string &target_worker = std::string());
+
   void LoadMicroBatch(const MicroBatchInfo &mb_info,
-                      const std::string &target_worker = "");
+                      const std::string &target_worker = std::string());
+
+  util::Config GetLoadDesc(const std::string &file,
+                           const std::string &table_name,
+                           const std::vector<std::string> &columns);
 
 private:
   const Controller &controller_;

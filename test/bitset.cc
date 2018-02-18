@@ -21,20 +21,25 @@
 #include "util/config.h"
 #include <algorithm>
 #include <gtest/gtest.h>
+#include <nlohmann/json.hpp>
+#include <utility>
 
 namespace util = viya::util;
 namespace query = viya::query;
+
+using json = nlohmann::json;
 
 TEST_F(UserEvents, BitsetMetric) {
   LoadEvents();
 
   query::MemoryRowOutput output;
-  db.Query(std::move(util::Config("{\"type\": \"aggregate\","
-                                  " \"table\": \"events\","
-                                  " \"dimensions\": [\"country\"],"
-                                  " \"metrics\": [\"user_id\"],"
-                                  " \"filter\": {\"op\": \"gt\", \"column\": "
-                                  "\"time\", \"value\": \"1495475514\"}}")),
+  db.Query(util::Config(json{
+               {"type", "aggregate"},
+               {"table", "events"},
+               {"dimensions", {"country"}},
+               {"metrics", {"user_id"}},
+               {"filter",
+                {{"op", "gt"}, {"column", "time"}, {"value", "1495475514"}}}}),
            output);
 
   std::vector<query::MemoryRowOutput::Row> expected = {

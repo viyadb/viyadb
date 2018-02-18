@@ -17,9 +17,9 @@
 #ifndef VIYA_CLUSTER_LOADER_H_
 #define VIYA_CLUSTER_LOADER_H_
 
+#include "util/config.h"
 #include <ThreadPool/ThreadPool.h>
 #include <boost/filesystem.hpp>
-#include <json.hpp>
 #include <unordered_map>
 #include <vector>
 
@@ -28,35 +28,25 @@ namespace cluster {
 
 namespace fs = boost::filesystem;
 
-using json = nlohmann::json;
-
 class Controller;
-class TableInfo;
 
 class Loader {
 public:
   Loader(const Controller &controller, const std::string &load_prefix);
   Loader(const Loader &other) = delete;
 
-  void LoadFiles(const std::string &path, const std::string &table_name,
-                 const TableInfo &table_info, const std::string &worker_id);
-
-  void LoadFilesToAll(const std::string &path, const std::string &table_name,
-                      const TableInfo &table_info);
+  void Load(const util::Config &load_desc,
+            const std::string &worker_id = std::string());
 
 private:
-  json GetPartitionFilter(const std::string &table_name,
-                          const std::string &worker_id);
+  void LoadToAll(const util::Config &load_desc);
 
-  void LoadFile(const std::string &file, const std::string &table_name,
-                const TableInfo &table_info, const std::string &worker_id);
+  util::Config GetPartitionFilter(const std::string &table_name,
+                                  const std::string &worker_id);
 
-  void LoadFileToAll(const std::string &file, const std::string &table_name,
-                     const TableInfo &table_info);
+  void SendRequest(const std::string &url, const std::string &data);
 
-  void SendRequest(const std::string &url, const json &request);
-
-  fs::path ExtractFiles(const std::string &path);
+  std::string ExtractFiles(const std::string &path);
 
   void ListFiles(const std::string &path, const std::vector<std::string> &exts,
                  std::vector<fs::path> &files);

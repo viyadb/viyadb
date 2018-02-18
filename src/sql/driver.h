@@ -45,15 +45,16 @@ class Statement;
 
 class Driver {
 public:
-  Driver(db::Database &db);
+  Driver(db::Database &db, bool add_header = false);
   ~Driver();
 
-  void Run(std::istream &stream, query::RowOutput *output = nullptr,
-           bool header = false);
+  void Run(std::istream &stream, query::RowOutput *output = nullptr);
   std::vector<util::Config> ParseQueries(std::istream &stream);
+  std::vector<Statement> ParseStatements(std::istream &stream);
   void Reset();
 
   const db::Database &db() const { return db_; }
+  bool add_header() const { return add_header_; }
 
 private:
   void Parse(std::istream &stream);
@@ -62,6 +63,7 @@ private:
 
 private:
   db::Database &db_;
+  bool add_header_;
   Scanner *scanner_;
   Parser *parser_;
   location *location_;

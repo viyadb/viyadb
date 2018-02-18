@@ -31,13 +31,14 @@ TEST_F(SearchEvents, SearchQuery) {
   LoadSearchEvents();
 
   query::MemoryRowOutput output;
-  db.Query(std::move(util::Config("{\"type\": \"search\","
-                                  " \"table\": \"events\","
-                                  " \"dimension\": \"event_name\","
-                                  " \"term\": \"r\","
-                                  " \"limit\": 10,"
-                                  " \"filter\": {\"op\": \"gt\", \"column\": "
-                                  "\"revenue\", \"value\": \"1.0\"}}")),
+  db.Query(std::move(util::Config(json{
+               {"type", "search"},
+               {"table", "events"},
+               {"dimension", "event_name"},
+               {"term", "r"},
+               {"limit", 10},
+               {"filter",
+                {{"op", "gt"}, {"column", "revenue"}, {"value", "1.0"}}}})),
            output);
 
   std::vector<query::MemoryRowOutput::Row> expected = {{"refund", "review"}};
@@ -52,13 +53,14 @@ TEST_F(SearchEvents, SearchQueryLimit) {
   LoadSearchEvents();
 
   query::MemoryRowOutput output;
-  db.Query(std::move(util::Config("{\"type\": \"search\","
-                                  " \"table\": \"events\","
-                                  " \"dimension\": \"event_name\","
-                                  " \"term\": \"\","
-                                  " \"limit\": 2,"
-                                  " \"filter\": {\"op\": \"gt\", \"column\": "
-                                  "\"install_time\", \"value\": \"0\"}}")),
+  db.Query(std::move(util::Config(json{
+               {"type", "search"},
+               {"table", "events"},
+               {"dimension", "event_name"},
+               {"term", ""},
+               {"limit", 2},
+               {"filter",
+                {{"op", "gt"}, {"column", "install_time"}, {"value", "0"}}}})),
            output);
 
   std::vector<query::MemoryRowOutput::Row> expected = {{"purchase", "refund"}};

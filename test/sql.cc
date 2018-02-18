@@ -304,11 +304,10 @@ TEST_F(SqlEvents, CopyFromFile) {
 
 TEST_F(SqlEvents, SupportHypens) {
   db::Database db(std::move(util::Config(
-      "{\"tables\": [{\"name\": \"user-events\","
-      "               \"dimensions\": [{\"name\": \"app-id\"},"
-      "                                {\"name\": \"event-name\"}],"
-      "               \"metrics\": [{\"name\": \"count\", \"type\": "
-      "\"count\"}]}]}")));
+      json{{"tables",
+            {{{"name", "user-events"},
+              {"dimensions", {{{"name", "app-id"}}, {{"name", "event-name"}}}},
+              {"metrics", {{{"name", "count"}, {"type", "count"}}}}}}}})));
 
   auto table = db.GetTable("user-events");
   input::SimpleLoader loader(*table);

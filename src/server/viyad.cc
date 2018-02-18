@@ -17,7 +17,7 @@
 #include "server/viyad.h"
 #include "db/database.h"
 #include "server/http/service.h"
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 #include <sched.h>
 #include <sys/types.h>
 #include <unistd.h>

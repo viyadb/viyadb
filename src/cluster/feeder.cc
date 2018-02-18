@@ -23,11 +23,13 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <glog/logging.h>
+#include <nlohmann/json.hpp>
 
 namespace viya {
 namespace cluster {
 
 namespace fs = boost::filesystem;
+using json = nlohmann::json;
 
 Feeder::Feeder(const Controller &controller, const std::string &load_prefix)
     : controller_(controller), loader_(controller, load_prefix) {
@@ -52,6 +54,16 @@ void Feeder::Start() {
     notifier->Listen(*this);
     notifiers_.push_back(notifier);
   }
+}
+
+util::Config Feeder::GetLoadDesc(const std::string &file,
+                                 const std::string &table_name,
+                                 const std::vector<std::string> &columns) {
+  return std::move(util::Config(json{{"table", table_name},
+                                     {"type", "file"},
+                                     {"file", file},
+                                     {"format", "tsv"},
+                                     {"columns", columns}}));
 }
 
 void Feeder::LoadHistoricalData(const std::string &target_worker) {
@@ -83,7 +95,10 @@ void Feeder::LoadHistoricalData(const std::string &target_worker) {
           if (target_path != path) {
             delete_paths.push_back(target_path);
           }
-          loader_.LoadFiles(target_path, table_name, table_info, worker_id);
+
+          loader_.Load(std::move(GetLoadDesc(target_path, table_name,
+                                             table_info.columns())),
+                       worker_id);
         }
       }
     }
@@ -92,11 +107,6 @@ void Feeder::LoadHistoricalData(const std::string &target_worker) {
 
 void Feeder::LoadMicroBatch(const MicroBatchInfo &mb_info,
                             const std::string &target_worker) {
-  std::vector<std::string> delete_paths;
-  util::ScopeGuard cleanup = [&delete_paths]() {
-    for (auto &path : delete_paths)
-      fs::remove_all(path);
-  };
 
   LOG(INFO) << "Processing micro batch: " << mb_info.id();
   for (auto &it : mb_info.tables_info()) {
@@ -104,18 +114,26 @@ void Feeder::LoadMicroBatch(const MicroBatchInfo &mb_info,
     auto &table_info = it.second;
 
     for (auto &path : table_info.paths()) {
-      std::string target_path = Downloader::Fetch(path);
-      if (target_path != path) {
-        delete_paths.push_back(target_path);
-      }
-
-      if (target_worker.empty()) {
-        loader_.LoadFilesToAll(target_path, table_name, table_info);
-      } else {
-        loader_.LoadFiles(target_path, table_name, table_info, target_worker);
-      }
+      auto load_desc =
+          std::move(GetLoadDesc(path, table_name, table_info.columns()));
+      LoadData(load_desc, target_worker);
     }
   }
+}
+
+void Feeder::LoadData(const util::Config &load_desc,
+                      const std::string &target_worker) {
+  auto path = load_desc.str("file");
+  std::string target_path = Downloader::Fetch(path);
+  util::ScopeGuard cleanup = [&path, &target_path]() {
+    if (path != target_path) {
+      fs::remove_all(path);
+    }
+  };
+
+  util::Config tmp_desc = load_desc;
+  tmp_desc.set_str("file", target_path);
+  loader_.Load(tmp_desc, target_worker);
 }
 
 bool Feeder::IsNewMicroBatch(const std::string &indexer_id,

@@ -22,9 +22,9 @@
 namespace viya {
 namespace db {
 class Database;
-class Table;
 } // namespace db
 } // namespace viya
+
 namespace viya {
 namespace util {
 class Config;
@@ -40,11 +40,8 @@ namespace util = viya::util;
 class LoaderFactory {
 public:
   Loader *Create(const util::Config &config, db::Database &database);
-
-private:
-  std::vector<int> CreateTupleIdxMapping(const util::Config &config,
-                                         const db::Table &table);
 };
+
 } // namespace input
 } // namespace viya
 

@@ -40,33 +40,46 @@ public:
   Controller(const Controller &other) = delete;
 
   const consul::Consul &consul() const { return consul_; }
+  const util::Config &config() const { return config_; }
   const util::Config &cluster_config() const { return cluster_config_; }
   const std::string &cluster_id() const { return cluster_id_; }
   db::Database &db() { return db_; }
+
   const std::map<std::string, util::Config> &tables_configs() const {
     return tables_configs_;
   }
+
   const std::map<std::string, util::Config> &indexers_configs() const {
     return indexers_configs_;
   }
+
   const std::map<std::string, std::unique_ptr<BatchInfo>> &
   indexers_batches() const {
     return indexers_batches_;
   }
+
   const std::map<std::string, Plan> &tables_plans() const {
     return tables_plans_;
   }
+
   const std::map<std::string, Partitioning> &tables_partitioning() const {
     return tables_partitioning_;
   }
+
   bool leader() const { return le_->Leader(); }
+  Feeder &feeder() const { return *feeder_; }
 
 private:
   void ReadClusterConfig();
   bool ReadWorkersConfigs(std::map<std::string, util::Config> &configs);
   void FetchLatestBatchInfo();
+  std::string FindIndexerForTable(const std::string &table_name);
   void Initialize();
-  void InitializePartitioning();
+
+  void InitializePartitioning(
+      size_t replication_factor,
+      const std::map<std::string, util::Config> &workers_configs);
+
   void InitializePlan();
   void AssignPartitionsToWorkers();
   bool ReadPlan();

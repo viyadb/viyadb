@@ -18,7 +18,7 @@
 #include "cluster/batch_info.h"
 #include "cluster/kafka_notifier.h"
 #include "util/config.h"
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 
 namespace viya {
 namespace cluster {

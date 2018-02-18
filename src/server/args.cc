@@ -22,6 +22,7 @@
 #include <glog/logging.h>
 #include <iostream>
 #include <limits.h>
+#include <nlohmann/json.hpp>
 #include <stdexcept>
 #include <stdlib.h>
 #include <thread>
@@ -30,6 +31,7 @@ namespace viya {
 namespace server {
 
 namespace util = viya::util;
+using json = nlohmann::json;
 
 std::string CmdlineArgs::Help() {
   std::stringstream ss;
@@ -104,7 +106,7 @@ util::Config CmdlineArgs::OpenConfig(const std::string &file) {
   }
   std::stringstream buf;
   buf << fs.rdbuf();
-  util::Config config(buf.str().c_str());
+  util::Config config(json::parse(buf.str()));
   return config;
 }
 } // namespace server

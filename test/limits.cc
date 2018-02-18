@@ -29,25 +29,26 @@ namespace input = viya::input;
 class LowCardColumn : public testing::Test {
 protected:
   LowCardColumn()
-      : db(std::move(util::Config("{\"tables\": [{\"name\": \"events\","
-                                  "               \"dimensions\": [{\"name\": "
-                                  "\"http_method\", \"cardinality\": 5}],"
-                                  "               \"metrics\": [{\"name\": "
-                                  "\"count\", \"type\": \"count\"}]}]}"))) {}
+      : db(std::move(util::Config(json{
+            {"tables",
+             {{{"name", "events"},
+               {"dimensions", {{{"name", "http_method"}, {"cardinality", 5}}}},
+               {"metrics", {{{"name", "count"}, {"type", "count"}}}}}}}}))) {}
   db::Database db;
 };
 
 class CardinalityGuard : public testing::Test {
 protected:
   CardinalityGuard()
-      : db(std::move(util::Config(
-            "{\"tables\": [{\"name\": \"events\","
-            "               \"dimensions\": [{\"name\": \"device_id\"},"
-            "                                {\"name\": \"event_name\","
-            "                                 \"cardinality_guard\": "
-            "{\"dimensions\": [\"device_id\"], \"limit\": 3}}],"
-            "               \"metrics\": [{\"name\": \"count\", \"type\": "
-            "\"count\"}]}]}"))) {}
+      : db(std::move(util::Config(json{
+            {"tables",
+             {{{"name", "events"},
+               {"dimensions",
+                {{{"name", "device_id"}},
+                 {{"name", "event_name"},
+                  {"cardinality_guard",
+                   {{"dimensions", {"device_id"}}, {"limit", 3}}}}}},
+               {"metrics", {{{"name", "count"}, {"type", "count"}}}}}}}}))) {}
   db::Database db;
 };
 
@@ -58,13 +59,14 @@ TEST_F(LowCardColumn, Exceeded) {
       {{"GET"}, {"POST"}, {"HEAD"}, {"PUT"}, {"DELETE"}, {"BLAH"}, {"BLAH"}});
 
   query::MemoryRowOutput output;
-  db.Query(std::move(util::Config("{\"type\": \"aggregate\","
-                                  " \"table\": \"events\","
-                                  " \"dimensions\": [\"http_method\"],"
-                                  " \"metrics\": [\"count\"],"
-                                  " \"filter\": {\"op\": \"gt\", \"column\": "
-                                  "\"count\", \"value\": \"1\"}}")),
-           output);
+  db.Query(
+      std::move(util::Config(json{
+          {"type", "aggregate"},
+          {"table", "events"},
+          {"dimensions", {"http_method"}},
+          {"metrics", {"count"}},
+          {"filter", {{"op", "gt"}, {"column", "count"}, {"value", "1"}}}})),
+      output);
 
   std::vector<query::MemoryRowOutput::Row> expected = {{"__exceeded", "2"}};
   EXPECT_EQ(expected, output.rows());
@@ -83,12 +85,12 @@ TEST_F(CardinalityGuard, Exceeded) {
 
   query::MemoryRowOutput output;
   db.Query(
-      std::move(util::Config("{\"type\": \"aggregate\","
-                             " \"table\": \"events\","
-                             " \"dimensions\": [\"device_id\", \"event_name\"],"
-                             " \"metrics\": [\"count\"],"
-                             " \"filter\": {\"op\": \"gt\", \"column\": "
-                             "\"count\", \"value\": \"0\"}}")),
+      std::move(util::Config(json{
+          {"type", "aggregate"},
+          {"table", "events"},
+          {"dimensions", {"device_id", "event_name"}},
+          {"metrics", {"count"}},
+          {"filter", {{"op", "gt"}, {"column", "count"}, {"value", "0"}}}})),
       output);
 
   std::vector<query::MemoryRowOutput::Row> expected = {
@@ -112,13 +114,14 @@ TEST_F(InappEvents, DimensionLength) {
                {"US", "veryveryveryveryvery", "20141112", "0.1"}});
 
   query::MemoryRowOutput output;
-  db.Query(std::move(util::Config("{\"type\": \"aggregate\","
-                                  " \"table\": \"events\","
-                                  " \"dimensions\": [\"event_name\"],"
-                                  " \"metrics\": [\"count\"],"
-                                  " \"filter\": {\"op\": \"gt\", \"column\": "
-                                  "\"count\", \"value\": \"0\"}}")),
-           output);
+  db.Query(
+      std::move(util::Config(json{
+          {"type", "aggregate"},
+          {"table", "events"},
+          {"dimensions", {"event_name"}},
+          {"metrics", {"count"}},
+          {"filter", {{"op", "gt"}, {"column", "count"}, {"value", "0"}}}})),
+      output);
 
   std::vector<query::MemoryRowOutput::Row> expected = {
       {"veryveryveryveryvery", "2"}};

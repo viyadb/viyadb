@@ -16,6 +16,7 @@
 
 #include "cluster/plan.h"
 #include <map>
+#include <nlohmann/json.hpp>
 #include <sstream>
 
 namespace viya {
@@ -71,11 +72,8 @@ void Plan::AssignPartitionsToWorkers() {
   }
 }
 
-PlanGenerator::PlanGenerator(const util::Config &cluster_config)
-    : cluster_config_(cluster_config) {}
-
 Plan PlanGenerator::Generate(
-    size_t partitions_num,
+    size_t partitions_num, size_t replication_factor,
     const std::map<std::string, util::Config> &workers_configs) {
 
   typedef std::vector<util::Config> workers;
@@ -102,19 +100,17 @@ Plan PlanGenerator::Generate(
     ++total_workers;
   }
 
-  size_t replicas_num = cluster_config_.num("replication_factor", 3);
-
   // Validate configuration:
-  if (partitions_num * replicas_num > total_workers) {
+  if (partitions_num * replication_factor > total_workers) {
     std::ostringstream s;
-    s << "Can't place " << std::to_string(replicas_num) << " copies of "
+    s << "Can't place " << std::to_string(replication_factor) << " copies of "
       << std::to_string(partitions_num) << " partitions on "
       << std::to_string(total_workers) << " workers";
     throw std::runtime_error(s.str());
   }
-  if (replicas_num > hbr.size()) {
+  if (replication_factor > hbr.size()) {
     std::ostringstream s;
-    s << "Replication factor of " << std::to_string(replicas_num)
+    s << "Replication factor of " << std::to_string(replication_factor)
       << " is smaller than the number of racks: " << std::to_string(hbr.size());
     throw std::runtime_error(s.str());
   }
@@ -150,8 +146,8 @@ Plan PlanGenerator::Generate(
     // under each host:
     // r1:h1:w1 -> r2:h1:w1 -> r1:h2:w1 -> r2:h2:w1 -> r1:h1:w2 -> r2:h1:w2 ->
     // r1:h2:w2 -> r2:h2:w2
-    for (size_t ri = 0, w = 0, p = 0; p < replicas_num && w < total_workers;
-         ++w) {
+    for (size_t ri = 0, w = 0, p = 0;
+         p < replication_factor && w < total_workers; ++w) {
       size_t hi = host_idxs[ri];
       size_t wi = worker_idxs[ri][hi];
 

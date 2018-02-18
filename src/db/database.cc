@@ -19,8 +19,8 @@
 #include "input/loader_factory.h"
 #include "query/runner.h"
 #include <glog/logging.h>
-#include <json.hpp>
 #include <memory>
+#include <nlohmann/json.hpp>
 
 namespace viya {
 namespace db {

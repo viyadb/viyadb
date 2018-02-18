@@ -31,16 +31,15 @@ TEST_F(SortEvents, PaginateNoSort) {
   LoadSortEvents();
 
   query::MemoryRowOutput output;
-  db.Query(
-      std::move(util::Config("{\"type\": \"aggregate\","
-                             " \"table\": \"events\","
-                             " \"dimensions\": [\"country\", \"event_name\"],"
-                             " \"metrics\": [\"count\"],"
-                             " \"filter\": {\"op\": \"gt\", \"column\": "
-                             "\"count\", \"value\": \"0\"},"
-                             " \"skip\": 1,"
-                             " \"limit\": 2}")),
-      output);
+  db.Query(std::move(util::Config(json{
+               {"type", "aggregate"},
+               {"table", "events"},
+               {"dimensions", {"country", "event_name"}},
+               {"metrics", {"count"}},
+               {"filter", {{"op", "gt"}, {"column", "count"}, {"value", "0"}}},
+               {"skip", 1},
+               {"limit", 2}})),
+           output);
 
   EXPECT_EQ(2, output.rows().size());
 }
@@ -49,15 +48,15 @@ TEST_F(SortEvents, SortMultiColumn) {
   LoadSortEvents();
 
   query::MemoryRowOutput output;
-  db.Query(std::move(util::Config(
-               "{\"type\": \"aggregate\","
-               " \"table\": \"events\","
-               " \"dimensions\": [\"country\", \"event_name\"],"
-               " \"metrics\": [\"revenue\"],"
-               " \"filter\": {\"op\": \"gt\", \"column\": \"count\", "
-               "\"value\": \"0\"},"
-               " \"sort\": [{\"column\": \"revenue\", \"ascending\": false},"
-               "            {\"column\": \"country\", \"ascending\": true}]}")),
+  db.Query(std::move(util::Config(json{
+               {"type", "aggregate"},
+               {"table", "events"},
+               {"dimensions", {"country", "event_name"}},
+               {"metrics", {"revenue"}},
+               {"filter", {{"op", "gt"}, {"column", "count"}, {"value", "0"}}},
+               {"sort",
+                {{{"column", "revenue"}, {"ascending", false}},
+                 {{"column", "country"}, {"ascending", true}}}}})),
            output);
 
   std::vector<query::MemoryRowOutput::Row> expected = {
@@ -72,17 +71,17 @@ TEST_F(SortEvents, TopN) {
   LoadSortEvents();
 
   query::MemoryRowOutput output;
-  db.Query(
-      std::move(util::Config("{\"type\": \"aggregate\","
-                             " \"table\": \"events\","
-                             " \"dimensions\": [\"country\"],"
-                             " \"metrics\": [\"revenue\"],"
-                             " \"filter\": {\"op\": \"gt\", \"column\": "
-                             "\"count\", \"value\": \"0\"},"
-                             " \"sort\": [{\"column\": \"revenue\"}, "
-                             "{\"column\": \"country\", \"ascending\": true}],"
-                             " \"limit\": 5}")),
-      output);
+  db.Query(std::move(util::Config(json{
+               {"type", "aggregate"},
+               {"table", "events"},
+               {"dimensions", {"country"}},
+               {"metrics", {"revenue"}},
+               {"filter", {{"op", "gt"}, {"column", "count"}, {"value", "0"}}},
+               {"sort",
+                {{{"column", "revenue"}},
+                 {{"column", "country"}, {"ascending", true}}}},
+               {"limit", 5}})),
+           output);
 
   std::vector<query::MemoryRowOutput::Row> expected = {
       {"KZ", "5"}, {"AZ", "1.1"}, {"CH", "1.1"}, {"IL", "1.01"}, {"RU", "1"},
@@ -95,17 +94,17 @@ TEST_F(SortEvents, LimitGreaterThanResult) {
   LoadSortEvents();
 
   query::MemoryRowOutput output;
-  db.Query(
-      std::move(util::Config("{\"type\": \"aggregate\","
-                             " \"table\": \"events\","
-                             " \"dimensions\": [\"country\"],"
-                             " \"metrics\": [\"revenue\"],"
-                             " \"filter\": {\"op\": \"gt\", \"column\": "
-                             "\"count\", \"value\": \"0\"},"
-                             " \"sort\": [{\"column\": \"revenue\"}, "
-                             "{\"column\": \"country\", \"ascending\": true}],"
-                             " \"limit\": 50}")),
-      output);
+  db.Query(std::move(util::Config(json{
+               {"type", "aggregate"},
+               {"table", "events"},
+               {"dimensions", {"country"}},
+               {"metrics", {"revenue"}},
+               {"filter", {{"op", "gt"}, {"column", "count"}, {"value", "0"}}},
+               {"sort",
+                {{{"column", "revenue"}},
+                 {{"column", "country"}, {"ascending", true}}}},
+               {"limit", 50}})),
+           output);
 
   std::vector<query::MemoryRowOutput::Row> expected = {
       {"KZ", "5"},    {"AZ", "1.1"}, {"CH", "1.1"},

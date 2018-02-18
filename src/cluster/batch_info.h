@@ -18,9 +18,9 @@
 #define VIYA_CLUSTER_BATCH_INFO_H_
 
 #include "cluster/partitioning.h"
-#include <json.hpp>
 #include <map>
 #include <memory>
+#include <nlohmann/json_fwd.hpp>
 
 namespace viya {
 namespace cluster {

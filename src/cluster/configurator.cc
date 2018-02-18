@@ -18,16 +18,16 @@
 #include "cluster/controller.h"
 #include "util/config.h"
 #include <cpr/cpr.h>
-#include <json.hpp>
+#include <glog/logging.h>
+#include <nlohmann/json.hpp>
 
 namespace viya {
 namespace cluster {
 
 using json = nlohmann::json;
 
-Configurator::Configurator(const Controller &controller,
-                           const std::string &load_prefix)
-    : controller_(controller), load_prefix_(load_prefix) {}
+Configurator::Configurator(const Controller &controller)
+    : controller_(controller) {}
 
 void Configurator::ConfigureWorkers() {
   for (auto &plans_it : controller_.tables_plans()) {
@@ -46,7 +46,8 @@ void Configurator::CreateTable(const util::Config &table_config,
                                const std::string &hostname, uint16_t port) {
   std::string url =
       "http://" + hostname + ":" + std::to_string(port) + "/tables";
-  auto r = cpr::Post(cpr::Url{url}, cpr::Body{table_config.dump()},
+  auto data = table_config.dump();
+  auto r = cpr::Post(cpr::Url{url}, cpr::Body{data},
                      cpr::Header{{"Content-Type", "application/json"}},
                      cpr::Timeout{3000L});
   if (r.status_code != 201) {

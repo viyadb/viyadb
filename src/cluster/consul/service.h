@@ -18,8 +18,8 @@
 #define VIYA_CLUSTER_CONSUL_SERVICE_H_
 
 #include "util/schedule.h"
-#include <json.hpp>
 #include <memory>
+#include <nlohmann/json.hpp>
 
 namespace viya {
 namespace cluster {
