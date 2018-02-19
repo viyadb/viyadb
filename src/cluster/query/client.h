@@ -58,6 +58,7 @@ public:
             const std::string &data);
 
   void OnRequestCompleted(evhttp_request *req);
+  void OnConnectionClosed(evhttp_connection *conn);
   void Await();
 
 private:

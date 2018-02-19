@@ -27,7 +27,7 @@ Loader *LoaderFactory::Create(const util::Config &config,
                               db::Database &database) {
   auto table = database.GetTable(config.str("table"));
 
-  std::string type = config.str("type");
+  std::string type = config.str("source", config.str("type", "file"));
   if (type == "file") {
     return new FileLoader(config, *table);
   }

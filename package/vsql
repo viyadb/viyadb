@@ -34,6 +34,7 @@ while IFS="" read -r -e -d $'\n' -p 'ViyaDB> ' query; do
       cat $tmpfile | column -s $'\t' -t
       echo "Time taken: ${time_secs} secs"
     else
+      echo -n "ERROR: "
       echo -n $(cat $tmpfile); echo
     fi
     history -s "${query}"

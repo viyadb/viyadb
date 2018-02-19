@@ -65,6 +65,7 @@ public:
   Format format() const { return format_; }
   const std::string &fname() const { return fname_; }
   const std::vector<int> &tuple_idx_map() const { return tuple_idx_map_; }
+  size_t columns_num() const { return columns_num_; }
   const PartitionFilter &partition_filter() const { return *partition_filter_; }
   bool has_partition_filter() const { return (bool)partition_filter_; }
 
@@ -77,6 +78,7 @@ private:
   Format format_;
   std::string fname_;
   std::vector<int> tuple_idx_map_;
+  size_t columns_num_;
   std::unique_ptr<PartitionFilter> partition_filter_;
 };
 } // namespace input

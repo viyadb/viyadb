@@ -71,6 +71,7 @@ void LoaderDesc::InitTupleIdxMap() {
 
   if (config_.exists("columns")) {
     auto load_cols = config_.strlist("columns");
+    columns_num_ = load_cols.size();
     size_t idx = 0;
     for (auto col : input_cols) {
       const std::string &col_name =
@@ -87,6 +88,7 @@ void LoaderDesc::InitTupleIdxMap() {
       throw std::runtime_error("Column names must be specified, because one or "
                                "more columns define field name mapping");
     }
+    columns_num_ = input_cols.size();
     for (size_t idx = 0; idx < input_cols.size(); ++idx) {
       tuple_idx_map_[idx] = idx;
     }

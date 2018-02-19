@@ -159,7 +159,7 @@ copy_cols: column_name { $$ = new json(); $$->push_back($1); delete[] $1; }
 ;
 
 copy_source: string_literal {
-               $$ = new json {{"type", "file"}, {"file", $1}}; delete[] $1;
+               $$ = new json {{"type", "load"}, {"source", "file"}, {"file", $1}}; delete[] $1;
              }
 ;
 

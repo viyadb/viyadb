@@ -21,6 +21,7 @@
 #include "sql/driver.h"
 #include "sql/statement.h"
 #include <algorithm>
+#include <boost/exception/diagnostic_information.hpp>
 #include <glog/logging.h>
 
 namespace viya {
@@ -71,8 +72,10 @@ void Service::Start() {
     try {
       util::Config query(request->content.string());
       ProcessQuery(query, response, request);
-    } catch (std::exception &e) {
-      SendError(response, std::string(e.what()));
+    } catch (const std::exception &e) {
+      SendError(response, e.what());
+    } catch (...) {
+      SendError(response, boost::current_exception_diagnostic_information());
     }
   };
 
@@ -82,8 +85,10 @@ void Service::Start() {
       util::Config load_conf(request->content.string());
       controller_.feeder().LoadData(load_conf);
       *response << "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n";
-    } catch (std::exception &e) {
-      SendError(response, std::string(e.what()));
+    } catch (const std::exception &e) {
+      SendError(response, e.what());
+    } catch (...) {
+      SendError(response, boost::current_exception_diagnostic_information());
     }
   };
 
@@ -102,8 +107,10 @@ void Service::Start() {
       } else if (stmts.size() > 1) {
         SendError(response, "multiple SQL statements are not supported");
       }
-    } catch (std::exception &e) {
-      SendError(response, std::string(e.what()));
+    } catch (const std::exception &e) {
+      SendError(response, e.what());
+    } catch (...) {
+      SendError(response, boost::current_exception_diagnostic_information());
     }
   };
 

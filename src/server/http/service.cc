@@ -21,6 +21,7 @@
 #include "sql/driver.h"
 #include "util/config.h"
 #include <algorithm>
+#include <boost/exception/diagnostic_information.hpp>
 #include <glog/logging.h>
 
 namespace viya {
@@ -45,13 +46,16 @@ void Service::SendError(ResponsePtr response, const std::string &error) {
 void Service::Start() {
   server_.resource["^/tables$"]["POST"] = [&](ResponsePtr response,
                                               RequestPtr request) {
+
+    auto table_conf = request->content.string();
     database_.write_pool().enqueue([=] {
       try {
-        util::Config table_conf(request->content.string());
         database_.CreateTable(table_conf);
         *response << "HTTP/1.1 201 OK\r\nContent-Length: 0\r\n\r\n";
-      } catch (std::exception &e) {
-        SendError(response, "Error creating table: " + std::string(e.what()));
+      } catch (const std::exception &e) {
+        SendError(response, e.what());
+      } catch (...) {
+        SendError(response, boost::current_exception_diagnostic_information());
       }
     });
   };
@@ -67,9 +71,10 @@ void Service::Start() {
                      "application/json\r\nContent-Length: "
                   << meta.length() << "\r\n\r\n"
                   << meta;
-      } catch (std::exception &e) {
-        SendError(response,
-                  "Error querying table metadata: " + std::string(e.what()));
+      } catch (const std::exception &e) {
+        SendError(response, e.what());
+      } catch (...) {
+        SendError(response, boost::current_exception_diagnostic_information());
       }
     });
   };
@@ -84,55 +89,65 @@ void Service::Start() {
                      "application/json\r\nContent-Length: "
                   << meta.length() << "\r\n\r\n"
                   << meta;
-      } catch (std::exception &e) {
-        SendError(response,
-                  "Error querying database metadata: " + std::string(e.what()));
+      } catch (const std::exception &e) {
+        SendError(response, e.what());
+      } catch (...) {
+        SendError(response, boost::current_exception_diagnostic_information());
       }
     });
   };
 
   server_.resource["^/load$"]["POST"] = [&](ResponsePtr response,
                                             RequestPtr request) {
+    auto load_conf = request->content.string();
     database_.write_pool().enqueue([=] {
       try {
-        util::Config load_conf(request->content.string());
         database_.Load(load_conf);
         *response << "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n";
-      } catch (std::exception &e) {
-        SendError(response, "Error loading data: " + std::string(e.what()));
+      } catch (const std::exception &e) {
+        SendError(response, e.what());
+      } catch (...) {
+        SendError(response, boost::current_exception_diagnostic_information());
       }
     });
   };
 
   server_.resource["^/query(\\?.*)?$"]["POST"] = [&](ResponsePtr response,
                                                      RequestPtr request) {
+    auto content_string = request->content.string();
+    auto params = request->parse_query_string();
     database_.read_pool().enqueue([=] {
       try {
-        util::Config query_conf(request->content.string());
-        auto params = request->parse_query_string();
+        util::Config query_conf(content_string);
         if (params.find("header") != params.end()) {
           query_conf.set_boolean("header", true);
         }
         ChunkedTsvOutput output(*response);
         database_.Query(query_conf, output);
-      } catch (std::exception &e) {
-        SendError(response, "Error querying table: " + std::string(e.what()));
+      } catch (const std::exception &e) {
+        SendError(response, e.what());
+      } catch (...) {
+        SendError(response, boost::current_exception_diagnostic_information());
       }
     });
   };
 
   server_.resource["^/sql(\\?.*)?$"]["POST"] = [&](ResponsePtr response,
                                                    RequestPtr request) {
+    auto sql_query = request->content.string();
     database_.read_pool().enqueue([=] {
       try {
         auto params = request->parse_query_string();
         bool add_header = params.find("header") != params.end();
         sql::Driver sql_driver(database_, add_header);
-        std::istringstream query(request->content.string());
         ChunkedTsvOutput output(*response);
+
+        std::istringstream query(sql_query);
         sql_driver.Run(query, &output);
-      } catch (std::exception &e) {
-        SendError(response, std::string(e.what()));
+      } catch (const std::exception &e) {
+        SendError(response, e.what());
+      } catch (...) {
+        SendError(response, boost::current_exception_diagnostic_information());
       }
     });
   };

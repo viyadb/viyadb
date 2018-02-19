@@ -95,6 +95,9 @@ ClusterQueryFactory::Create(const util::Config &query,
   if (type == "show") {
     return std::move(std::make_unique<LocalQuery>(query));
   }
+  if (type == "load") {
+    return std::move(std::make_unique<LoadQuery>(query));
+  }
   return std::move(std::make_unique<RemoteQuery>(query, controller));
 }
 

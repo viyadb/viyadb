@@ -29,6 +29,10 @@ const std::string &WorkersToTry::Next() {
   return workers_[current_++];
 }
 
+static void on_connection_closed(evhttp_connection *conn, void *obj) {
+  static_cast<WorkersClient *>(obj)->OnConnectionClosed(conn);
+}
+
 static void on_request_completed(evhttp_request *req, void *obj) {
   static_cast<WorkersClient *>(obj)->OnRequestCompleted(req);
 }
@@ -53,7 +57,16 @@ WorkersClient::~WorkersClient() {
   }
 }
 
+void WorkersClient::OnConnectionClosed(evhttp_connection *conn
+                                       __attribute__((unused))) {}
+
 void WorkersClient::OnRequestCompleted(evhttp_request *request) {
+  if (!request) {
+    // eek -- this is just a clean-up notification because the connection's
+    // been closed, but we already dealt with it in onConnectionClosed
+    return;
+  }
+
   if (request->response_code != 200) {
     throw std::runtime_error(request->response_code_line
                                  ? request->response_code_line
@@ -96,10 +109,12 @@ void WorkersClient::Send(WorkersToTry *workers_to_try, const char *uri,
 
     evhttp_add_header(request->output_headers, "Content-Type",
                       "application/json");
+    evhttp_add_header(request->output_headers, "Connection", "close");
     evbuffer_add(request->output_buffer, data, data_size);
 
     auto connection = evhttp_connection_base_new(
         event_base_, nullptr, host.c_str(), std::atoi(port.c_str()));
+    evhttp_connection_set_closecb(connection, on_connection_closed, this);
     connections_.push_back(connection);
 
     if (evhttp_make_request(connection, request, EVHTTP_REQ_POST, uri) == 0) {

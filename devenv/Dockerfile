@@ -27,7 +27,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     clang-format \
     g++-7 \
   && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 60 --slave /usr/bin/g++ g++ /usr/bin/g++-7 \
-  && curl -sS -L https://cmake.org/files/v3.10/cmake-3.10.0-Linux-x86_64.sh -o cmake-install.sh \
+  && curl -sS -L https://cmake.org/files/v3.10/cmake-3.10.2-Linux-x86_64.sh -o cmake-install.sh \
     && sh ./cmake-install.sh --prefix=/usr/local --skip-license \
     && rm -f ./cmake-install.sh \
   && curl -sS -L https://dl.bintray.com/boostorg/release/1.65.1/source/boost_1_65_1.tar.gz | tar -zxf - \

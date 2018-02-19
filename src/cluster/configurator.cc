@@ -47,9 +47,10 @@ void Configurator::CreateTable(const util::Config &table_config,
   std::string url =
       "http://" + hostname + ":" + std::to_string(port) + "/tables";
   auto data = table_config.dump();
-  auto r = cpr::Post(cpr::Url{url}, cpr::Body{data},
-                     cpr::Header{{"Content-Type", "application/json"}},
-                     cpr::Timeout{3000L});
+  auto r = cpr::Post(
+      cpr::Url{url}, cpr::Body{data},
+      cpr::Header{{"Content-Type", "application/json"}, {"Expect", "None"}},
+      cpr::Timeout{3000L});
   if (r.status_code != 201) {
     if (r.status_code == 0) {
       throw std::runtime_error("Can't contact worker at: " + url +

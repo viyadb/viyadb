@@ -53,20 +53,20 @@ Config &Config::operator=(Config &&other) {
 
 Config::~Config() { delete conf_; }
 
-bool Config::exists(const char *key) const {
+bool Config::exists(const std::string &key) const {
   return conf_->find(key) != conf_->end();
 }
 
-void Config::erase(const char *key) { conf_->erase(key); }
+void Config::erase(const std::string &key) { conf_->erase(key); }
 
-void Config::ValidateKey(const char *key) const {
+void Config::ValidateKey(const std::string &key) const {
   if (!exists(key)) {
     throw std::invalid_argument("Missing configuration key: " +
                                 std::string(key));
   }
 }
 
-bool Config::boolean(const char *key) const {
+bool Config::boolean(const std::string &key) const {
   ValidateKey(key);
   try {
     return (*conf_)[key].get<bool>();
@@ -75,7 +75,7 @@ bool Config::boolean(const char *key) const {
   }
 }
 
-bool Config::boolean(const char *key, bool default_value) const {
+bool Config::boolean(const std::string &key, bool default_value) const {
   if (!exists(key)) {
     return default_value;
   }
@@ -86,9 +86,11 @@ bool Config::boolean(const char *key, bool default_value) const {
   }
 }
 
-void Config::set_boolean(const char *key, bool value) { (*conf_)[key] = value; }
+void Config::set_boolean(const std::string &key, bool value) {
+  (*conf_)[key] = value;
+}
 
-long Config::num(const char *key) const {
+long Config::num(const std::string &key) const {
   ValidateKey(key);
   try {
     return (*conf_)[key].get<long>();
@@ -97,7 +99,7 @@ long Config::num(const char *key) const {
   }
 }
 
-long Config::num(const char *key, long default_value) const {
+long Config::num(const std::string &key, long default_value) const {
   if (!exists(key)) {
     return default_value;
   }
@@ -108,7 +110,7 @@ long Config::num(const char *key, long default_value) const {
   }
 }
 
-std::vector<long> Config::numlist(const char *key) const {
+std::vector<long> Config::numlist(const std::string &key) const {
   ValidateKey(key);
   try {
     return (*conf_)[key].get<std::vector<long>>();
@@ -117,7 +119,7 @@ std::vector<long> Config::numlist(const char *key) const {
   }
 }
 
-std::vector<uint32_t> Config::numlist_uint32(const char *key) const {
+std::vector<uint32_t> Config::numlist_uint32(const std::string &key) const {
   ValidateKey(key);
   try {
     return (*conf_)[key].get<std::vector<uint32_t>>();
@@ -126,13 +128,15 @@ std::vector<uint32_t> Config::numlist_uint32(const char *key) const {
   }
 }
 
-void Config::set_num(const char *key, long value) { (*conf_)[key] = value; }
-
-void Config::set_numlist(const char *key, std::vector<long> value) {
+void Config::set_num(const std::string &key, long value) {
   (*conf_)[key] = value;
 }
 
-std::string Config::str(const char *key) const {
+void Config::set_numlist(const std::string &key, std::vector<long> value) {
+  (*conf_)[key] = value;
+}
+
+std::string Config::str(const std::string &key) const {
   ValidateKey(key);
   try {
     return (*conf_)[key].get<std::string>();
@@ -141,7 +145,8 @@ std::string Config::str(const char *key) const {
   }
 }
 
-std::string Config::str(const char *key, const char *default_value) const {
+std::string Config::str(const std::string &key,
+                        const std::string &default_value) const {
   if (!exists(key)) {
     return default_value;
   }
@@ -152,7 +157,7 @@ std::string Config::str(const char *key, const char *default_value) const {
   }
 }
 
-std::vector<std::string> Config::strlist(const char *key) const {
+std::vector<std::string> Config::strlist(const std::string &key) const {
   ValidateKey(key);
   try {
     return (*conf_)[key].get<std::vector<std::string>>();
@@ -162,7 +167,8 @@ std::vector<std::string> Config::strlist(const char *key) const {
 }
 
 std::vector<std::string>
-Config::strlist(const char *key, std::vector<std::string> default_value) const {
+Config::strlist(const std::string &key,
+                std::vector<std::string> default_value) const {
   if (!exists(key)) {
     return default_value;
   }
@@ -173,19 +179,16 @@ Config::strlist(const char *key, std::vector<std::string> default_value) const {
   }
 }
 
-void Config::set_str(const char *key, const char *value) {
+void Config::set_str(const std::string &key, const std::string &value) {
   (*conf_)[key] = value;
 }
 
-void Config::set_str(const char *key, const std::string &value) {
-  set_str(key, value.c_str());
-}
-
-void Config::set_strlist(const char *key, std::vector<std::string> value) {
+void Config::set_strlist(const std::string &key,
+                         std::vector<std::string> value) {
   (*conf_)[key] = value;
 }
 
-Config Config::sub(const char *key, bool return_empty) const {
+Config Config::sub(const std::string &key, bool return_empty) const {
   if (!return_empty) {
     ValidateKey(key);
   }
@@ -196,11 +199,11 @@ Config Config::sub(const char *key, bool return_empty) const {
   }
 }
 
-void Config::set_sub(const char *key, Config &sub) {
+void Config::set_sub(const std::string &key, Config &sub) {
   (*conf_)[key] = *sub.conf_;
 }
 
-std::vector<Config> Config::sublist(const char *key) const {
+std::vector<Config> Config::sublist(const std::string &key) const {
   ValidateKey(key);
   try {
     std::vector<Config> result;

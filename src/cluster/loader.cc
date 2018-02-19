@@ -66,18 +66,21 @@ util::Config Loader::GetPartitionFilter(const std::string &table_name,
 }
 
 void Loader::Load(const util::Config &load_desc, const std::string &worker_id) {
-
   auto tmpfile = ExtractFiles(load_desc.str("file"));
-  util::ScopeGuard cleanup = [&tmpfile]() { DeleteFile(tmpfile); };
 
   util::Config tmp_desc = load_desc;
   tmp_desc.set_str("file", tmpfile);
   auto data = tmp_desc.dump();
 
   if (!worker_id.empty()) {
-    load_pool_.enqueue([&] { SendRequest(worker_id, data); });
+    load_pool_.enqueue([tmpfile, worker_id, data, this] {
+      util::ScopeGuard cleanup = [tmpfile]() { DeleteFile(tmpfile); };
+      SendRequest(worker_id, data);
+    });
 
   } else {
+    util::ScopeGuard cleanup = [&tmpfile]() { DeleteFile(tmpfile); };
+
     int fd = open(tmpfile.c_str(), O_RDONLY);
     if (fd == -1) {
       throw std::runtime_error("File not accessible: " + tmpfile);
@@ -110,13 +113,12 @@ void Loader::Load(const util::Config &load_desc, const std::string &worker_id) {
 
     for (auto &it : workers_parts) {
       auto &worker_id = it.first;
-      util::Config tmp_desc = load_desc;
       auto partition_filter =
           std::move(GetPartitionFilter(table_name, worker_id));
       tmp_desc.set_sub("partition_filter", partition_filter);
       auto data = tmp_desc.dump();
 
-      load_pool_.enqueue([&] {
+      load_pool_.enqueue([&, worker_id, data] {
         SendRequest(worker_id, data);
         latch.CountDown();
       });
@@ -129,9 +131,11 @@ void Loader::Load(const util::Config &load_desc, const std::string &worker_id) {
 
 void Loader::SendRequest(const std::string &worker_id,
                          const std::string &data) {
+  DLOG(INFO) << "Sending load request to worker: " << worker_id;
   std::string url = "http://" + worker_id + "/load";
-  auto r = cpr::Post(cpr::Url{url}, cpr::Body{data},
-                     cpr::Header{{"Content-Type", "application/json"}});
+  auto r = cpr::Post(
+      cpr::Url{url}, cpr::Body{data},
+      cpr::Header{{"Content-Type", "application/json"}, {"Expect", "None"}});
   if (r.status_code != 200 && r.status_code == 0) {
     LOG(ERROR) << "Can't contact worker at: " << url
                << " (host is unreachable)";
@@ -140,7 +144,7 @@ void Loader::SendRequest(const std::string &worker_id,
 
 std::string Loader::ExtractFiles(const std::string &path) {
   auto tmpfile = fs::temp_directory_path() / fs::unique_path();
-  DLOG(INFO) << "Creating temporary file: " << tmpfile.string();
+  DLOG(INFO) << "Extracting: " << path << " to: " << tmpfile.string();
 
   std::vector<fs::path> files;
   ListFiles(path, std::vector<std::string>{".gz", ".tsv", ".csv"}, files);
@@ -167,7 +171,11 @@ std::string Loader::ExtractFiles(const std::string &path) {
 void Loader::ListFiles(const std::string &path,
                        const std::vector<std::string> &exts,
                        std::vector<fs::path> &files) {
-  if (!fs::exists(path) || !fs::is_directory(path)) {
+  if (!fs::exists(path)) {
+    return;
+  }
+  if (!fs::is_directory(path)) {
+    files.push_back(fs::path(path));
     return;
   }
   fs::recursive_directory_iterator it(path);
