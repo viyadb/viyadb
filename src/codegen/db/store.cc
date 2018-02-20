@@ -15,9 +15,13 @@
  */
 
 #include "codegen/db/store.h"
+#include "codegen/db/rollup.h"
+#include "codegen/db/store.h"
 #include "db/column.h"
 #include "db/defs.h"
+#include "db/segment.h"
 #include "db/table.h"
+#include <algorithm>
 
 namespace viya {
 namespace codegen {
@@ -102,7 +106,7 @@ Code MetricsStruct::GenerateCode() const {
   for (auto *metric : metrics_) {
     if (metric->agg_type() == db::Metric::AggregationType::BITSET) {
       code.AddHeaders({"util/bitset.h"});
-      code << "namespace util = viya::util;\n";
+      code.AddNamespaces({"util = viya::util"});
       break;
     }
   }
@@ -261,7 +265,7 @@ Code SegmentStatsStruct::GenerateCode() const {
 Code StoreDefs::GenerateCode() const {
   Code code;
   code.AddHeaders({"db/segment.h"});
-  code << "namespace db = viya::db;\n";
+  code.AddNamespaces({"db = viya::db"});
 
   DimensionsStruct dims_struct(table_.dimensions(), "Dimensions");
   code << dims_struct.GenerateCode();
@@ -323,21 +327,168 @@ Code StoreDefs::GenerateCode() const {
   return code;
 }
 
-Code CreateSegment::GenerateCode() const {
+bool UpsertContextDefs::AddOptimize() const {
+  bool has_bitset_metric = std::any_of(
+      table_.metrics().cbegin(), table_.metrics().cend(),
+      [](const db::Metric *metric) {
+        return metric->agg_type() == db::Metric::AggregationType::BITSET;
+      });
+  return has_bitset_metric || !table_.cardinality_guards().empty();
+}
+
+bool UpsertContextDefs::HasTimeDimension() const {
+  return std::any_of(table_.dimensions().cbegin(), table_.dimensions().cend(),
+                     [](const db::Dimension *dim) {
+                       return dim->dim_type() == db::Dimension::DimType::TIME;
+                     });
+}
+
+Code UpsertContextDefs::ResetFunctionCode() const {
   Code code;
+  code << "void Reset() {\n";
+  code << " stats = db::UpsertStats();\n";
+  if (HasTimeDimension()) {
+    RollupReset rollup_reset(table_.dimensions());
+    code << rollup_reset.GenerateCode();
+  }
+  code << "}\n";
+  return code;
+}
+
+Code UpsertContextDefs::OptimizeFunctionCode() const {
+  Code code;
+  code << "void Optimize() {\n";
+  for (auto &guard : table_.cardinality_guards()) {
+    auto dim_idx = std::to_string(guard.dim()->index());
+    code << " for (auto it = card_stats" << dim_idx
+         << ".begin(); it != card_stats" << dim_idx << ".end(); ++it) {\n";
+    code << "  it->second.optimize();\n";
+    code << " }\n";
+  }
+  code << " updates_before_optimize = 1000000L;\n";
+  code << "}\n";
+  return code;
+}
+
+Code UpsertContextDefs::UpsertContextStruct() const {
+  Code code;
+  code.AddNamespaces({"util = viya::util"});
+
+  code << "struct UpsertContext {\n";
+  code << " Dimensions upsert_dims;\n";
+  code << " Metrics upsert_metrics;\n";
+  code << " std::unordered_map<Dimensions,size_t,DimensionsHasher> "
+          "tuple_offsets;\n";
+
+  bool add_optimize = AddOptimize();
+  if (add_optimize) {
+    code << "uint32_t updates_before_optimize = 1000000L;\n";
+  }
+
+  if (HasTimeDimension()) {
+    RollupDefs rollup_defs(table_.dimensions());
+    code << rollup_defs.GenerateCode();
+  }
+
+  auto &cardinality_guards = table_.cardinality_guards();
+  for (auto &guard : cardinality_guards) {
+    auto dim_idx = std::to_string(guard.dim()->index());
+    std::string struct_name = "CardDimKey" + dim_idx;
+    DimensionsStruct card_key_struct(guard.dimensions(), struct_name);
+    code << card_key_struct.GenerateCode();
+    code << " " << struct_name << " card_dim_key" << dim_idx << ";\n";
+
+    code << " std::unordered_map<" << struct_name << ","
+         << "util::Bitset<" << std::to_string(guard.dim()->num_type().size())
+         << ">"
+         << "," << struct_name << "Hasher> card_stats" << dim_idx << ";\n";
+  }
+
+  for (auto *dimension : table_.dimensions()) {
+    auto dim_idx = std::to_string(dimension->index());
+    if (dimension->dim_type() == db::Dimension::DimType::STRING) {
+      code << " db::DimensionDict* dict" << dim_idx << ";\n";
+      code << " db::DictImpl<" << dimension->num_type().cpp_type() << ">* v2c"
+           << dim_idx << ";\n";
+    }
+  }
+
+  for (auto *metric : table_.metrics()) {
+    if (metric->agg_type() == db::Metric::AggregationType::BITSET) {
+      code << "util::Bitset<" << std::to_string(metric->num_type().size())
+           << "> empty_bitset" << std::to_string(metric->index()) << ";\n";
+    }
+  }
+
+  code << ResetFunctionCode();
+
+  if (add_optimize) {
+    code << OptimizeFunctionCode();
+  }
+
+  code << " db::UpsertStats stats;\n";
+  code << "};\n";
+  return code;
+}
+
+Code UpsertContextDefs::GenerateCode() const {
+  Code code;
+  code.AddHeaders({"db/store.h", "db/table.h", "db/dictionary.h"});
+
+  auto &cardinality_guards = table_.cardinality_guards();
+  if (!cardinality_guards.empty()) {
+    code.AddHeaders({"util/bitset.h"});
+  }
+
+  code << UpsertContextStruct();
+  return code;
+}
+
+Code StoreFunctions::GenerateCode() const {
+  Code code;
+
   StoreDefs store_defs(table_);
   code << store_defs.GenerateCode();
+
+  UpsertContextDefs defs(table_);
+  code << defs.GenerateCode();
+
+  code << "extern \"C\" void* viya_upsert_context(const db::Table &table) "
+          "__attribute__((__visibility__(\"default\")));\n";
+  code << "extern \"C\" void* viya_upsert_context(const db::Table &table) "
+          "{\n";
+  code << " UpsertContext* ctx = new UpsertContext();\n";
+  for (auto *dimension : table_.dimensions()) {
+    if (dimension->dim_type() == db::Dimension::DimType::STRING) {
+      auto dim_idx = std::to_string(dimension->index());
+      code << " ctx->dict" << dim_idx
+           << " = static_cast<const db::StrDimension*>(table.dimension("
+           << dim_idx << "))->dict();\n";
+      code << " ctx->v2c" << dim_idx << " = reinterpret_cast<db::DictImpl<"
+           << dimension->num_type().cpp_type() << ">*>(ctx->dict" << dim_idx
+           << "->v2c());\n";
+    }
+  }
+  code << " return static_cast<void*>(ctx);\n";
+  code << "}\n";
+
   code << "extern \"C\" db::SegmentBase* viya_segment_create() "
           "__attribute__((__visibility__(\"default\")));\n";
   code << "extern \"C\" db::SegmentBase* viya_segment_create() {\n";
   code << " return new Segment();\n";
   code << "}\n";
+
   return code;
 }
 
-db::CreateSegmentFn CreateSegment::Function() {
+CreateSegmentFn StoreFunctions::CreateSegmentFunction() {
   return GenerateFunction<db::CreateSegmentFn>(
       std::string("viya_segment_create"));
 }
+
+UpsertContextFn StoreFunctions::UpsertContextFunction() {
+  return GenerateFunction<UpsertContextFn>(std::string("viya_upsert_context"));
+}
+
 } // namespace codegen
 } // namespace viya

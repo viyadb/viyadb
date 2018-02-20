@@ -35,6 +35,21 @@ TEST_F(InappEvents, LoadEvents) {
   EXPECT_EQ(1, table->store()->segments()[0]->size());
 }
 
+TEST_F(InappEvents, UpsertEvents) {
+  auto table = db.GetTable("events");
+
+  input::SimpleLoader loader1(*table);
+  loader1.Load({{"US", "purchase", "20141112", "0.1"},
+                {"US", "purchase", "20141112", "1.1"}});
+
+  input::SimpleLoader loader2(*table);
+  loader2.Load({{"US", "purchase", "20141112", "0.1"},
+                {"US", "purchase", "20141112", "1.1"}});
+
+  EXPECT_EQ(1, table->store()->segments().size());
+  EXPECT_EQ(1, table->store()->segments()[0]->size());
+}
+
 TEST_F(InappEvents, LoadFromTsv) {
   auto table = db.GetTable("events");
   std::string fname("InappEvents_LoadFromTsv.tsv");

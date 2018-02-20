@@ -28,10 +28,18 @@ Code::Code(Code &&other) {
 
 std::string Code::str() const {
   std::stringstream ss;
+
   std::unordered_set<std::string> headers_set(headers_.begin(), headers_.end());
   for (auto &header : headers_set) {
-    ss << "#include <" << header << ">" << std::endl;
+    ss << "#include <" << header << ">\n";
   }
+
+  std::unordered_set<std::string> namespaces_set(namespaces_.begin(),
+                                                 namespaces_.end());
+  for (auto &ns : namespaces_set) {
+    ss << "namespace " << ns << ";\n";
+  }
+
   ss << body_.str();
   return ss.str();
 }

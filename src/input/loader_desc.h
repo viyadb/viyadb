@@ -22,14 +22,19 @@
 
 namespace viya {
 namespace db {
+
 class Table;
 class Column;
+
 } // namespace db
 } // namespace viya
+
 namespace viya {
 namespace util {
+
 class Config;
-}
+
+} // namespace util
 } // namespace viya
 
 namespace viya {

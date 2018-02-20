@@ -31,14 +31,12 @@ Loader::Loader(const util::Config &config, db::Table &table)
   after_upsert_ = upsert_gen.AfterFunction();
   upsert_ = upsert_gen.Function();
 
-  void *upsert_ctx = upsert_gen.SetupFunction()(desc_);
-  table.set_upsert_ctx(upsert_ctx);
+  loader_ctx_ = upsert_gen.SetupFunction()(desc_);
 }
 
-void Loader::BeforeLoad() { before_upsert_(table_.upsert_ctx()); }
+void Loader::BeforeLoad() { before_upsert_(loader_ctx_); }
 
-db::UpsertStats Loader::AfterLoad() {
-  return after_upsert_(table_.upsert_ctx());
-}
+db::UpsertStats Loader::AfterLoad() { return after_upsert_(loader_ctx_); }
+
 } // namespace input
 } // namespace viya

@@ -54,6 +54,7 @@ public:
 private:
   cr::steady_clock::time_point begin_work_;
 };
+
 } // namespace input
 } // namespace viya
 

@@ -28,20 +28,32 @@ class Controller;
 } // namespace viya
 
 namespace viya {
+namespace query {
+
+class RowOutput;
+
+} // namespace query
+} // namespace viya
+
+namespace viya {
 namespace cluster {
 namespace query {
+
+namespace query = viya::query;
 
 class WorkersStates;
 
 class LoadQueryRunner {
 public:
-  LoadQueryRunner(Controller &controller, WorkersStates &workers_states);
+  LoadQueryRunner(Controller &controller, WorkersStates &workers_states,
+                  query::RowOutput &output);
 
   void Run(const LoadQuery *query);
 
 private:
   Controller &controller_;
   WorkersStates &workers_states_;
+  query::RowOutput &output_;
 };
 
 } // namespace query

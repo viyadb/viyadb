@@ -39,6 +39,7 @@ public:
 private:
   query::AggregateQuery &query_;
 };
+
 } // namespace codegen
 } // namespace viya
 

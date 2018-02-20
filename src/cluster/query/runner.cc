@@ -53,7 +53,7 @@ void ClusterQueryProcessor::Visit(const LocalQuery *query) const {
 }
 
 void ClusterQueryProcessor::Visit(const LoadQuery *query) const {
-  LoadQueryRunner runner(controller_, workers_states_);
+  LoadQueryRunner runner(controller_, workers_states_, output_);
   runner.Run(query);
 }
 

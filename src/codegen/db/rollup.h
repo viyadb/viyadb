@@ -25,6 +25,7 @@ namespace db {
 
 class Dimension;
 class TimeDimension;
+
 } // namespace db
 } // namespace viya
 
@@ -48,9 +49,8 @@ private:
 
 class RollupReset : public CodeGenerator {
 public:
-  RollupReset(const std::vector<const db::Dimension *> &dimensions,
-              const std::string &prefix = "")
-      : dimensions_(dimensions), prefix_(prefix) {}
+  RollupReset(const std::vector<const db::Dimension *> &dimensions)
+      : dimensions_(dimensions) {}
 
   RollupReset(const RollupReset &other) = delete;
 
@@ -58,13 +58,13 @@ public:
 
 private:
   const std::vector<const db::Dimension *> &dimensions_;
-  const std::string prefix_;
 };
 
 class TimestampRollup : public CodeGenerator {
 public:
   TimestampRollup(const db::TimeDimension *dimension,
-                  const std::string &var_name, const std::string &prefix = "")
+                  const std::string &var_name,
+                  const std::string &prefix = std::string())
       : dimension_(dimension), var_name_(var_name), prefix_(prefix) {}
 
   TimestampRollup(const TimestampRollup &other) = delete;
@@ -74,8 +74,9 @@ public:
 private:
   const db::TimeDimension *dimension_;
   std::string var_name_;
-  const std::string prefix_;
+  std::string prefix_;
 };
+
 } // namespace codegen
 } // namespace viya
 

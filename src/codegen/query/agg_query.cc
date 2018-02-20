@@ -29,9 +29,8 @@ Code AggQueryGenerator::GenerateCode() const {
                    "db/table.h", "db/dictionary.h", "db/store.h",
                    "util/format.h", "util/string.h"});
 
-  code << "namespace db = viya::db;\n";
-  code << "namespace query = viya::query;\n";
-  code << "namespace util = viya::util;\n";
+  code.AddNamespaces(
+      {"db = viya::db", "query = viya::query", "util = viya::util"});
 
   code << "extern \"C\" void viya_query_agg(db::Table& table, "
           "query::RowOutput& output, query::QueryStats& stats,"
@@ -77,5 +76,6 @@ Code AggQueryGenerator::GenerateCode() const {
 query::AggQueryFn AggQueryGenerator::Function() {
   return GenerateFunction<query::AggQueryFn>(std::string("viya_query_agg"));
 }
+
 } // namespace codegen
 } // namespace viya

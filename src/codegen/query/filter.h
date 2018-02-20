@@ -23,8 +23,10 @@
 
 namespace viya {
 namespace db {
+
 class Table;
-}
+
+} // namespace db
 } // namespace viya
 
 namespace viya {
@@ -92,6 +94,7 @@ private:
   const query::Filter *filter_;
   const std::string var_prefix_;
 };
+
 } // namespace codegen
 } // namespace viya
 

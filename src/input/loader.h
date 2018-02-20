@@ -38,9 +38,7 @@ public:
 
 protected:
   void BeforeLoad();
-  void Load(std::vector<std::string> &values) {
-    upsert_(table_.upsert_ctx(), values);
-  }
+  void Load(std::vector<std::string> &values) { upsert_(loader_ctx_, values); }
   db::UpsertStats AfterLoad();
 
 protected:
@@ -50,7 +48,9 @@ protected:
   cg::BeforeUpsertFn before_upsert_;
   cg::AfterUpsertFn after_upsert_;
   cg::UpsertFn upsert_;
+  void *loader_ctx_;
 };
+
 } // namespace input
 } // namespace viya
 

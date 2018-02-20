@@ -109,7 +109,6 @@ void WorkersClient::Send(WorkersToTry *workers_to_try, const char *uri,
 
     evhttp_add_header(request->output_headers, "Content-Type",
                       "application/json");
-    evhttp_add_header(request->output_headers, "Connection", "close");
     evbuffer_add(request->output_buffer, data, data_size);
 
     auto connection = evhttp_connection_base_new(

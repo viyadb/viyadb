@@ -29,6 +29,8 @@ namespace db {
 class Dimension;
 class Metric;
 class Table;
+class SegmentBase;
+
 } // namespace db
 } // namespace viya
 
@@ -92,19 +94,42 @@ private:
   const db::Table &table_;
 };
 
-class CreateSegment : public FunctionGenerator {
+class UpsertContextDefs : public CodeGenerator {
 public:
-  CreateSegment(Compiler &compiler, const db::Table &table)
-      : FunctionGenerator(compiler), table_(table) {}
-
-  CreateSegment(const CreateSegment &other) = delete;
+  UpsertContextDefs(const db::Table &table) : table_(table) {}
+  UpsertContextDefs(const UpsertContextDefs &other) = delete;
 
   Code GenerateCode() const;
-  db::CreateSegmentFn Function();
+
+private:
+  bool AddOptimize() const;
+  bool HasTimeDimension() const;
+  Code UpsertContextStruct() const;
+  Code ResetFunctionCode() const;
+  Code OptimizeFunctionCode() const;
 
 private:
   const db::Table &table_;
 };
+
+using UpsertContextFn = void *(*)(const db::Table &table);
+using CreateSegmentFn = db::SegmentBase *(*)();
+
+class StoreFunctions : public FunctionGenerator {
+public:
+  StoreFunctions(Compiler &compiler, const db::Table &table)
+      : FunctionGenerator(compiler), table_(table) {}
+  StoreFunctions(const StoreFunctions &other) = delete;
+
+  Code GenerateCode() const;
+
+  CreateSegmentFn CreateSegmentFunction();
+  UpsertContextFn UpsertContextFunction();
+
+private:
+  const db::Table &table_;
+};
+
 } // namespace codegen
 } // namespace viya
 

@@ -58,8 +58,7 @@ Code RollupReset::GenerateCode() const {
         auto &rollup_rule = rollup_rules[rule_idx];
         auto after = rollup_rule.after();
 
-        code << prefix_ << "rollup_b" << dim_idx << "_"
-             << std::to_string(rule_idx)
+        code << "rollup_b" << dim_idx << "_" << std::to_string(rule_idx)
              << " = util::Duration(static_cast<util::TimeUnit>("
              << std::to_string(static_cast<int>(after.time_unit())) << "), "
              << std::to_string(after.count()) << ").add_to((uint32_t) "
@@ -94,5 +93,6 @@ Code TimestampRollup::GenerateCode() const {
   }
   return code;
 }
+
 } // namespace codegen
 } // namespace viya

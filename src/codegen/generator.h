@@ -34,6 +34,10 @@ public:
     headers_.insert(headers_.end(), headers.begin(), headers.end());
   }
 
+  void AddNamespaces(std::vector<std::string> namespaces) {
+    namespaces_.insert(namespaces_.end(), namespaces.begin(), namespaces.end());
+  }
+
   template <typename T> Code &operator<<(const T &v) {
     body_ << v;
     return *this;
@@ -42,6 +46,7 @@ public:
   Code &operator<<(const Code &c) {
     body_ << c.body_.str();
     AddHeaders(c.headers_);
+    AddNamespaces(c.namespaces_);
     return *this;
   }
 
@@ -50,6 +55,7 @@ public:
 private:
   std::ostringstream body_;
   std::vector<std::string> headers_;
+  std::vector<std::string> namespaces_;
 };
 
 class CodeGenerator {

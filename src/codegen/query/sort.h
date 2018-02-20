@@ -35,6 +35,7 @@ public:
 private:
   Code &code_;
 };
+
 } // namespace codegen
 } // namespace viya
 

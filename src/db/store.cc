@@ -25,7 +25,8 @@ namespace db {
 namespace cg = viya::codegen;
 
 SegmentStore::SegmentStore(Database &database, Table &table) {
-  create_segment_ = cg::CreateSegment(database.compiler(), table).Function();
+  create_segment_ =
+      cg::StoreFunctions(database.compiler(), table).CreateSegmentFunction();
 }
 
 SegmentStore::~SegmentStore() {

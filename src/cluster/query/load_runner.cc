@@ -29,8 +29,10 @@ namespace cluster {
 namespace query {
 
 LoadQueryRunner::LoadQueryRunner(Controller &controller,
-                                 WorkersStates &workers_states)
-    : controller_(controller), workers_states_(workers_states) {}
+                                 WorkersStates &workers_states,
+                                 query::RowOutput &output)
+    : controller_(controller), workers_states_(workers_states),
+      output_(output) {}
 
 void LoadQueryRunner::Run(const LoadQuery *load_query) {
 
@@ -52,6 +54,9 @@ void LoadQueryRunner::Run(const LoadQuery *load_query) {
     http_client.Send(std::vector<std::string>{controller_id}, "/load", data);
   }
   http_client.Await();
+
+  output_.Start();
+  output_.Flush();
 }
 
 } // namespace query

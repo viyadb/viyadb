@@ -16,6 +16,7 @@
 
 #include "db/table.h"
 #include "codegen/db/metadata.h"
+#include "codegen/db/store.h"
 #include "db/column.h"
 #include "db/database.h"
 #include "db/store.h"
@@ -84,6 +85,10 @@ Table::Table(const util::Config &config, Database &database)
   }
 
   store_ = new SegmentStore(database, *this);
+
+  auto upsert_ctx =
+      cg::StoreFunctions(database_.compiler(), *this).UpsertContextFunction();
+  upsert_ctx_ = upsert_ctx(*this);
 
   if (config.exists("watch")) {
     database_.watcher().AddWatch(config.sub("watch"), this);

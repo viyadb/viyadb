@@ -24,8 +24,10 @@
 
 namespace viya {
 namespace input {
+
 class LoaderDesc;
-}
+
+} // namespace input
 } // namespace viya
 
 namespace viya {
@@ -71,17 +73,17 @@ public:
   UpsertFn Function();
 
 private:
-  Code UpsertContextCode() const;
+  Code LoaderContextCode() const;
+  Code OptimizeCode() const;
   Code SetupFunctionCode() const;
   Code CardinalityProtection() const;
   Code PartitionFilter() const;
   bool AddOptimize() const;
-  bool HasTimeDimension() const;
-  Code OptimizeFunctionCode() const;
 
 private:
   const input::LoaderDesc &desc_;
 };
+
 } // namespace codegen
 } // namespace viya
 

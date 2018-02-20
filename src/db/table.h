@@ -73,7 +73,6 @@ public:
   const std::vector<CardinalityGuard> &cardinality_guards() const {
     return cardinality_guards_;
   }
-  void set_upsert_ctx(void *upsert_ctx) { upsert_ctx_ = upsert_ctx; }
   void *upsert_ctx() { return upsert_ctx_; }
 
   void PrintMetadata(std::string &);
