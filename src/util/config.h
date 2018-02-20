@@ -46,7 +46,8 @@ public:
   void set_sub(const std::string &key, Config &sub);
 
   std::string str(const std::string &key) const;
-  std::string str(const std::string &key, const std::string &default_value) const;
+  std::string str(const std::string &key,
+                  const std::string &default_value) const;
   std::vector<std::string> strlist(const std::string &key) const;
   std::vector<std::string>
   strlist(const std::string &key, std::vector<std::string> default_value) const;
