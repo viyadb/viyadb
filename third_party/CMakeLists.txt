@@ -18,8 +18,11 @@ add_subdirectory(CRoaring)
 install(FILES
   CRoaring/cpp/roaring.hh
   CRoaring/cpp/roaring64map.hh
-  json/src/json.hpp
   DESTINATION include)
+
+install(FILES
+  json/include/nlohmann/json_fwd.hpp
+  DESTINATION include/nlohmann)
 
 install(DIRECTORY fmt/fmt
   DESTINATION include
