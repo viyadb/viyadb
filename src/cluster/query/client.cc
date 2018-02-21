@@ -109,10 +109,12 @@ void WorkersClient::Send(WorkersToTry *workers_to_try, const char *uri,
 
     evhttp_add_header(request->output_headers, "Content-Type",
                       "application/json");
+    evhttp_add_header(request->output_headers, "Connection", "keep-alive");
     evbuffer_add(request->output_buffer, data, data_size);
 
     auto connection = evhttp_connection_base_new(
         event_base_, nullptr, host.c_str(), std::atoi(port.c_str()));
+    evhttp_connection_set_timeout(connection, 600);
     evhttp_connection_set_closecb(connection, on_connection_closed, this);
     connections_.push_back(connection);
 

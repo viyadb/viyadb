@@ -31,8 +31,11 @@ while IFS="" read -r -e -d $'\n' -p 'ViyaDB> ' query; do
     http_code=${res%-*}
     time_secs=${res#*-}
     if [ $http_code -eq 200 ]; then
-      cat $tmpfile | column -s $'\t' -t
+      echo
+      (head -1 $tmpfile; head -1 $tmpfile | sed 's/\S/-/g'; tail +2 $tmpfile) | column -s $'\t' -t
+      echo
       echo "Time taken: ${time_secs} secs"
+      echo
     else
       echo -n "ERROR: "
       echo -n $(cat $tmpfile); echo

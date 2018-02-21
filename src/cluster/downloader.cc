@@ -27,6 +27,8 @@ std::string S3Downloader::Download(const std::string &path) const {
   char tmpdir[] = "/tmp/viyadb-download.XXXXXX";
   std::string target_path(mkdtemp(tmpdir));
 
+  LOG(INFO) << "Fetching " << path << " into " << target_path;
+
   // This may seem silly to call external AWS CLI binary instead of using AWS
   // SDK,
   // but according to performance tests this command beats any AWS SDK:
@@ -52,7 +54,6 @@ std::string FSDownloader::Download(const std::string &path) const {
 }
 
 std::string Downloader::Download(const std::string &path) const {
-  LOG(INFO) << "Fetching " << path;
   if (path.rfind("s3:", 0) == 0) {
     return s3_downloader_.Download(path);
   }

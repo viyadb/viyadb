@@ -88,7 +88,7 @@ Compiler::Compiler(const util::Config &config) {
     "" // This will hold the target .so file path
   };
 
-  path_ = config.str("state_dir", "/tmp/viyadb") + "/codegen";
+  path_ = config.str("state_dir") + "/codegen";
   fs::create_directories(fs::path(path_));
 }
 

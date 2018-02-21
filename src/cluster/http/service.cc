@@ -36,6 +36,7 @@ Service::Service(Controller &controller)
   server_.config.port = controller.cluster_config().num("http_port", 5555);
   server_.config.reuse_address = true;
   server_.config.thread_pool_size = 4;
+  server_.config.timeout_content = 600;
 }
 
 void Service::SendError(ResponsePtr response, const std::string &error) {

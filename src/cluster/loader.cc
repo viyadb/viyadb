@@ -38,7 +38,7 @@ namespace fs = boost::filesystem;
 namespace bi = boost::iostreams;
 
 void DeleteFile(const std::string &file) {
-  DLOG(INFO) << "Deleting file: " << file;
+  LOG(INFO) << "Deleting " << file;
   fs::remove(file);
 }
 
@@ -143,8 +143,14 @@ void Loader::SendRequest(const std::string &worker_id,
 }
 
 std::string Loader::ExtractFiles(const std::string &path) {
-  auto tmpfile = fs::temp_directory_path() / fs::unique_path();
-  DLOG(INFO) << "Extracting: " << path << " to: " << tmpfile.string();
+  char tmpfile[] = "/tmp/viyadb-data.XXXXXX";
+  auto fd = mkstemp(tmpfile);
+  if (fd == -1) {
+    throw std::runtime_error("Can't create temporary file!");
+  }
+  close(fd);
+
+  LOG(INFO) << "Extracting " << path << " into " << tmpfile;
 
   std::vector<fs::path> files;
   ListFiles(path, std::vector<std::string>{".gz", ".tsv", ".csv"}, files);
@@ -158,14 +164,14 @@ std::string Loader::ExtractFiles(const std::string &path) {
     }
     in.push(infile);
 
-    std::ofstream outfile(tmpfile.string(),
+    std::ofstream outfile(tmpfile,
                           std::ios_base::out | std::ios_base::binary |
                               std::ios_base::app);
     bi::filtering_streambuf<bi::output> out;
     out.push(outfile);
     bi::copy(in, out);
   }
-  return tmpfile.string();
+  return tmpfile;
 }
 
 void Loader::ListFiles(const std::string &path,
