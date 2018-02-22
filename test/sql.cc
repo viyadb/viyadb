@@ -168,8 +168,39 @@ TEST_F(SqlEvents, TopN) {
   sql_driver.Run(query, &output);
 
   std::vector<query::MemoryRowOutput::Row> expected = {
-      {"KZ", "5"}, {"AZ", "1.1"}, {"CH", "1.1"}, {"IL", "1.01"}, {"RU", "1"},
-  };
+      {"KZ", "5"}, {"AZ", "1.1"}, {"CH", "1.1"}, {"IL", "1.01"}, {"RU", "1"}};
+
+  EXPECT_EQ(expected, output.rows());
+}
+
+TEST_F(SqlEvents, LimitOffset) {
+  LoadSortEvents();
+
+  query::MemoryRowOutput output;
+  sql::Driver sql_driver(db);
+
+  std::istringstream query("SELECT country,revenue FROM events ORDER BY "
+                           "revenue DESC, country LIMIT 2, 3");
+  sql_driver.Run(query, &output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {
+      {"CH", "1.1"}, {"IL", "1.01"}, {"RU", "1"}};
+
+  EXPECT_EQ(expected, output.rows());
+}
+
+TEST_F(SqlEvents, LimitOffset2) {
+  LoadSortEvents();
+
+  query::MemoryRowOutput output;
+  sql::Driver sql_driver(db);
+
+  std::istringstream query("SELECT country,revenue FROM events ORDER BY "
+                           "revenue DESC, country LIMIT 3 OFFSET 2");
+  sql_driver.Run(query, &output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {
+      {"CH", "1.1"}, {"IL", "1.01"}, {"RU", "1"}};
 
   EXPECT_EQ(expected, output.rows());
 }

@@ -57,6 +57,7 @@ ORDER           { return token::ORDER; }
 ASC             { return token::ASC; }
 DESC            { return token::DESC; }
 LIMIT           { return token::LIMIT; }
+OFFSET          { return token::OFFSET; }
 AND             { return token::AND; }
 OR              { return token::OR; }
 NOT             { return token::NOT; }

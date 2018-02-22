@@ -70,3 +70,42 @@ TEST_F(SelectEvents, QueryWithHeader) {
 
   EXPECT_EQ(expected, actual);
 }
+
+TEST_F(SelectEvents, QueryWithLimit) {
+  LoadEvents();
+
+  query::MemoryRowOutput output;
+  db.Query(
+      std::move(util::Config(json{{"type", "select"},
+                                  {"table", "events"},
+                                  {"dimensions", {"event_name", "country"}},
+                                  {"metrics", {"revenue"}},
+                                  {"limit", 2}})),
+      output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {
+      {"purchase", "US", "0.1"}, {"purchase", "US", "1.1"}};
+
+  auto actual = output.rows();
+
+  EXPECT_EQ(expected, actual);
+}
+
+TEST_F(SelectEvents, QueryWithSkip) {
+  LoadEvents();
+
+  query::MemoryRowOutput output;
+  db.Query(
+      std::move(util::Config(json{{"type", "select"},
+                                  {"table", "events"},
+                                  {"dimensions", {"event_name", "country"}},
+                                  {"metrics", {"revenue"}},
+                                  {"skip", 2}})),
+      output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {{"donate", "US", "5"}};
+
+  auto actual = output.rows();
+
+  EXPECT_EQ(expected, actual);
+}

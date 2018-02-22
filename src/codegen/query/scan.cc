@@ -91,6 +91,7 @@ void ScanVisitor::Visit(query::SelectQuery *query) {
                                         query->metric_cols().size())
         << ");\n";
   code_ << "util::Format fmt;\n";
+  code_ << "size_t row_index = 0;\n";
   code_ << "output.Start();\n";
 
   // Print header if requested:
@@ -98,6 +99,8 @@ void ScanVisitor::Visit(query::SelectQuery *query) {
   query->Accept(header_gen);
 
   IterationStart(query);
+
+  code_ << "if (skip > 0 && row_index++ < skip) continue;\n";
 
   // Output dimensions:
   for (auto &dim_col : query->dimension_cols()) {

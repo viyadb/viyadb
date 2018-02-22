@@ -39,7 +39,7 @@ char* dup(const char* str) {
 
 /* Tokens */
 %token TOK_EOF 0 "end of file"
-%token SELECT SEARCH FROM WHERE BY ORDER HAVING ASC DESC LIMIT
+%token SELECT SEARCH FROM WHERE BY ORDER HAVING ASC DESC LIMIT OFFSET
 %token AND OR NOT NE LE GE IN BETWEEN SHOW TABLES WORKERS
 %token COPY WITH FORMAT TSV
 %token <sval> IDENTIFIER STRING FLOATVAL INTVAL
@@ -56,8 +56,8 @@ char* dup(const char* str) {
 
 /* Non-terminal types */
 %type <stmt> statement select_statement show_statement copy_statement
-%type <sval> table_name column_name string_literal filter_literal num_literal limit_opt copy_format show_what
-%type <jsonval> select_cols select_col filter_opt filter comp_filter relop_filter filter_literals
+%type <sval> table_name column_name string_literal filter_literal num_literal copy_format show_what
+%type <jsonval> select_cols select_col filter_opt filter comp_filter relop_filter filter_literals limit_opt
 %type <jsonval> having_opt orderby_opt orderby_cols orderby_col copy_opt copy_opts copy_opts_opt copy_source
 %type <jsonval> copy_cols_opt copy_cols
 %type <bval> order_opt
@@ -103,7 +103,12 @@ select_statement: SELECT select_cols FROM table_name filter_opt having_opt order
                     if ($5 != nullptr) { d["filter"] = *$5; delete $5; }
                     if ($6 != nullptr) { d["having"] = *$6; delete $6; }
                     if ($7 != nullptr) { d["sort"] = *$7; delete $7; }
-                    if ($8 != nullptr) { d["limit"] = atoi($8); delete[] $8; }
+                    if ($8 != nullptr) {
+                      for (auto it = $8->begin(); it != $8->end(); ++it) {
+                        d[it.key()] = it.value();
+                      }
+                      delete $8;
+                    }
                   }
                 | SELECT SEARCH '(' column_name ',' string_literal ')' FROM table_name filter_opt limit_opt {
                     $$ = new Statement(Statement::Type::QUERY);
@@ -114,7 +119,12 @@ select_statement: SELECT select_cols FROM table_name filter_opt having_opt order
                     d["term"] = $6; delete[] $6;
                     d["table"] = $9; delete[] $9;
                     if ($10 != nullptr) { d["filter"] = *$10; delete $10; }
-                    if ($11 != nullptr) { d["limit"] = atoi($11); delete[] $11; }
+                    if ($11 != nullptr) {
+                      for (auto it = $11->begin(); it != $11->end(); ++it) {
+                        d[it.key()] = it.value();
+                      }
+                      delete $11;
+                    }
                   }
 ;
 
@@ -235,7 +245,9 @@ order_opt: ASC { $$ = true; }
          | DESC { $$ = false; }
          | /* empty */ { $$ = true; }
 
-limit_opt: LIMIT INTVAL { $$ = $2; }
+limit_opt: LIMIT INTVAL { $$ = new json {{"limit", atoi($2)}}; delete[] $2; }
+         | LIMIT INTVAL ',' INTVAL { $$ = new json {{"skip", atoi($2)}, {"limit", atoi($4)}}; delete[] $2;  delete[] $4; }
+         | LIMIT INTVAL OFFSET INTVAL { $$ = new json {{"limit", atoi($2)}, {"skip", atoi($4)}}; delete[] $2;  delete[] $4; }
          | /* empty */ { $$ = nullptr; }
 
 select_cols: select_col { $$ = new json(); $$->push_back(*$1); delete $1; }
