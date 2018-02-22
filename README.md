@@ -17,8 +17,8 @@ ViyaDB is in-memory columnar analytical data store, featuring:
  
 ## Quickstart
 
- * Learn about ViyaDB through [Mobile Attribution Tracking Sample](http://viyadb.com/samples/#mobile-attribution-tracking)
- * Read more on ViyaDB [Usage](http://viyadb.com/usage)
+ * Learn about ViyaDB through [Mobile Attribution Tracking Sample](http://viyadb.com/samples/#mobile-attribution-tracking).
+ * Read more on ViyaDB [Usage](http://viyadb.com/usage).
  * Deep dive into ViyaDB [Clustering Architecture](http://viyadb.com/clustering) and [Real-Time Analytics Infrastructure](http://viyadb.com/realtime) based on ViyaDB.
  
 For more information please visit the official Website: http://viyadb.com
