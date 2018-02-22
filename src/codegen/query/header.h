@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef VIYA_CODEGEN_QUERY_SORT_H_
-#define VIYA_CODEGEN_QUERY_SORT_H_
+#ifndef VIYA_CODEGEN_QUERY_HEADER_H_
+#define VIYA_CODEGEN_QUERY_HEADER_H_
 
 #include "codegen/generator.h"
 #include "query/query.h"
@@ -25,11 +25,13 @@ namespace codegen {
 
 namespace query = viya::query;
 
-class SortVisitor : public query::QueryVisitor {
+class HeaderGenerator : public query::QueryVisitor {
 public:
-  SortVisitor(Code &code) : code_(code) {}
+  HeaderGenerator(Code &code) : code_(code) {}
 
+  void Visit(query::SelectQuery *query) override;
   void Visit(query::AggregateQuery *query) override;
+  void Visit(query::SearchQuery *query) override;
 
 private:
   Code &code_;
@@ -38,4 +40,4 @@ private:
 } // namespace codegen
 } // namespace viya
 
-#endif // VIYA_CODEGEN_QUERY_SORT_H_
+#endif // VIYA_CODEGEN_QUERY_HEADER_H_

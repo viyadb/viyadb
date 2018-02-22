@@ -38,10 +38,10 @@ class FilterArgsPacker : public query::FilterVisitor {
 public:
   FilterArgsPacker(const db::Table &table) : table_(table) {}
 
-  void Visit(const query::RelOpFilter *filter);
-  void Visit(const query::InFilter *filter);
-  void Visit(const query::CompositeFilter *filter);
-  void Visit(const query::EmptyFilter *filter);
+  void Visit(const query::RelOpFilter *filter) override;
+  void Visit(const query::InFilter *filter) override;
+  void Visit(const query::CompositeFilter *filter) override;
+  void Visit(const query::EmptyFilter *filter) override;
 
   const std::vector<db::AnyNum> &args() const { return args_; }
 

@@ -16,6 +16,7 @@
 
 #include "codegen/query/post_agg.h"
 #include "codegen/query/filter.h"
+#include "codegen/query/header.h"
 #include "codegen/query/sort.h"
 #include "db/column.h"
 
@@ -65,19 +66,8 @@ void PostAggVisitor::Visit(query::AggregateQuery *query) {
   }
 
   // Print header if requested:
-  if (query->header()) {
-    for (auto &dim_col : query->dimension_cols()) {
-      code_ << "row[" << std::to_string(dim_col.index())
-            << "] = table.dimension(" << std::to_string(dim_col.dim()->index())
-            << ")->name();\n";
-    }
-    for (auto &metric_col : query->metric_cols()) {
-      code_ << "row[" << std::to_string(metric_col.index())
-            << "] = table.metric("
-            << std::to_string(metric_col.metric()->index()) << ")->name();\n";
-    }
-    code_ << "output.Send(row);\n";
-  }
+  HeaderGenerator header_gen(code_);
+  query->Accept(header_gen);
 
   // Iterate on agg_map, and materialize output records:
   code_ << "for (; agg_it != agg_end; ++agg_it) {\n";
@@ -91,26 +81,29 @@ void PostAggVisitor::Visit(query::AggregateQuery *query) {
     code_ << " if (!r) continue;\n";
   }
 
+  // Output dimensions:
   for (auto &dim_col : query->dimension_cols()) {
-    auto dimension = dim_col.dim();
-    auto dim_idx = std::to_string(dimension->index());
-    auto col_idx = std::to_string(dim_col.index());
+    auto dim = dim_col.dim();
+    auto dim_idx = std::to_string(dim->index());
 
-    if (dimension->dim_type() == db::Dimension::DimType::STRING) {
-      code_ << " dict" << dim_idx << "->lock().lock_shared();\n";
-      code_ << " row[" << col_idx << "] = dict" << dim_idx
-            << "->c2v()[agg_it->first._" << dim_idx << "];\n";
+    if (dim->dim_type() == db::Dimension::DimType::STRING) {
+      code_ << "dict" << dim_idx << "->lock().lock_shared();\n";
+      code_ << "row[" << std::to_string(dim_col.index()) << "] = dict"
+            << dim_idx << "->c2v()[agg_it->first._" << dim_idx << "];\n";
       code_ << " dict" << dim_idx << "->lock().unlock_shared();\n";
-    } else if (dimension->dim_type() == db::Dimension::DimType::TIME &&
+
+    } else if (dim->dim_type() == db::Dimension::DimType::TIME &&
                !dim_col.format().empty()) {
-      code_ << " row[" << col_idx << "] = fmt.date(\"" << dim_col.format()
-            << "\", agg_it->first._" << dim_idx << ");\n";
-    } else if (dimension->dim_type() == db::Dimension::DimType::BOOLEAN) {
-      code_ << " row[" << col_idx << "] = agg_it->first._" << dim_idx
-            << "? \"true\" : \"false\";\n";
+      code_ << "row[" << std::to_string(dim_col.index()) << "] = fmt.date(\""
+            << dim_col.format() << "\", agg_it->first._" << dim_idx << ");\n";
+
+    } else if (dim->dim_type() == db::Dimension::DimType::BOOLEAN) {
+      code_ << "row[" << std::to_string(dim_col.index())
+            << "] = agg_it->first._" << dim_idx << "? \"true\" : \"false\";\n";
+
     } else {
-      code_ << " row[" << col_idx << "] = fmt.num(agg_it->first._" << dim_idx
-            << ");\n";
+      code_ << "row[" << std::to_string(dim_col.index())
+            << "] = fmt.num(agg_it->first._" << dim_idx << ");\n";
     }
   }
 
@@ -127,15 +120,17 @@ void PostAggVisitor::Visit(query::AggregateQuery *query) {
   for (auto &metric_col : query->metric_cols()) {
     auto metric = metric_col.metric();
     auto metric_idx = std::to_string(metric->index());
-    code_ << " row[" << std::to_string(metric_col.index())
-          << "] = fmt.num(agg_it->second._" << metric_idx;
+    code_ << "row[" << std::to_string(metric_col.index()) << "]"
+          << " = fmt.num(agg_it->second._" << metric_idx;
     if (metric->agg_type() == db::Metric::AggregationType::AVG) {
-      code_ << "/(double)agg_it->second._" << count_field;
+      code_ << "/(double) agg_it->second._" << count_field;
     } else if (metric->agg_type() == db::Metric::AggregationType::BITSET) {
       code_ << ".cardinality()";
     }
     code_ << ");\n";
   }
+
+  // Sort, optionally:
   if (sort_columns.empty()) {
     code_ << " output.Send(row);\n";
     code_ << " ++stats.output_recs;\n";
@@ -150,11 +145,15 @@ void PostAggVisitor::Visit(query::AggregateQuery *query) {
   code_ << "output.Flush();\n";
 }
 
-void PostAggVisitor::Visit(query::SearchQuery *query __attribute__((unused))) {
+void PostAggVisitor::Visit(query::SearchQuery *query) {
 #ifdef NDEBUG
   code_ << "// ========= post aggregation ==========\n";
 #endif
   code_ << "output.Start();\n";
+
+  // Print header if requested:
+  HeaderGenerator header_gen(code_);
+  query->Accept(header_gen);
 
   code_ << "output.SendAsCol(values);\n";
   code_ << "stats.output_recs = values.size();\n";
@@ -164,5 +163,6 @@ void PostAggVisitor::Visit(query::SearchQuery *query __attribute__((unused))) {
 
   code_ << "output.Flush();\n";
 }
+
 } // namespace codegen
 } // namespace viya

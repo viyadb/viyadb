@@ -29,8 +29,8 @@ class PostAggVisitor : public query::QueryVisitor {
 public:
   PostAggVisitor(Code &code) : code_(code) {}
 
-  void Visit(query::AggregateQuery *query);
-  void Visit(query::SearchQuery *query);
+  void Visit(query::AggregateQuery *query) override;
+  void Visit(query::SearchQuery *query) override;
 
 private:
   Code &code_;

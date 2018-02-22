@@ -29,13 +29,16 @@ class Database;
 class Dimension;
 class Metric;
 class Table;
+
 } // namespace db
 } // namespace viya
 
 namespace viya {
 namespace util {
+
 class Config;
-}
+
+} // namespace query
 } // namespace viya
 
 namespace viya {
@@ -64,14 +67,16 @@ private:
 
 class TableQuery : public Query {
 public:
-  TableQuery(db::Table &table) : table_(table) {}
+  TableQuery(const util::Config &config, db::Table &table);
   virtual ~TableQuery() {}
   virtual void Accept(class QueryVisitor &visitor) = 0;
 
   db::Table &table() { return table_; }
+  bool header() const { return header_; }
 
 private:
   db::Table &table_;
+  bool header_;
 };
 
 class FilterBasedQuery : public TableQuery {
@@ -144,11 +149,11 @@ private:
   const db::Metric *metric_;
 };
 
-class AggregateQuery : public FilterBasedQuery {
+class SelectQuery : public FilterBasedQuery {
 public:
-  AggregateQuery(const util::Config &config, db::Table &table);
+  SelectQuery(const util::Config &config, db::Table &table);
 
-  virtual ~AggregateQuery() { delete having_; }
+  virtual ~SelectQuery() {}
 
   const std::vector<DimOutputColumn> &dimension_cols() const {
     return dimension_cols_;
@@ -169,25 +174,33 @@ public:
     return std::move(columns);
   }
 
-  const std::vector<SortColumn> &sort_cols() const { return sort_cols_; }
-
   size_t skip() const { return skip_; }
 
   size_t limit() const { return limit_; }
-
-  bool header() const { return header_; }
-
-  const Filter *having() const { return having_; }
 
   void Accept(class QueryVisitor &visitor);
 
 private:
   std::vector<DimOutputColumn> dimension_cols_;
   std::vector<MetricOutputColumn> metric_cols_;
-  std::vector<SortColumn> sort_cols_;
   size_t skip_;
   size_t limit_;
-  bool header_;
+};
+
+class AggregateQuery : public SelectQuery {
+public:
+  AggregateQuery(const util::Config &config, db::Table &table);
+
+  virtual ~AggregateQuery() { delete having_; }
+
+  const Filter *having() const { return having_; }
+
+  const std::vector<SortColumn> &sort_cols() const { return sort_cols_; }
+
+  void Accept(class QueryVisitor &visitor);
+
+private:
+  std::vector<SortColumn> sort_cols_;
   Filter *having_;
 };
 
@@ -215,6 +228,7 @@ public:
 
 class QueryVisitor {
 public:
+  virtual void Visit(SelectQuery *query __attribute__((unused))){};
   virtual void Visit(AggregateQuery *query __attribute__((unused))){};
   virtual void Visit(SearchQuery *query __attribute__((unused))){};
   virtual void Visit(ShowTablesQuery *query __attribute__((unused))){};

@@ -23,10 +23,13 @@
 namespace viya {
 namespace query {
 
+TableQuery::TableQuery(const util::Config &config, db::Table &table)
+    : table_(table), header_(config.boolean("header", false)) {}
+
 FilterBasedQuery::FilterBasedQuery(const util::Config &config, db::Table &table)
-    : TableQuery(table) {
+    : TableQuery(config, table) {
   FilterFactory filter_factory;
-  filter_ = filter_factory.Create(config);
+  filter_ = filter_factory.Create(config.sub("filter", true));
 }
 
 DimOutputColumn::DimOutputColumn(const util::Config &config,
@@ -41,10 +44,9 @@ DimOutputColumn::DimOutputColumn(const util::Config &config,
   }
 }
 
-AggregateQuery::AggregateQuery(const util::Config &config, db::Table &table)
-    : FilterBasedQuery(config.sub("filter", true), table),
-      skip_(config.num("skip", 0)), limit_(config.num("limit", 0)),
-      header_(config.boolean("header", false)), having_(nullptr) {
+SelectQuery::SelectQuery(const util::Config &config, db::Table &table)
+    : FilterBasedQuery(config, table), skip_(config.num("skip", 0)),
+      limit_(config.num("limit", 0)) {
 
   size_t output_idx = 0;
 
@@ -77,6 +79,42 @@ AggregateQuery::AggregateQuery(const util::Config &config, db::Table &table)
       metric_cols_.emplace_back(table.metric(metric_name), output_idx++);
     }
   }
+}
+
+void SelectQuery::Accept(QueryVisitor &visitor) { visitor.Visit(this); }
+
+AggregateQuery::AggregateQuery(const util::Config &config, db::Table &table)
+    : SelectQuery(config, table), having_(nullptr) {
+
+  if (config.exists("sort")) {
+    for (auto &sort_conf : config.sublist("sort")) {
+      auto sort_column = sort_conf.str("column");
+      auto col = table.column(sort_column);
+      bool ascending = sort_conf.boolean("ascending", false);
+
+      // Find index of sort column in the result row:
+      int col_idx = -1;
+      for (auto &dim_col : dimension_cols()) {
+        if (dim_col.dim() == col) {
+          col_idx = dim_col.index();
+          break;
+        }
+      }
+      if (col_idx == -1) {
+        for (auto &metric_col : metric_cols()) {
+          if (metric_col.metric() == col) {
+            col_idx = metric_col.index();
+            break;
+          }
+        }
+      }
+      if (col_idx == -1) {
+        throw std::invalid_argument("Sort column '" + sort_column +
+                                    "' is not selected");
+      }
+      sort_cols_.push_back(SortColumn(col, col_idx, ascending));
+    }
+  }
 
   if (config.exists("having")) {
     FilterFactory filter_factory;
@@ -93,42 +131,12 @@ AggregateQuery::AggregateQuery(const util::Config &config, db::Table &table)
       }
     }
   }
-
-  if (config.exists("sort")) {
-    for (auto &sort_conf : config.sublist("sort")) {
-      auto sort_column = sort_conf.str("column");
-      auto col = table.column(sort_column);
-      bool ascending = sort_conf.boolean("ascending", false);
-
-      // Find index of sort column in the result row:
-      int col_idx = -1;
-      for (auto &dim_col : dimension_cols_) {
-        if (dim_col.dim() == col) {
-          col_idx = dim_col.index();
-          break;
-        }
-      }
-      if (col_idx == -1) {
-        for (auto &metric_col : metric_cols_) {
-          if (metric_col.metric() == col) {
-            col_idx = metric_col.index();
-            break;
-          }
-        }
-      }
-      if (col_idx == -1) {
-        throw std::invalid_argument("Sort column '" + sort_column +
-                                    "' is not selected");
-      }
-      sort_cols_.push_back(SortColumn(col, col_idx, ascending));
-    }
-  }
 }
 
 void AggregateQuery::Accept(QueryVisitor &visitor) { visitor.Visit(this); }
 
 SearchQuery::SearchQuery(const util::Config &config, db::Table &table)
-    : FilterBasedQuery(config.sub("filter", true), table),
+    : FilterBasedQuery(config, table),
       dimension_(table.dimension(config.str("dimension"))),
       term_(config.str("term")), limit_(config.num("limit", 0)) {}
 
@@ -148,6 +156,10 @@ Query *QueryFactory::Create(const util::Config &config,
   if (type == "search") {
     auto table = database.GetTable(config.str("table"));
     return new SearchQuery(config, *table);
+  }
+  if (type == "select") {
+    auto table = database.GetTable(config.str("table"));
+    return new SelectQuery(config, *table);
   }
   if (type == "show") {
     auto what = config.str("what");

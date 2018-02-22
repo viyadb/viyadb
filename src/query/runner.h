@@ -27,9 +27,13 @@ namespace query {
 
 namespace db = viya::db;
 
+using SelectQueryFn = void (*)(db::Table &, RowOutput &, QueryStats &,
+                               std::vector<db::AnyNum>, size_t, size_t);
+
 using AggQueryFn = void (*)(db::Table &, RowOutput &, QueryStats &,
                             std::vector<db::AnyNum>, size_t, size_t,
                             std::vector<db::AnyNum>);
+
 using SearchQueryFn = void (*)(db::Table &, RowOutput &, QueryStats &,
                                std::vector<db::AnyNum>, const std::string &,
                                size_t);
@@ -39,9 +43,10 @@ public:
   QueryRunner(db::Database &database, RowOutput &output)
       : database_(database), output_(output), stats_(database.statsd()) {}
 
-  void Visit(AggregateQuery *query);
-  void Visit(SearchQuery *query);
-  void Visit(ShowTablesQuery *query);
+  void Visit(SelectQuery *query) override;
+  void Visit(AggregateQuery *query) override;
+  void Visit(SearchQuery *query) override;
+  void Visit(ShowTablesQuery *query) override;
 
   const QueryStats &stats() const { return stats_; }
 

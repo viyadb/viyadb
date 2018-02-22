@@ -14,28 +14,33 @@
  * limitations under the License.
  */
 
-#ifndef VIYA_CODEGEN_QUERY_SORT_H_
-#define VIYA_CODEGEN_QUERY_SORT_H_
+#ifndef VIYA_CODEGEN_QUERY_SELECT_QUERY_H_
+#define VIYA_CODEGEN_QUERY_SELECT_QUERY_H_
 
 #include "codegen/generator.h"
 #include "query/query.h"
+#include "query/runner.h"
 
 namespace viya {
 namespace codegen {
 
 namespace query = viya::query;
 
-class SortVisitor : public query::QueryVisitor {
+class SelectQueryGenerator : public FunctionGenerator {
 public:
-  SortVisitor(Code &code) : code_(code) {}
+  SelectQueryGenerator(Compiler &compiler, query::SelectQuery &query)
+      : FunctionGenerator(compiler), query_(query) {}
 
-  void Visit(query::AggregateQuery *query) override;
+  SelectQueryGenerator(const SelectQueryGenerator &other) = delete;
+
+  Code GenerateCode() const;
+  query::SelectQueryFn Function();
 
 private:
-  Code &code_;
+  query::SelectQuery &query_;
 };
 
 } // namespace codegen
 } // namespace viya
 
-#endif // VIYA_CODEGEN_QUERY_SORT_H_
+#endif // VIYA_CODEGEN_QUERY_SELECT_QUERY_H_

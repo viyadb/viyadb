@@ -24,7 +24,9 @@
 namespace util = viya::util;
 namespace query = viya::query;
 
-TEST_F(InappEvents, AggregationQuery) {
+using AggregationEvents = InappEvents;
+
+TEST_F(AggregationEvents, BasicQuery) {
   LoadEvents();
 
   query::MemoryRowOutput output;
@@ -47,7 +49,27 @@ TEST_F(InappEvents, AggregationQuery) {
   EXPECT_EQ(expected, actual);
 }
 
-TEST_F(InappEvents, HavingQuery) {
+TEST_F(AggregationEvents, QueryWithHeader) {
+  LoadEvents();
+
+  query::MemoryRowOutput output;
+  db.Query(
+      std::move(util::Config(json{
+          {"type", "aggregate"},
+          {"header", true},
+          {"table", "events"},
+          {"dimensions", {"country"}},
+          {"metrics", {"revenue"}},
+          {"filter", {{"op", "eq"}, {"column", "country"}, {"value", "US"}}}})),
+      output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {{"country", "revenue"},
+                                                       {"US", "6.2"}};
+  auto actual = output.rows();
+  EXPECT_EQ(expected, actual);
+}
+
+TEST_F(AggregationEvents, HavingQuery) {
   LoadEvents();
 
   query::MemoryRowOutput output;
@@ -66,7 +88,7 @@ TEST_F(InappEvents, HavingQuery) {
   EXPECT_EQ(expected, actual);
 }
 
-TEST_F(InappEvents, ComplexHavingQuery) {
+TEST_F(AggregationEvents, ComplexHavingQuery) {
   LoadEvents();
 
   query::MemoryRowOutput output;
@@ -90,7 +112,7 @@ TEST_F(InappEvents, ComplexHavingQuery) {
   EXPECT_EQ(expected, actual);
 }
 
-TEST_F(InappEvents, NoDimensions) {
+TEST_F(AggregationEvents, NoDimensions) {
   LoadEvents();
 
   query::MemoryRowOutput output;
@@ -112,7 +134,7 @@ TEST_F(InappEvents, NoDimensions) {
   EXPECT_EQ(expected, actual);
 }
 
-TEST_F(InappEvents, OutputColumnsOrder) {
+TEST_F(AggregationEvents, OutputColumnsOrder) {
   LoadEvents();
 
   query::MemoryRowOutput output;
@@ -138,7 +160,7 @@ TEST_F(InappEvents, OutputColumnsOrder) {
   EXPECT_EQ(expected, actual);
 }
 
-TEST_F(InappEvents, ColumnsOrderHaving) {
+TEST_F(AggregationEvents, ColumnsOrderHaving) {
   LoadEvents();
 
   query::MemoryRowOutput output;
@@ -159,7 +181,7 @@ TEST_F(InappEvents, ColumnsOrderHaving) {
   EXPECT_EQ(expected, actual);
 }
 
-TEST_F(InappEvents, MetricFilter) {
+TEST_F(AggregationEvents, MetricFilter) {
   LoadEvents();
 
   query::MemoryRowOutput output;
@@ -176,7 +198,7 @@ TEST_F(InappEvents, MetricFilter) {
   EXPECT_EQ(expected, output.rows());
 }
 
-TEST_F(InappEvents, NoFilter) {
+TEST_F(AggregationEvents, NoFilter) {
   LoadEvents();
 
   query::MemoryRowOutput output;
@@ -197,7 +219,7 @@ TEST_F(InappEvents, NoFilter) {
   EXPECT_EQ(expected, actual);
 }
 
-TEST_F(InappEvents, NoFilterHaving) {
+TEST_F(AggregationEvents, NoFilterHaving) {
   LoadEvents();
 
   query::MemoryRowOutput output;
@@ -215,7 +237,7 @@ TEST_F(InappEvents, NoFilterHaving) {
   EXPECT_EQ(expected, actual);
 }
 
-TEST_F(InappEvents, HavingExtraColumn) {
+TEST_F(AggregationEvents, HavingExtraColumn) {
   LoadEvents();
 
   query::MemoryRowOutput output;
@@ -231,7 +253,7 @@ TEST_F(InappEvents, HavingExtraColumn) {
       std::invalid_argument);
 }
 
-TEST_F(InappEvents, MissingValueEq) {
+TEST_F(AggregationEvents, MissingValueEq) {
   LoadEvents();
 
   query::MemoryRowOutput output;
@@ -248,7 +270,7 @@ TEST_F(InappEvents, MissingValueEq) {
   EXPECT_EQ(expected, output.rows());
 }
 
-TEST_F(InappEvents, MissingValueNe) {
+TEST_F(AggregationEvents, MissingValueNe) {
   LoadEvents();
 
   query::MemoryRowOutput output;

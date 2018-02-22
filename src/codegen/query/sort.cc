@@ -74,6 +74,5 @@ void SortVisitor::Visit(query::AggregateQuery *query) {
   }
 }
 
-void SortVisitor::Visit(query::SearchQuery *query __attribute__((unused))) {}
 } // namespace codegen
 } // namespace viya

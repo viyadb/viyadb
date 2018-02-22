@@ -30,12 +30,13 @@ class ScanVisitor : public query::QueryVisitor {
 public:
   ScanVisitor(Code &code) : code_(code) {}
 
-  void Visit(query::AggregateQuery *query);
-  void Visit(query::SearchQuery *query);
+  void Visit(query::SelectQuery *query) override;
+  void Visit(query::AggregateQuery *query) override;
+  void Visit(query::SearchQuery *query) override;
 
 private:
+  void UnpackArguments(query::FilterBasedQuery *query);
   void UnpackArguments(query::AggregateQuery *query);
-  void UnpackArguments(query::SearchQuery *query);
 
   void IterationStart(query::FilterBasedQuery *query);
   void IterationEnd();

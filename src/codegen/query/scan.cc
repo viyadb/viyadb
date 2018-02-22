@@ -18,23 +18,23 @@
 #include "codegen/db/rollup.h"
 #include "codegen/generator.h"
 #include "codegen/query/filter.h"
+#include "codegen/query/header.h"
 
 namespace viya {
 namespace codegen {
 
-void ScanVisitor::UnpackArguments(query::AggregateQuery *query) {
+void ScanVisitor::UnpackArguments(query::FilterBasedQuery *query) {
   FilterArgsUnpack filter_args(query->table(), query->filter(), "farg");
   code_ << filter_args.GenerateCode();
+}
+
+void ScanVisitor::UnpackArguments(query::AggregateQuery *query) {
+  UnpackArguments(static_cast<query::FilterBasedQuery *>(query));
 
   if (query->having() != nullptr) {
     FilterArgsUnpack having_args(query->table(), query->having(), "harg");
     code_ << having_args.GenerateCode();
   }
-}
-
-void ScanVisitor::UnpackArguments(query::SearchQuery *query) {
-  FilterArgsUnpack args_unpack(query->table(), query->filter(), "farg");
-  code_ << args_unpack.GenerateCode();
 }
 
 void ScanVisitor::IterationStart(query::FilterBasedQuery *query) {
@@ -70,11 +70,100 @@ void ScanVisitor::IterationEnd() {
   code_ << "}\n";
 }
 
-void ScanVisitor::Visit(query::AggregateQuery *query) {
-// Structures for aggragation in memory:
+void ScanVisitor::Visit(query::SelectQuery *query) {
 #ifdef NDEBUG
   code_ << "// ========= scan ==========\n";
 #endif
+  UnpackArguments(query);
+
+  for (auto &dim_col : query->dimension_cols()) {
+    auto dim = dim_col.dim();
+    auto dim_idx = std::to_string(dim->index());
+    if (dim->dim_type() == db::Dimension::DimType::STRING) {
+      code_ << "auto dict" << dim_idx
+            << " = static_cast<const db::StrDimension*>(table.dimension("
+            << dim_idx << "))->dict();\n";
+    }
+  }
+
+  code_ << "typedef std::vector<std::string> Row;\n";
+  code_ << "Row row(" << std::to_string(query->dimension_cols().size() +
+                                        query->metric_cols().size())
+        << ");\n";
+  code_ << "util::Format fmt;\n";
+  code_ << "output.Start();\n";
+
+  // Print header if requested:
+  HeaderGenerator header_gen(code_);
+  query->Accept(header_gen);
+
+  IterationStart(query);
+
+  // Output dimensions:
+  for (auto &dim_col : query->dimension_cols()) {
+    auto dim = dim_col.dim();
+    auto dim_idx = std::to_string(dim->index());
+
+    if (dim->dim_type() == db::Dimension::DimType::STRING) {
+      code_ << "dict" << dim_idx << "->lock().lock_shared();\n";
+      code_ << "row[" << std::to_string(dim_col.index()) << "] = dict"
+            << dim_idx << "->c2v()[tuple_dims._" << dim_idx << "];\n";
+      code_ << " dict" << dim_idx << "->lock().unlock_shared();\n";
+
+    } else if (dim->dim_type() == db::Dimension::DimType::TIME &&
+               !dim_col.format().empty()) {
+      code_ << "row[" << std::to_string(dim_col.index()) << "] = fmt.date(\""
+            << dim_col.format() << "\", tuple_dims._" << dim_idx << ");\n";
+
+    } else if (dim->dim_type() == db::Dimension::DimType::BOOLEAN) {
+      code_ << "row[" << std::to_string(dim_col.index()) << "] = tuple_dims._"
+            << dim_idx << "? \"true\" : \"false\";\n";
+
+    } else {
+      code_ << "row[" << std::to_string(dim_col.index())
+            << "] = fmt.num(tuple_dims._" << dim_idx << ");\n";
+    }
+  }
+
+  // Detect count column to divide by for calculating averages:
+  std::string count_field("count");
+  for (auto &metric_col : query->metric_cols()) {
+    if (metric_col.metric()->agg_type() == db::Metric::AggregationType::COUNT) {
+      count_field = std::to_string(metric_col.metric()->index());
+      break;
+    }
+  }
+
+  // Output metrics:
+  for (auto &metric_col : query->metric_cols()) {
+    auto metric = metric_col.metric();
+    auto metric_idx = std::to_string(metric->index());
+    code_ << "row[" << std::to_string(metric_col.index())
+          << "] = fmt.num(tuple_metrics._" << metric_idx;
+    if (metric->agg_type() == db::Metric::AggregationType::AVG) {
+      code_ << "/(double) tuple_metrics._" << count_field;
+    } else if (metric->agg_type() == db::Metric::AggregationType::BITSET) {
+      code_ << ".cardinality()";
+    }
+    code_ << ");\n";
+  }
+
+  code_ << " output.Send(row);\n";
+  code_ << " ++stats.output_recs;\n";
+
+  code_ << " if (limit > 0 && stats.output_recs >= limit) break;\n";
+
+  IterationEnd();
+
+  code_ << "output.Flush();\n";
+}
+
+void ScanVisitor::Visit(query::AggregateQuery *query) {
+#ifdef NDEBUG
+  code_ << "// ========= scan ==========\n";
+#endif
+
+  // Structures for aggragation in memory:
   code_ << "AggDimensions agg_dims;\n";
   code_ << "AggMetrics agg_metrics;\n";
   code_ << "std::unordered_map<AggDimensions,AggMetrics,AggDimensionsHasher> "
@@ -159,10 +248,13 @@ void ScanVisitor::Visit(query::SearchQuery *query) {
   code_ << "std::unordered_set<" << dim->num_type().cpp_type() << "> codes;\n";
   code_ << "std::vector<std::string> values;\n";
   code_ << "std::string check_value;\n";
+
   if (dim->dim_type() == db::Dimension::DimType::STRING) {
-    code_ << "auto dict = static_cast<const db::StrDimension*>(table.dimension("
+    code_ << "auto dict" << dim_idx
+          << " = static_cast<const db::StrDimension*>(table.dimension("
           << dim_idx << "))->dict();\n";
   }
+
   code_ << "util::Format fmt;\n";
 
   UnpackArguments(query);
@@ -170,13 +262,21 @@ void ScanVisitor::Visit(query::SearchQuery *query) {
   IterationStart(query);
 
   code_ << "if (codes.insert(tuple_dims._" << dim_idx << ").second) {\n";
+
   if (dim->dim_type() == db::Dimension::DimType::STRING) {
-    code_ << " dict->lock().lock_shared();\n";
-    code_ << " check_value = dict->c2v()[tuple_dims._" << dim_idx << "];\n";
-    code_ << " dict->lock().unlock_shared();\n";
+    code_ << "dict" << dim_idx << "->lock().lock_shared();\n";
+    code_ << "check_value = dict" << dim_idx << "->c2v()[tuple_dims._"
+          << dim_idx << "];\n";
+    code_ << " dict" << dim_idx << "->lock().unlock_shared();\n";
+
+  } else if (dim->dim_type() == db::Dimension::DimType::BOOLEAN) {
+    code_ << "check_value = tuple_dims._" << dim_idx
+          << "? \"true\" : \"false\";\n";
+
   } else {
-    code_ << " check_value = fmt.num(tuple_dims._" << dim_idx << ");\n";
+    code_ << "check_value = fmt.num(tuple_dims._" << dim_idx << ");\n";
   }
+
   code_ << " if (check_value.find(term) != std::string::npos) {\n";
   code_ << "   values.push_back(check_value);\n";
   code_ << "   if (limit > 0 && values.size() >= limit) break;\n";
@@ -187,5 +287,6 @@ void ScanVisitor::Visit(query::SearchQuery *query) {
 
   code_ << "stats.aggregated_recs = codes.size();\n";
 }
+
 } // namespace codegen
 } // namespace viya

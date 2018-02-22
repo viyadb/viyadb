@@ -49,6 +49,28 @@ TEST_F(SearchEvents, SearchQuery) {
   EXPECT_EQ(expected, actual);
 }
 
+TEST_F(SearchEvents, QueryWithHeader) {
+  LoadSearchEvents();
+
+  query::MemoryRowOutput output;
+  db.Query(std::move(util::Config(json{
+               {"type", "search"},
+               {"header", true},
+               {"table", "events"},
+               {"dimension", "event_name"},
+               {"term", "ref"},
+               {"filter",
+                {{"op", "gt"}, {"column", "revenue"}, {"value", "1.0"}}}})),
+           output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {{"event_name"},
+                                                       {"refund"}};
+
+  auto actual = output.rows();
+
+  EXPECT_EQ(expected, actual);
+}
+
 TEST_F(SearchEvents, SearchQueryLimit) {
   LoadSearchEvents();
 

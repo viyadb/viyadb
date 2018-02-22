@@ -18,6 +18,7 @@
 #include "codegen/query/agg_query.h"
 #include "codegen/query/filter.h"
 #include "codegen/query/search_query.h"
+#include "codegen/query/select_query.h"
 #include "db/table.h"
 
 namespace viya {
@@ -25,11 +26,29 @@ namespace query {
 
 namespace cg = viya::codegen;
 
+void QueryRunner::Visit(SelectQuery *query) {
+  stats_.OnBegin("select", query->table().name());
+
+  auto query_fn =
+      cg::SelectQueryGenerator(database_.compiler(), *query).Function();
+
+  stats_.OnCompile();
+
+  cg::FilterArgsPacker filter_args(query->table());
+  query->filter()->Accept(filter_args);
+
+  query_fn(query->table(), output_, stats_, filter_args.args(), query->skip(),
+           query->limit());
+  stats_.OnEnd();
+}
+
 void QueryRunner::Visit(AggregateQuery *query) {
   stats_.OnBegin("aggregate", query->table().name());
 
   auto query_fn =
       cg::AggQueryGenerator(database_.compiler(), *query).Function();
+
+  stats_.OnCompile();
 
   cg::FilterArgsPacker filter_args(query->table());
   query->filter()->Accept(filter_args);
@@ -38,8 +57,6 @@ void QueryRunner::Visit(AggregateQuery *query) {
   if (query->having() != nullptr) {
     query->having()->Accept(having_args);
   }
-
-  stats_.OnCompile();
 
   query_fn(query->table(), output_, stats_, filter_args.args(), query->skip(),
            query->limit(), having_args.args());
@@ -52,10 +69,10 @@ void QueryRunner::Visit(SearchQuery *query) {
   auto query_fn =
       cg::SearchQueryGenerator(database_.compiler(), *query).Function();
 
+  stats_.OnCompile();
+
   cg::FilterArgsPacker filter_args(query->table());
   query->filter()->Accept(filter_args);
-
-  stats_.OnCompile();
 
   query_fn(query->table(), output_, stats_, filter_args.args(), query->term(),
            query->limit());
