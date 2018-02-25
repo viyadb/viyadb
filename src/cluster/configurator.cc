@@ -21,6 +21,7 @@
 #include <cpr/cpr.h>
 #include <glog/logging.h>
 #include <nlohmann/json.hpp>
+#include <util/hostname.h>
 
 namespace viya {
 namespace cluster {
