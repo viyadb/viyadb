@@ -20,6 +20,7 @@
 #include <cpr/cpr.h>
 #include <glog/logging.h>
 #include <nlohmann/json.hpp>
+#include <util/hostname.h>
 
 namespace viya {
 namespace cluster {
@@ -30,13 +31,16 @@ Configurator::Configurator(const Controller &controller)
     : controller_(controller) {}
 
 void Configurator::ConfigureWorkers() {
+  auto hostname = util::get_hostname();
   for (auto &plans_it : controller_.tables_plans()) {
     auto &table_name = plans_it.first;
     auto &plan = plans_it.second;
     for (auto &replicas : plan.partitions()) {
       for (auto &placement : replicas) {
-        CreateTable(controller_.tables_configs().at(table_name),
-                    placement.hostname(), placement.port());
+        if (hostname == placement.hostname()) {
+          CreateTable(controller_.tables_configs().at(table_name),
+                      placement.hostname(), placement.port());
+        }
       }
     }
   }
