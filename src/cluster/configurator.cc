@@ -17,10 +17,10 @@
 #include "cluster/configurator.h"
 #include "cluster/controller.h"
 #include "util/config.h"
+#include "util/hostname.h"
 #include <cpr/cpr.h>
 #include <glog/logging.h>
 #include <nlohmann/json.hpp>
-#include <util/hostname.h>
 
 namespace viya {
 namespace cluster {
