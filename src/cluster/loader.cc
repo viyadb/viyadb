@@ -17,6 +17,7 @@
 #include "cluster/loader.h"
 #include "cluster/batch_info.h"
 #include "cluster/controller.h"
+#include "util/hostname.h"
 #include "util/latch.h"
 #include "util/scope_guard.h"
 #include <boost/filesystem.hpp>
@@ -109,10 +110,18 @@ void Loader::Load(const util::Config &load_desc, const std::string &worker_id) {
     auto table_name = load_desc.str("table");
     auto &workers_parts =
         controller_.tables_plans().at(table_name).workers_partitions();
-    util::CountDownLatch latch(workers_parts.size());
-
+    std::vector<std::string> own_workers;
+    auto hostname = util::get_hostname();
     for (auto &it : workers_parts) {
       auto &worker_id = it.first;
+      if (worker_id.substr(0, worker_id.find(":")) == hostname) {
+        own_workers.emplace_back(worker_id);
+      }
+    }
+
+    util::CountDownLatch latch(own_workers.size());
+
+    for (auto &worker_id : own_workers) {
       auto partition_filter =
           std::move(GetPartitionFilter(table_name, worker_id));
       tmp_desc.set_sub("partition_filter", partition_filter);
