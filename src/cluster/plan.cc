@@ -48,10 +48,8 @@ json Plan::ToJson() const {
     for (auto &p : replicas) {
       partitions.push_back({{"hostname", p.hostname()}, {"port", p.port()}});
     }
-    std::sort(partitions.begin(), partitions.end());
     plan.push_back(partitions);
   }
-  std::sort(plan.begin(), plan.end());
   return plan;
 }
 

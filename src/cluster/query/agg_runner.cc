@@ -59,7 +59,7 @@ std::string AggQueryRunner::CreateTempTable(const util::Config &query) {
     auto dim_name = it["name"];
     if (std::find(query_columns.begin(), query_columns.end(), dim_name) !=
         query_columns.end()) {
-      dimensions.push_back(it);
+      dimensions.emplace_back(it);
     }
   }
 
@@ -68,7 +68,10 @@ std::string AggQueryRunner::CreateTempTable(const util::Config &query) {
     auto metric_name = it["name"];
     if (std::find(query_columns.begin(), query_columns.end(), metric_name) !=
         query_columns.end()) {
-      metrics.push_back(it);
+      metrics.emplace_back(it);
+      if (it["type"] == "count") {
+        metrics.back()["type"] = "long_sum";
+      }
     }
   }
 

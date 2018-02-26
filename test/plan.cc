@@ -108,3 +108,19 @@ TEST(PlanGenerator, Placement1) {
 
   EXPECT_EQ(expected.ToJson(), actual.ToJson());
 }
+
+TEST(PlanGenerator, PartitionFilter) {
+  std::map<std::string, util::Config> worker_configs{
+      {"host1:5000", json{{"hostname", "host1"}, {"http_port", 5000}}},
+      {"host1:5001", json{{"hostname", "host1"}, {"http_port", 5001}}},
+      {"host2:5000", json{{"hostname", "host2"}, {"http_port", 5000}}},
+      {"host2:5001", json{{"hostname", "host2"}, {"http_port", 5001}}}};
+
+  cluster::PlanGenerator plan_generator;
+  auto plan = plan_generator.Generate(4, 1, worker_configs);
+
+  EXPECT_EQ(plan.workers_partitions().at("host1:5000"), 0);
+  EXPECT_EQ(plan.workers_partitions().at("host1:5001"), 2);
+  EXPECT_EQ(plan.workers_partitions().at("host2:5000"), 1);
+  EXPECT_EQ(plan.workers_partitions().at("host2:5001"), 3);
+}
