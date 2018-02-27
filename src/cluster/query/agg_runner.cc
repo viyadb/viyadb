@@ -23,6 +23,7 @@
 #include "query/output.h"
 #include "query/query.h"
 #include "util/config.h"
+#include "util/latch.h"
 #include "util/scope_guard.h"
 #include <nlohmann/json.hpp>
 #include <random>
@@ -41,9 +42,8 @@ AggQueryRunner::AggQueryRunner(Controller &controller,
     : controller_(controller), workers_states_(workers_states),
       output_(output) {}
 
-std::string AggQueryRunner::CreateTempTable(const util::Config &query) {
-  std::string tmp_table = "query-" + std::to_string(std::rand());
-
+void AggQueryRunner::CreateTempTable(const std::string &tmp_table,
+                                     const util::Config &query) {
   // Create table descriptor based on the query and the original table:
   query::QueryFactory query_factory;
   std::unique_ptr<query::AggregateQuery> table_query(
@@ -78,8 +78,6 @@ std::string AggQueryRunner::CreateTempTable(const util::Config &query) {
   util::Config table_conf(json{
       {"name", tmp_table}, {"dimensions", dimensions}, {"metrics", metrics}});
   controller_.db().CreateTable(tmp_table, table_conf);
-
-  return tmp_table;
 }
 
 util::Config AggQueryRunner::CreateWorkerQuery(const util::Config &agg_query) {
@@ -102,23 +100,26 @@ void AggQueryRunner::Run(const RemoteQuery *remote_query) {
   auto agg_query = remote_query->query();
   auto worker_query = CreateWorkerQuery(agg_query);
 
-  auto tmp_table = CreateTempTable(worker_query);
-  util::ScopeGuard cleanup = [this, &tmp_table]() {
-    controller_.db().DropTable(tmp_table);
-  };
+  std::string tmp_table = "query-" + std::to_string(std::rand());
+  util::ScopeGuard cleanup = [&]() { controller_.db().DropTable(tmp_table); };
 
-  auto table = controller_.db().GetTable(tmp_table);
-  std::vector<std::string> columns;
-  for (auto col : table->columns()) {
-    columns.push_back(col->name());
-  }
-  util::Config load_desc;
-  load_desc.set_str("format", "tsv");
-  load_desc.set_strlist("columns", columns);
+  util::CountDownLatch latch(1);
+  // Create table in separate thread while other workers respond:
+  std::thread create_table([&] {
+    CreateTempTable(tmp_table, worker_query);
+    latch.CountDown();
+  });
+  create_table.detach();
 
   WorkersClient http_client(
-      workers_states_, [&load_desc, table](const char *buf, size_t buf_size) {
+      workers_states_, [&](const char *buf, size_t buf_size) {
         if (buf_size > 0) {
+          latch.Wait();
+
+          auto table = controller_.db().GetTable(tmp_table);
+          util::Config load_desc(
+              json{{"format", "tsv"}, {"columns", table->column_names()}});
+
           input::BufferLoader loader(load_desc, *table, buf, buf_size);
           loader.LoadData();
         }

@@ -59,6 +59,7 @@ public:
   const Database &database() const { return database_; }
   const Column *column(const std::string &name) const;
   const std::vector<const Column *> columns() const;
+  const std::vector<std::string> column_names() const;
   const std::vector<const Dimension *> &dimensions() const {
     return dimensions_;
   }

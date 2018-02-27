@@ -53,7 +53,8 @@ public:
   void Run(const RemoteQuery *query);
 
 protected:
-  std::string CreateTempTable(const util::Config &worker_query);
+  void CreateTempTable(const std::string &tmp_table,
+                       const util::Config &worker_query);
   util::Config CreateWorkerQuery(const util::Config &cluster_query);
 
 private:

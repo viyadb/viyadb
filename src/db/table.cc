@@ -125,6 +125,20 @@ const std::vector<const Column *> Table::columns() const {
   return std::move(columns);
 }
 
+const std::vector<std::string> Table::column_names() const {
+  std::vector<std::string> column_names;
+  column_names.reserve(dimensions_.size() + metrics_.size());
+
+  std::transform(dimensions_.begin(), dimensions_.end(),
+                 std::back_inserter(column_names),
+                 [](auto d) { return d->name(); });
+
+  std::transform(metrics_.begin(), metrics_.end(),
+                 std::back_inserter(column_names),
+                 [](auto m) { return m->name(); });
+  return std::move(column_names);
+}
+
 const Dimension *Table::dimension(const std::string &name) const {
   for (auto d : dimensions_)
     if (d->name() == name)

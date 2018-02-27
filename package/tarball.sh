@@ -2,6 +2,13 @@
 
 set -ex
 
+for arg in "$@"; do
+  case "$arg" in
+    "-cache") cached="true"
+      ;;
+  esac
+done
+
 if [ $(uname -s) != "Linux" ]; then
   cd ../devenv/docker
   exec ./run.sh bash -c "cd /viyadb/package && ./tarball.sh"
@@ -10,8 +17,11 @@ fi
 version=$(cat ../VERSION)
 package_name=$(echo viyadb-${version}-$(uname -s)-x86_64 | tr "[:upper:]" "[:lower:]")
 
-rm -rf build
-mkdir build
+if [ "${cached}" != "true" ]; then
+  rm -rf build
+  trap "rm -rf build" EXIT
+fi
+[ ! -d build ] && mkdir build
 cd build
 
 cmake --build-target viyad ../.. \
@@ -34,5 +44,4 @@ cp ../vsql ${package_name}/bin/
 tar -zcf ${package_name}.tgz ${package_name}
 mv ${package_name}.tgz ..
 cd ..
-rm -rf build
 
