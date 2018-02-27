@@ -179,6 +179,9 @@ util::Config Supervisor::PrepareWorkerConfig(const util::Config &config,
   worker_config.erase("workers");
   worker_config.set_str("id",
                         util::get_hostname() + ":" + std::to_string(port));
+  if (controller_) {
+    worker_config.set_str("controller_id", controller_->id());
+  }
 
   // Calculate list of CPU to allocate for the worker:
   size_t workers_num = config.num("workers");

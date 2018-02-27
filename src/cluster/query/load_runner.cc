@@ -46,7 +46,10 @@ void LoadQueryRunner::Run(const LoadQuery *load_query) {
   auto &table_plan = controller_.tables_plans().at(load_desc.str("table"));
   for (auto &parts_it : table_plan.workers_partitions()) {
     auto worker_id = parts_it.first;
-    controller_ids.emplace(worker_id.substr(0, worker_id.find(":")) + ":5555");
+    auto controller_id =
+        worker_id.substr(0, worker_id.find(":")) + ":" +
+        std::to_string(controller_.cluster_config().num("http_port"));
+    controller_ids.emplace(controller_id);
   }
 
   auto data = load_desc.dump();

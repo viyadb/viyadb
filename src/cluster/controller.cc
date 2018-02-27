@@ -17,6 +17,7 @@
 #include "cluster/controller.h"
 #include "cluster/configurator.h"
 #include "cluster/notifier.h"
+#include "util/hostname.h"
 #include <boost/exception/diagnostic_information.hpp>
 #include <chrono>
 #include <glog/logging.h>
@@ -25,14 +26,15 @@ namespace viya {
 namespace cluster {
 
 Controller::Controller(const util::Config &config)
-    : config_(config), cluster_id_(config.str("cluster_id")), consul_(config),
+    : id_(util::get_hostname()), config_(config),
+      cluster_id_(config.str("cluster_id")), consul_(config),
       db_(config, 0, 0) {
 
   ReadClusterConfig();
 
   session_ = consul_.CreateSession(std::string("viyadb-controller"));
-  le_ = consul_.ElectLeader(
-      *session_, "clusters/" + cluster_id_ + "/nodes/controller/leader");
+  le_ = consul_.ElectLeader(*session_,
+                            "clusters/" + cluster_id_ + "/nodes/leader");
 
   initializer_ = std::make_unique<util::Later>(10000L, [this]() {
     try {
@@ -47,6 +49,18 @@ Controller::Controller(const util::Config &config)
 void Controller::ReadClusterConfig() {
   cluster_config_ =
       util::Config(consul_.GetKey("clusters/" + cluster_id_ + "/config"));
+
+  // Set defaults:
+  if (!cluster_config_.exists("replication_factor")) {
+    cluster_config_.set_num("replication_factor", 3);
+  }
+  if (!cluster_config_.exists("http_port")) {
+    cluster_config_.set_num("http_port", 5555);
+  }
+  if (!cluster_config_.exists("workers")) {
+    cluster_config_.set_num("workers", 0);
+  }
+
   LOG(INFO) << "Using cluster configuration: " << cluster_config_.dump();
 
   indexers_configs_.clear();
@@ -80,12 +94,12 @@ void Controller::ReadClusterConfig() {
 }
 
 bool Controller::ReadWorkersConfigs(
-    std::map<std::string, util::Config> &configs) {
-  configs.clear();
+    std::map<std::string, util::Config> &workers_configs) {
+  workers_configs.clear();
 
   auto active_workers =
       consul_.ListKeys("clusters/" + cluster_id_ + "/nodes/workers");
-  auto workers_num = (size_t)cluster_config_.num("workers", 0);
+  auto workers_num = (size_t)cluster_config_.num("workers");
 
   if (workers_num > 0 && active_workers.size() < workers_num) {
     LOG(INFO) << "Number of active workers is less than the expected number of "
@@ -96,12 +110,13 @@ bool Controller::ReadWorkersConfigs(
 
   LOG(INFO) << "Found " << active_workers.size() << " active workers";
   for (auto &worker_id : active_workers) {
-    configs.emplace(worker_id,
-                    consul_.GetKey("clusters/" + cluster_id_ +
-                                       "/nodes/workers/" + worker_id,
-                                   false, "{}"));
+    LOG(INFO) << "Inserting worker ID: " << worker_id;
+    workers_configs.emplace(worker_id,
+                            consul_.GetKey("clusters/" + cluster_id_ +
+                                               "/nodes/workers/" + worker_id,
+                                           false, "{}"));
   }
-  LOG(INFO) << "Read " << configs.size() << " workers configurations";
+  LOG(INFO) << "Read " << workers_configs.size() << " workers configurations";
   return true;
 }
 
@@ -114,6 +129,8 @@ void Controller::Initialize() {
   configurator.ConfigureWorkers();
 
   feeder_ = std::make_unique<Feeder>(*this, load_prefix);
+
+  CreateKey();
 
   StartHttpServer();
 }
@@ -257,24 +274,24 @@ bool Controller::ReadPlan() {
 }
 
 bool Controller::GeneratePlan() {
-  std::map<std::string, util::Config> configs;
-  while (!ReadWorkersConfigs(configs)) {
+  std::map<std::string, util::Config> workers_configs;
+  while (!ReadWorkersConfigs(workers_configs)) {
     std::this_thread::sleep_for(std::chrono::seconds(10));
   }
 
-  size_t replication_factor = cluster_config_.num("replication_factor", 3);
+  size_t replication_factor = cluster_config_.num("replication_factor");
 
   LOG(INFO) << "Initializing table partitioning";
-  InitializePartitioning(replication_factor, configs);
+  InitializePartitioning(replication_factor, workers_configs);
 
   LOG(INFO) << "Generating partitioning plan";
   PlanGenerator plan_generator;
   tables_plans_.clear();
 
   for (auto &it : tables_partitioning_) {
-    tables_plans_.emplace(it.first,
-                          std::move(plan_generator.Generate(
-                              it.second.total(), replication_factor, configs)));
+    tables_plans_.emplace(
+        it.first, std::move(plan_generator.Generate(
+                      it.second.total(), replication_factor, workers_configs)));
   }
 
   LOG(INFO) << "Storing plan to Consul";
@@ -296,6 +313,22 @@ bool Controller::GeneratePlan() {
 void Controller::StartHttpServer() {
   http_service_ = std::make_unique<http::Service>(*this);
   http_service_->Start();
+}
+
+void Controller::CreateKey() const {
+  auto controller_key =
+      "clusters/" + config_.str("cluster_id") + "/nodes/controllers/" + id_;
+
+  util::Config controller_data;
+  controller_data.set_num("http_port", cluster_config_.num("http_port"));
+  controller_data.set_str("hostname", util::get_hostname());
+  controller_data.set_str("id", id_);
+
+  while (!session_->EphemeralKey(controller_key, controller_data.dump())) {
+    LOG(WARNING) << "The controller key is still locked by the previous "
+                    "process... waiting";
+    std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+  }
 }
 
 } // namespace cluster

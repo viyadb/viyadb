@@ -33,7 +33,7 @@ namespace server = viya::server;
 
 Service::Service(Controller &controller)
     : controller_(controller), query_runner_(controller) {
-  server_.config.port = controller.cluster_config().num("http_port", 5555);
+  server_.config.port = controller_.cluster_config().num("http_port");
   server_.config.reuse_address = true;
   server_.config.thread_pool_size = 4;
   server_.config.timeout_content = 600;

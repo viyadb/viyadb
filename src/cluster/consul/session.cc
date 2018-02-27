@@ -42,7 +42,7 @@ Session::~Session() {
 }
 
 void Session::Destroy() {
-  LOG(INFO) << "Destroying session '" << id_ << "'";
+  DLOG(INFO) << "Destroying session '" << id_ << "'";
   cpr::Put(cpr::Url{consul_.url() + "/v1/session/destroy/" + id_},
            cpr::Timeout{3000L});
 }

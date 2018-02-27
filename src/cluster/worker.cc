@@ -41,6 +41,9 @@ void Worker::CreateKey() const {
   if (config_.exists("cpu_list")) {
     worker_data.set_numlist("cpu_list", config_.numlist("cpu_list"));
   }
+  if (config_.exists("controller_id")) {
+    worker_data.set_str("controller_id", config_.str("controller_id"));
+  }
   worker_data.set_num("http_port", config_.num("http_port"));
   worker_data.set_str("hostname", util::get_hostname());
   worker_data.set_str("id", id_);

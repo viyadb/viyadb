@@ -40,6 +40,7 @@ public:
   Controller(const Controller &other) = delete;
 
   const consul::Consul &consul() const { return consul_; }
+  const std::string &id() const { return id_; }
   const util::Config &config() const { return config_; }
   const util::Config &cluster_config() const { return cluster_config_; }
   const std::string &cluster_id() const { return cluster_id_; }
@@ -71,22 +72,22 @@ public:
 
 private:
   void ReadClusterConfig();
-  bool ReadWorkersConfigs(std::map<std::string, util::Config> &configs);
+  bool ReadWorkersConfigs(std::map<std::string, util::Config> &workers_configs);
   void FetchLatestBatchInfo();
   std::string FindIndexerForTable(const std::string &table_name);
   void Initialize();
-
   void InitializePartitioning(
       size_t replication_factor,
       const std::map<std::string, util::Config> &workers_configs);
-
   void InitializePlan();
   void AssignPartitionsToWorkers();
   bool ReadPlan();
   bool GeneratePlan();
   void StartHttpServer();
+  void CreateKey() const;
 
 private:
+  const std::string id_;
   util::Config config_;
   const std::string cluster_id_;
   const consul::Consul consul_;
