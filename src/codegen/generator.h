@@ -28,7 +28,7 @@ class Code {
 public:
   Code() {}
   Code(const Code &other) = delete;
-  Code(Code &&other);
+  Code(Code &&other) = default;
 
   void AddHeaders(std::vector<std::string> headers) {
     headers_.insert(headers_.end(), headers.begin(), headers.end());

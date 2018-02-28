@@ -21,11 +21,6 @@
 namespace viya {
 namespace codegen {
 
-Code::Code(Code &&other) {
-  headers_ = std::move(other.headers_);
-  body_ = std::move(other.body_);
-}
-
 std::string Code::str() const {
   std::stringstream ss;
 
