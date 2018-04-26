@@ -20,6 +20,7 @@
 #include "sql/parser.hh"
 #include "sql/scanner.h"
 #include "sql/statement.h"
+#include <glog/logging.h>
 #include <sstream>
 
 namespace viya {
@@ -76,6 +77,7 @@ void Driver::Run(std::istream &stream, query::RowOutput *output) {
       if (output == nullptr) {
         throw std::runtime_error("Output handler is not provided");
       }
+      DLOG(INFO) << desc.dump();
       db_.Query(desc, *output);
       break;
     case Statement::Type::LOAD:

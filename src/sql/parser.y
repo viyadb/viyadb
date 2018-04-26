@@ -39,7 +39,7 @@ char* dup(const char* str) {
 
 /* Tokens */
 %token TOK_EOF 0 "end of file"
-%token SELECT SEARCH FROM WHERE BY ORDER HAVING ASC DESC LIMIT OFFSET
+%token SELECT SEARCH RAW FROM WHERE BY ORDER HAVING ASC DESC LIMIT OFFSET
 %token AND OR NOT NE LE GE IN BETWEEN SHOW TABLES WORKERS
 %token COPY WITH FORMAT TSV
 %token <sval> IDENTIFIER STRING FLOATVAL INTVAL
@@ -108,6 +108,21 @@ select_statement: SELECT select_cols FROM table_name filter_opt having_opt order
                         d[it.key()] = it.value();
                       }
                       delete $8;
+                    }
+                  }
+                | SELECT RAW '(' select_cols ')' FROM table_name filter_opt limit_opt {
+                    $$ = new Statement(Statement::Type::QUERY);
+                    auto& d = $$->descriptor_;
+                    d["type"] = "select";
+                    d["header"] = driver.add_header();
+                    d["table"] = $7; delete[] $7;
+                    d["select"] = *$4; delete $4;
+                    if ($8 != nullptr) { d["filter"] = *$8; delete $8; }
+                    if ($9 != nullptr) {
+                      for (auto it = $9->begin(); it != $9->end(); ++it) {
+                        d[it.key()] = it.value();
+                      }
+                      delete $9;
                     }
                   }
                 | SELECT SEARCH '(' column_name ',' string_literal ')' FROM table_name filter_opt limit_opt {

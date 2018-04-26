@@ -205,6 +205,52 @@ TEST_F(SqlEvents, LimitOffset2) {
   EXPECT_EQ(expected, output.rows());
 }
 
+TEST_F(SqlEvents, SelectRawAll) {
+  LoadEvents();
+
+  query::MemoryRowOutput output;
+  sql::Driver sql_driver(db);
+
+  std::istringstream query("SELECT RAW(*) FROM events");
+  sql_driver.Run(query, &output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {
+      {"US", "purchase", "20141112", "1", "0.1"},
+      {"US", "purchase", "20141113", "1", "1.1"},
+      {"US", "donate", "20141112", "1", "5"}};
+  auto actual = output.rows();
+  EXPECT_EQ(expected, actual);
+}
+
+TEST_F(SqlEvents, SelectRawSlice) {
+  LoadEvents();
+
+  query::MemoryRowOutput output;
+  sql::Driver sql_driver(db);
+
+  std::istringstream query("SELECT RAW(country, event_name) FROM events");
+  sql_driver.Run(query, &output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {
+      {"US", "purchase"}, {"US", "purchase"}, {"US", "donate"}};
+  auto actual = output.rows();
+  EXPECT_EQ(expected, actual);
+}
+
+TEST_F(SqlEvents, SelectRawLimit) {
+  LoadEvents();
+
+  query::MemoryRowOutput output;
+  sql::Driver sql_driver(db);
+
+  std::istringstream query("SELECT RAW(country) FROM events LIMIT 1");
+  sql_driver.Run(query, &output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {{"US"}};
+  auto actual = output.rows();
+  EXPECT_EQ(expected, actual);
+}
+
 TEST_F(SqlEvents, SearchQuery) {
   LoadSearchEvents();
 

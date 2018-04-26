@@ -49,6 +49,7 @@ typedef viya::sql::Parser::token_type token_type;
 
 SELECT          { return token::SELECT; }
 SEARCH          { return token::SEARCH; }
+RAW             { return token::RAW; }
 FROM            { return token::FROM; }
 WHERE           { return token::WHERE; }
 BY              { return token::BY; }

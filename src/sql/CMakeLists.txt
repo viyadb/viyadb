@@ -12,3 +12,6 @@ add_library(viya_sql
   ${BISON_Parser_OUTPUTS}
   ${SOURCES})
 
+target_link_libraries(viya_sql
+  glog)
+
