@@ -24,7 +24,7 @@ install(FILES
   json/include/nlohmann/json_fwd.hpp
   DESTINATION include/nlohmann)
 
-install(DIRECTORY fmt/fmt
+install(DIRECTORY fmt/include/fmt
   DESTINATION include
   FILES_MATCHING PATTERN "*.h" PATTERN "format.cc")
 

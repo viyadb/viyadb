@@ -20,6 +20,7 @@
 [submodule "third_party/fmt"]
 	path = third_party/fmt
 	url = https://github.com/fmtlib/fmt.git
+  branch = 4.x
 [submodule "third_party/glog"]
 	path = third_party/glog
 	url = https://github.com/google/glog.git
