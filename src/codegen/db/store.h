@@ -20,6 +20,7 @@
 #include "codegen/generator.h"
 #include "db/rollup.h"
 #include "db/store.h"
+#include "util/macros.h"
 #include <string>
 #include <vector>
 
@@ -47,7 +48,7 @@ public:
                    std::string struct_name)
       : dimensions_(dimensions), struct_name_(struct_name) {}
 
-  DimensionsStruct(const DimensionsStruct &other) = delete;
+  DISALLOW_COPY_AND_MOVE(DimensionsStruct);
 
   Code GenerateCode() const;
 
@@ -62,7 +63,7 @@ public:
                 std::string struct_name)
       : metrics_(metrics), struct_name_(struct_name) {}
 
-  MetricsStruct(const MetricsStruct &other) = delete;
+  DISALLOW_COPY_AND_MOVE(MetricsStruct);
 
   Code GenerateCode() const;
 
@@ -74,7 +75,7 @@ private:
 class SegmentStatsStruct : public CodeGenerator {
 public:
   SegmentStatsStruct(const db::Table &table) : table_(table) {}
-  SegmentStatsStruct(const SegmentStatsStruct &other) = delete;
+  DISALLOW_COPY_AND_MOVE(SegmentStatsStruct);
 
   Code GenerateCode() const;
 
@@ -86,7 +87,7 @@ class StoreDefs : public CodeGenerator {
 public:
   StoreDefs(const db::Table &table) : table_(table) {}
 
-  StoreDefs(const StoreDefs &other) = delete;
+  DISALLOW_COPY_AND_MOVE(StoreDefs);
 
   Code GenerateCode() const;
 
@@ -97,7 +98,7 @@ private:
 class UpsertContextDefs : public CodeGenerator {
 public:
   UpsertContextDefs(const db::Table &table) : table_(table) {}
-  UpsertContextDefs(const UpsertContextDefs &other) = delete;
+  DISALLOW_COPY_AND_MOVE(UpsertContextDefs);
 
   Code GenerateCode() const;
 
@@ -119,7 +120,7 @@ class StoreFunctions : public FunctionGenerator {
 public:
   StoreFunctions(Compiler &compiler, const db::Table &table)
       : FunctionGenerator(compiler), table_(table) {}
-  StoreFunctions(const StoreFunctions &other) = delete;
+  DISALLOW_COPY_AND_MOVE(StoreFunctions);
 
   Code GenerateCode() const;
 

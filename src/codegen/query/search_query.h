@@ -20,6 +20,7 @@
 #include "codegen/generator.h"
 #include "query/query.h"
 #include "query/runner.h"
+#include "util/macros.h"
 
 namespace viya {
 namespace codegen {
@@ -31,7 +32,7 @@ public:
   SearchQueryGenerator(Compiler &compiler, query::SearchQuery &query)
       : FunctionGenerator(compiler), query_(query) {}
 
-  SearchQueryGenerator(const SearchQueryGenerator &other) = delete;
+  DISALLOW_COPY_AND_MOVE(SearchQueryGenerator);
 
   Code GenerateCode() const;
   query::SearchQueryFn Function();

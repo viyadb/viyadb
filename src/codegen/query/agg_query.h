@@ -20,6 +20,7 @@
 #include "codegen/generator.h"
 #include "query/query.h"
 #include "query/runner.h"
+#include "util/macros.h"
 
 namespace viya {
 namespace codegen {
@@ -31,7 +32,7 @@ public:
   AggQueryGenerator(Compiler &compiler, query::AggregateQuery &query)
       : FunctionGenerator(compiler), query_(query) {}
 
-  AggQueryGenerator(const AggQueryGenerator &other) = delete;
+  DISALLOW_COPY_AND_MOVE(AggQueryGenerator);
 
   Code GenerateCode() const;
   query::AggQueryFn Function();

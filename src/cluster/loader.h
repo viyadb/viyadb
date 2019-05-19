@@ -18,6 +18,7 @@
 #define VIYA_CLUSTER_LOADER_H_
 
 #include "util/config.h"
+#include "util/macros.h"
 #include <ThreadPool/ThreadPool.h>
 #include <boost/filesystem.hpp>
 #include <unordered_map>
@@ -33,7 +34,7 @@ class Controller;
 class Loader {
 public:
   Loader(const Controller &controller, const std::string &load_prefix);
-  Loader(const Loader &other) = delete;
+  DISALLOW_COPY_AND_MOVE(Loader);
 
   void Load(const util::Config &load_desc,
             const std::string &worker_id = std::string());

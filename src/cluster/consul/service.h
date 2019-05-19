@@ -17,6 +17,7 @@
 #ifndef VIYA_CLUSTER_CONSUL_SERVICE_H_
 #define VIYA_CLUSTER_CONSUL_SERVICE_H_
 
+#include "util/macros.h"
 #include "util/schedule.h"
 #include <memory>
 #include <nlohmann/json.hpp>
@@ -35,7 +36,7 @@ class Service {
 public:
   Service(const Consul &consul, const std::string &name, uint16_t port,
           uint32_t ttl_sec, bool auto_hc);
-  Service(const Service &other) = delete;
+  DISALLOW_COPY_AND_MOVE(Service);
   ~Service();
 
   void Notify(Status status, const std::string &message);

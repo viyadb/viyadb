@@ -20,6 +20,7 @@
 #include "input/loader.h"
 #include "input/loader_desc.h"
 #include "input/stats.h"
+#include "util/macros.h"
 
 namespace viya {
 namespace util {
@@ -35,7 +36,7 @@ namespace util = viya::util;
 class BufferLoader : public Loader {
 public:
   BufferLoader(const util::Config &, db::Table &, const char *, size_t);
-  BufferLoader(const BufferLoader &) = delete;
+  DISALLOW_COPY_AND_MOVE(BufferLoader);
   virtual ~BufferLoader() {}
 
   void LoadData();

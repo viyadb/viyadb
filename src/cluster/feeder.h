@@ -21,6 +21,7 @@
 #include "cluster/loader.h"
 #include "cluster/notifier.h"
 #include "util/config.h"
+#include "util/macros.h"
 #include <map>
 #include <vector>
 
@@ -38,7 +39,7 @@ namespace cluster {
 class Feeder : public MessageProcessor {
 public:
   Feeder(const Controller &controller, const std::string &load_prefix);
-  Feeder(const Feeder &other) = delete;
+  DISALLOW_COPY_AND_MOVE(Feeder);
   ~Feeder();
 
   bool ProcessMessage(const std::string &indexer_id, const Message &message);

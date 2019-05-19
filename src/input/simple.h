@@ -19,6 +19,7 @@
 
 #include "input/loader.h"
 #include "input/loader_desc.h"
+#include "util/macros.h"
 
 namespace viya {
 namespace db {
@@ -42,7 +43,7 @@ class SimpleLoader : public Loader {
 public:
   SimpleLoader(db::Table &table);
   SimpleLoader(const util::Config &config, db::Table &table);
-  SimpleLoader(const SimpleLoader &other) = delete;
+  DISALLOW_COPY_AND_MOVE(SimpleLoader);
 
   void Load(std::initializer_list<std::vector<std::string>> rows);
   void Load(std::vector<std::string> &values) { Loader::Load(values); }

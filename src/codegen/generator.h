@@ -18,6 +18,7 @@
 #define VIYA_CODEGEN_GENERATOR_H_
 
 #include "codegen/compiler.h"
+#include "util/macros.h"
 #include <sstream>
 #include <vector>
 
@@ -27,7 +28,7 @@ namespace codegen {
 class Code {
 public:
   Code() {}
-  Code(const Code &other) = delete;
+  DISALLOW_COPY(Code);
   Code(Code &&other) = default;
 
   void AddHeaders(std::vector<std::string> headers) {

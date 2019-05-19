@@ -17,6 +17,7 @@
 #ifndef VIYA_INPUT_LOAD_DESC_H_
 #define VIYA_INPUT_LOAD_DESC_H_
 
+#include "util/macros.h"
 #include <memory>
 #include <vector>
 
@@ -45,7 +46,7 @@ namespace db = viya::db;
 class PartitionFilter {
 public:
   PartitionFilter(const util::Config &config);
-  PartitionFilter(const PartitionFilter &other) = delete;
+  DISALLOW_COPY_AND_MOVE(PartitionFilter);
 
   const std::vector<std::string> &columns() const { return columns_; }
   size_t total_partitions() const { return total_partitions_; }
@@ -62,7 +63,7 @@ public:
   enum Format { TSV, UNKNOWN };
 
   LoaderDesc(const util::Config &config, const db::Table &table);
-  LoaderDesc(const LoaderDesc &other) = delete;
+  DISALLOW_COPY_AND_MOVE(LoaderDesc);
   virtual ~LoaderDesc() = default;
 
   const util::Config &config() const { return config_; }

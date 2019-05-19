@@ -22,6 +22,7 @@
 #include <ostream>
 #endif
 
+#include "util/macros.h"
 #include "util/rwlock.h"
 
 namespace viya {
@@ -30,8 +31,7 @@ namespace db {
 class SegmentBase {
 public:
   SegmentBase(size_t capacity) : size_(0), capacity_(capacity){};
-
-  SegmentBase(const SegmentBase &other) = delete;
+  DISALLOW_COPY_AND_MOVE(SegmentBase);
   virtual ~SegmentBase() {}
 
   bool full() const { return size_ == capacity_; }

@@ -18,6 +18,7 @@
 #include "db/column.h"
 #include "db/dictionary.h"
 #include "db/table.h"
+#include "util/macros.h"
 #include <algorithm>
 #include <cstring>
 #include <ctime>
@@ -31,7 +32,7 @@ public:
                const std::string &var_prefix)
       : table_(table), argidx_(0), code_(code), var_prefix_(var_prefix) {}
 
-  ArgsUnpacker(const ArgsUnpacker &other) = delete;
+  DISALLOW_COPY_AND_MOVE(ArgsUnpacker);
 
   void Visit(const query::RelOpFilter *filter);
   void Visit(const query::InFilter *filter);

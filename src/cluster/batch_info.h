@@ -18,6 +18,7 @@
 #define VIYA_CLUSTER_BATCH_INFO_H_
 
 #include "cluster/partitioning.h"
+#include "util/macros.h"
 #include <map>
 #include <memory>
 #include <nlohmann/json_fwd.hpp>
@@ -41,7 +42,7 @@ private:
 class TableInfo {
 public:
   TableInfo(const json &message);
-  TableInfo(const TableInfo &other) = delete;
+  DISALLOW_COPY_AND_MOVE(TableInfo);
 
   const std::vector<std::string> &paths() const { return paths_; }
   const std::vector<std::string> &columns() const { return columns_; }
@@ -54,13 +55,13 @@ private:
 class MicroBatchTableInfo : public TableInfo {
 public:
   MicroBatchTableInfo(const json &message);
-  MicroBatchTableInfo(const MicroBatchTableInfo &other) = delete;
+  DISALLOW_COPY_AND_MOVE(MicroBatchTableInfo);
 };
 
 class MicroBatchInfo : public Message {
 public:
   MicroBatchInfo(const json &message);
-  MicroBatchInfo(const MicroBatchInfo &other) = delete;
+  DISALLOW_COPY_AND_MOVE(MicroBatchInfo);
 
   const std::map<std::string, MicroBatchTableInfo> &tables_info() const {
     return tables_info_;

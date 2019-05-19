@@ -17,6 +17,7 @@
 #ifndef VIYA_CLUSTER_QUERY_CLIENT_H_
 #define VIYA_CLUSTER_QUERY_CLIENT_H_
 
+#include "util/macros.h"
 #include <functional>
 #include <unordered_map>
 #include <vector>
@@ -36,7 +37,7 @@ public:
   WorkersToTry(const std::vector<std::string> &workers, size_t current = 0L)
       : workers_(workers), current_(current) {}
 
-  WorkersToTry(const WorkersToTry &other) = delete;
+  DISALLOW_COPY_AND_MOVE(WorkersToTry);
 
   const std::string &Next();
 
@@ -51,7 +52,7 @@ public:
       WorkersStates &workers_states,
       const std::function<void(const char *, size_t)> response_handler);
 
-  WorkersClient(const WorkersClient &) = delete;
+  DISALLOW_COPY_AND_MOVE(WorkersClient);
   ~WorkersClient();
 
   void Send(const std::vector<std::string> &workers, const std::string &uri,

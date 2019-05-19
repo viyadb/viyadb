@@ -17,6 +17,7 @@
 #ifndef VIYA_CLUSTER_CONSUL_WATCH_H_
 #define VIYA_CLUSTER_CONSUL_WATCH_H_
 
+#include "util/macros.h"
 #include <memory>
 #include <nlohmann/json.hpp>
 
@@ -31,7 +32,7 @@ class Consul;
 class Watch {
 public:
   Watch(const Consul &consul, const std::string &key, bool recurse = false);
-  Watch(const Watch &other) = delete;
+  DISALLOW_COPY_AND_MOVE(Watch);
 
   std::unique_ptr<json> LastChanges(int32_t timeout = 86400000L);
 

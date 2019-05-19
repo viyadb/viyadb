@@ -19,6 +19,7 @@
 
 #include "codegen/generator.h"
 #include "db/rollup.h"
+#include "util/macros.h"
 
 namespace viya {
 namespace db {
@@ -39,7 +40,7 @@ public:
   RollupDefs(const std::vector<const db::Dimension *> &dimensions)
       : dimensions_(dimensions) {}
 
-  RollupDefs(const RollupDefs &other) = delete;
+  DISALLOW_COPY_AND_MOVE(RollupDefs);
 
   Code GenerateCode() const;
 
@@ -52,7 +53,7 @@ public:
   RollupReset(const std::vector<const db::Dimension *> &dimensions)
       : dimensions_(dimensions) {}
 
-  RollupReset(const RollupReset &other) = delete;
+  DISALLOW_COPY_AND_MOVE(RollupReset);
 
   Code GenerateCode() const;
 
@@ -67,7 +68,7 @@ public:
                   const std::string &prefix = std::string())
       : dimension_(dimension), var_name_(var_name), prefix_(prefix) {}
 
-  TimestampRollup(const TimestampRollup &other) = delete;
+  DISALLOW_COPY_AND_MOVE(TimestampRollup);
 
   Code GenerateCode() const;
 

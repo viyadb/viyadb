@@ -18,6 +18,7 @@
 #define VIYA_UTIL_STATSD_H_
 
 #include "util/config.h"
+#include "util/macros.h"
 #include <netinet/in.h>
 
 namespace viya {
@@ -26,7 +27,7 @@ namespace util {
 class Statsd {
 public:
   Statsd();
-  Statsd(Statsd &other) = delete;
+  DISALLOW_COPY_AND_MOVE(Statsd);
   ~Statsd();
 
   void Connect(const Config &config);

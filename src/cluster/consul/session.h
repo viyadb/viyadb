@@ -17,6 +17,7 @@
 #ifndef VIYA_CLUSTER_CONSUL_SESSION_H_
 #define VIYA_CLUSTER_CONSUL_SESSION_H_
 
+#include "util/macros.h"
 #include "util/schedule.h"
 #include <functional>
 #include <memory>
@@ -30,7 +31,7 @@ class Consul;
 class Session {
 public:
   Session(const Consul &consul, const std::string &name, uint32_t ttl_sec);
-  Session(const Session &other) = delete;
+  DISALLOW_COPY_AND_MOVE(Session);
   ~Session();
 
   void Renew();

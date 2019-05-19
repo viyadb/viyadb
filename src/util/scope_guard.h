@@ -17,6 +17,7 @@
 #ifndef VIYA_UTIL_SCOPE_GUARD_H_
 #define VIYA_UTIL_SCOPE_GUARD_H_
 
+#include "util/macros.h"
 #include <functional>
 
 namespace viya {
@@ -37,8 +38,7 @@ public:
 
   void dismiss() noexcept { f = nullptr; }
 
-  ScopeGuard(const ScopeGuard &) = delete;
-  void operator=(const ScopeGuard &) = delete;
+  DISALLOW_COPY(ScopeGuard);
 
 private:
   std::function<void()> f;

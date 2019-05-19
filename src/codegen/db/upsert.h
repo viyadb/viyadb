@@ -21,6 +21,7 @@
 #include "db/column.h"
 #include "db/stats.h"
 #include "input/loader_desc.h"
+#include "util/macros.h"
 
 namespace viya {
 namespace input {
@@ -63,7 +64,7 @@ using UpsertFn = void (*)(void *, std::vector<std::string> &);
 class UpsertGenerator : public FunctionGenerator {
 public:
   UpsertGenerator(const input::LoaderDesc &desc);
-  UpsertGenerator(const UpsertGenerator &other) = delete;
+  DISALLOW_COPY_AND_MOVE(UpsertGenerator);
 
   Code GenerateCode() const;
 

@@ -17,6 +17,7 @@
 #ifndef VIYA_QUERY_FILTER_H_
 #define VIYA_QUERY_FILTER_H_
 
+#include "util/macros.h"
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -37,7 +38,7 @@ class FilterVisitor;
 class Filter {
 public:
   Filter(int precedence) : precedence_(precedence) {}
-  Filter(const Filter &other) = delete;
+  DISALLOW_COPY_AND_MOVE(Filter);
   virtual ~Filter() {}
 
   int precedence() const { return precedence_; }
@@ -63,7 +64,7 @@ public:
               const std::string &value)
       : Filter(1), op_(op), column_(column), value_(value) {}
 
-  RelOpFilter(const RelOpFilter &other) = delete;
+  DISALLOW_COPY_AND_MOVE(RelOpFilter);
 
   Operator op() const { return op_; }
   const char *opstr() const { return opstr_[op_]; }
@@ -85,7 +86,7 @@ public:
            bool equal = true)
       : Filter(4), column_(column), values_(values), equal_(equal) {}
 
-  InFilter(const InFilter &other) = delete;
+  DISALLOW_COPY_AND_MOVE(InFilter);
 
   const std::string &column() const { return column_; }
   const std::vector<std::string> &values() const { return values_; }
@@ -106,7 +107,7 @@ public:
   CompositeFilter(Operator op, const std::vector<Filter *> &filters)
       : Filter(op == Operator::AND ? 2 : 3), op_(op), filters_(filters) {}
 
-  CompositeFilter(const CompositeFilter &other) = delete;
+  DISALLOW_COPY_AND_MOVE(CompositeFilter);
 
   ~CompositeFilter() {
     for (auto filter : filters_) {
@@ -127,7 +128,7 @@ private:
 class EmptyFilter : public Filter {
 public:
   EmptyFilter() : Filter(0) {}
-  EmptyFilter(const EmptyFilter &other) = delete;
+  DISALLOW_COPY_AND_MOVE(EmptyFilter);
 
   void Accept(FilterVisitor &visitor) const;
 };

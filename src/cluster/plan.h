@@ -18,6 +18,7 @@
 #define VIYA_CLUSTER_PLAN_H_
 
 #include "util/config.h"
+#include "util/macros.h"
 #include <map>
 #include <nlohmann/json_fwd.hpp>
 #include <vector>
@@ -53,7 +54,7 @@ class Plan {
 public:
   Plan(const json &plan);
   Plan(const Partitions &partitions);
-  Plan(const Plan &other) = delete;
+  DISALLOW_COPY(Plan);
   Plan(Plan &&other) = default;
 
   const Partitions &partitions() const { return partitions_; }
@@ -82,7 +83,7 @@ private:
 class PlanGenerator {
 public:
   PlanGenerator() {}
-  PlanGenerator(const PlanGenerator &other) = delete;
+  DISALLOW_COPY_AND_MOVE(PlanGenerator);
 
   Plan Generate(size_t partitions_num, size_t replication_factor,
                 const std::map<std::string, util::Config> &workers_configs);

@@ -22,6 +22,7 @@
 #include "cluster/consul/session.h"
 #include "cluster/consul/watch.h"
 #include "util/config.h"
+#include "util/macros.h"
 #include <functional>
 #include <memory>
 
@@ -34,7 +35,7 @@ namespace util = viya::util;
 class Consul {
 public:
   Consul(const util::Config &config);
-  Consul(const Consul &other) = delete;
+  DISALLOW_COPY_AND_MOVE(Consul);
 
   std::unique_ptr<Session> CreateSession(const std::string &name,
                                          uint32_t ttl_sec = 10) const;

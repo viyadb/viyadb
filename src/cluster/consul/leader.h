@@ -18,6 +18,7 @@
 #define VIYA_CLUSTER_CONSUL_LEADER_H_
 
 #include "cluster/consul/watch.h"
+#include "util/macros.h"
 #include "util/schedule.h"
 #include <atomic>
 #include <memory>
@@ -33,7 +34,7 @@ class LeaderElector {
 public:
   LeaderElector(const Consul &consul, const Session &session,
                 const std::string &key);
-  LeaderElector(const LeaderElector &other) = delete;
+  DISALLOW_COPY_AND_MOVE(LeaderElector);
 
   bool Leader() const { return leader_; }
 

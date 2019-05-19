@@ -19,6 +19,7 @@
 
 #include "db/rollup.h"
 #include "util/config.h"
+#include "util/macros.h"
 #include <array>
 #include <string>
 
@@ -125,7 +126,7 @@ public:
   enum SortType { STRING, INTEGER, FLOAT };
 
   Column(const util::Config &config, Type type, size_t index);
-  Column(const Column &other) = delete;
+  DISALLOW_COPY_AND_MOVE(Column);
   virtual ~Column() {}
 
   virtual const BaseNumType &num_type() const = 0;
@@ -150,8 +151,7 @@ public:
 
   Dimension(const util::Config &config, size_t index, DimType dim_type)
       : Column(config, Column::Type::DIMENSION, index), dim_type_(dim_type) {}
-
-  Dimension(const Dimension &other) = delete;
+  DISALLOW_COPY_AND_MOVE(Dimension);
 
   virtual const BaseNumType &num_type() const = 0;
 
@@ -164,7 +164,7 @@ private:
 class StrDimension : public Dimension {
 public:
   StrDimension(const util::Config &config, size_t index, Dictionaries &dicts);
-  StrDimension(const StrDimension &other) = delete;
+  DISALLOW_COPY_AND_MOVE(StrDimension);
 
   void Accept(class ColumnVisitor &visitor) const;
 
@@ -184,7 +184,7 @@ private:
 class NumDimension : public Dimension {
 public:
   NumDimension(const util::Config &config, size_t index);
-  NumDimension(const NumDimension &other) = delete;
+  DISALLOW_COPY_AND_MOVE(NumDimension);
 
   void Accept(class ColumnVisitor &visitor) const;
 
@@ -206,7 +206,7 @@ private:
 class TimeDimension : public Dimension {
 public:
   TimeDimension(const util::Config &config, size_t index, bool micro_precision);
-  TimeDimension(const TimeDimension &other) = delete;
+  DISALLOW_COPY_AND_MOVE(TimeDimension);
 
   const std::string &format() const { return format_; }
   const std::vector<RollupRule> &rollup_rules() const { return rollup_rules_; }
@@ -228,7 +228,7 @@ private:
 class BoolDimension : public Dimension {
 public:
   BoolDimension(const util::Config &config, size_t index);
-  BoolDimension(const BoolDimension &other) = delete;
+  DISALLOW_COPY_AND_MOVE(BoolDimension);
 
   void Accept(class ColumnVisitor &visitor) const;
 
@@ -245,8 +245,7 @@ public:
 
   Metric(const util::Config &config, size_t index, AggregationType agg_type)
       : Column(config, Column::Type::METRIC, index), agg_type_(agg_type) {}
-
-  Metric(const Metric &other) = delete;
+  DISALLOW_COPY_AND_MOVE(Metric);
 
   AggregationType agg_type() const { return agg_type_; }
 
@@ -257,7 +256,7 @@ private:
 class ValueMetric : public Metric {
 public:
   ValueMetric(const util::Config &config, size_t index);
-  ValueMetric(const Metric &other) = delete;
+  DISALLOW_COPY_AND_MOVE(ValueMetric);
 
   void Accept(class ColumnVisitor &visitor) const;
 
@@ -279,8 +278,7 @@ private:
 class BitsetMetric : public Metric {
 public:
   BitsetMetric(const util::Config &config, size_t index);
-
-  BitsetMetric(const BitsetMetric &other) = delete;
+  DISALLOW_COPY_AND_MOVE(BitsetMetric);
 
   void Accept(class ColumnVisitor &visitor) const;
 

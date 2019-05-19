@@ -19,6 +19,7 @@
 
 #include "db/stats.h"
 #include "util/config.h"
+#include "util/macros.h"
 #include <string>
 #include <vector>
 
@@ -52,7 +53,7 @@ private:
 class Table {
 public:
   Table(const util::Config &config, class Database &database);
-  Table(const Table &other) = delete;
+  DISALLOW_COPY_AND_MOVE(Table);
   ~Table();
 
   const std::string &name() const { return name_; }

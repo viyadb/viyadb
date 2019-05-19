@@ -21,6 +21,7 @@
 #include "db/table.h"
 #include "input/loader_desc.h"
 #include "input/stats.h"
+#include "util/macros.h"
 
 namespace viya {
 namespace input {
@@ -30,7 +31,7 @@ namespace cg = viya::codegen;
 class Loader {
 public:
   Loader(const util::Config &config, db::Table &table);
-  Loader(const Loader &other) = delete;
+  DISALLOW_COPY_AND_MOVE(Loader);
   virtual ~Loader() = default;
 
   virtual void LoadData() = 0;

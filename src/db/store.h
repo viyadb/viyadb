@@ -18,6 +18,7 @@
 #define VIYA_DB_STORE_H_
 
 #include "db/segment.h"
+#include "util/macros.h"
 #include "util/rwlock.h"
 #include <vector>
 
@@ -31,7 +32,7 @@ using CreateSegmentFn = SegmentBase *(*)();
 class SegmentStore {
 public:
   SegmentStore(class Database &database, class Table &table);
-  SegmentStore(const SegmentStore &other) = delete;
+  DISALLOW_COPY_AND_MOVE(SegmentStore);
   ~SegmentStore();
 
   std::vector<SegmentBase *> &segments() { return segments_; }

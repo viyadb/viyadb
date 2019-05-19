@@ -17,6 +17,7 @@
 #ifndef VIYA_CODEGEN_SHARED_LIBRARY_H_
 #define VIYA_CODEGEN_SHARED_LIBRARY_H_
 
+#include "util/macros.h"
 #include <string>
 #include <vector>
 
@@ -26,7 +27,7 @@ namespace codegen {
 class SharedLibrary {
 public:
   SharedLibrary(const std::string &path);
-  SharedLibrary(const SharedLibrary &other) = delete;
+  DISALLOW_COPY_AND_MOVE(SharedLibrary);
   ~SharedLibrary();
 
   template <typename Func> Func GetFunction(const std::string &name) {

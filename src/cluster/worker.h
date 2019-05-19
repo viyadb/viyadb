@@ -19,6 +19,7 @@
 
 #include "cluster/consul/consul.h"
 #include "util/config.h"
+#include "util/macros.h"
 #include <memory>
 
 namespace viya {
@@ -29,7 +30,7 @@ namespace util = viya::util;
 class Worker {
 public:
   Worker(const util::Config &config);
-  Worker(const Worker &other) = delete;
+  DISALLOW_COPY_AND_MOVE(Worker);
 
   void CreateKey() const;
 

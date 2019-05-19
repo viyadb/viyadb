@@ -20,6 +20,7 @@
 #include "codegen/generator.h"
 #include "db/column.h"
 #include "query/filter.h"
+#include "util/macros.h"
 
 namespace viya {
 namespace db {
@@ -55,7 +56,7 @@ public:
   FilterArgsUnpack(const db::Table &table, const query::Filter *filter,
                    const std::string &var_prefix)
       : table_(table), filter_(filter), var_prefix_(var_prefix) {}
-  FilterArgsUnpack(const FilterArgsUnpack &other) = delete;
+  DISALLOW_COPY_AND_MOVE(FilterArgsUnpack);
 
   Code GenerateCode() const;
 
@@ -70,7 +71,7 @@ public:
   SegmentSkip(const db::Table &table, const query::Filter *filter)
       : table_(table), filter_(filter) {}
 
-  SegmentSkip(const SegmentSkip &other) = delete;
+  DISALLOW_COPY_AND_MOVE(SegmentSkip);
 
   Code GenerateCode() const;
 
@@ -85,7 +86,7 @@ public:
                    const std::string &var_prefix)
       : table_(table), filter_(filter), var_prefix_(var_prefix) {}
 
-  FilterComparison(const FilterComparison &other) = delete;
+  DISALLOW_COPY_AND_MOVE(FilterComparison);
 
   Code GenerateCode() const;
 

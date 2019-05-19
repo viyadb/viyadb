@@ -25,6 +25,7 @@
 #include "cluster/plan.h"
 #include "db/database.h"
 #include "util/config.h"
+#include "util/macros.h"
 #include "util/schedule.h"
 #include <map>
 #include <memory>
@@ -37,7 +38,7 @@ namespace util = viya::util;
 class Controller {
 public:
   Controller(const util::Config &config);
-  Controller(const Controller &other) = delete;
+  DISALLOW_COPY_AND_MOVE(Controller);
 
   const consul::Consul &consul() const { return consul_; }
   const std::string &id() const { return id_; }

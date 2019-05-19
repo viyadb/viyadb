@@ -23,6 +23,7 @@
 #include "query/output.h"
 #include "query/stats.h"
 #include "util/config.h"
+#include "util/macros.h"
 #include "util/rwlock.h"
 #include "util/statsd.h"
 #include <ThreadPool/ThreadPool.h>
@@ -42,7 +43,7 @@ public:
   Database(const util::Config &config);
   Database(const util::Config &config, size_t write_threads,
            size_t read_threads);
-  Database(const Database &other) = delete;
+  DISALLOW_COPY_AND_MOVE(Database);
   ~Database();
 
   void CreateTable(const util::Config &table_conf);

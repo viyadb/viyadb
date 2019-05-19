@@ -17,6 +17,7 @@
 #ifndef VIYA_UTIL_LATCH_H_
 #define VIYA_UTIL_LATCH_H_
 
+#include "util/macros.h"
 #include <condition_variable>
 #include <mutex>
 
@@ -26,8 +27,7 @@ namespace util {
 class CountDownLatch {
 public:
   explicit CountDownLatch(size_t count) : count_(count) {}
-  CountDownLatch(const CountDownLatch &other) = delete;
-  CountDownLatch &operator=(const CountDownLatch &other) = delete;
+  DISALLOW_COPY_AND_MOVE(CountDownLatch);
 
   void CountDown() {
     std::lock_guard<std::mutex> lock{mtx_};

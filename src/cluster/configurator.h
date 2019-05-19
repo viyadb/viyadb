@@ -17,6 +17,7 @@
 #ifndef VIYA_CLUSTER_CONFIGURATOR_H_
 #define VIYA_CLUSTER_CONFIGURATOR_H_
 
+#include "util/macros.h"
 #include <cstdint>
 #include <string>
 
@@ -40,7 +41,7 @@ namespace cluster {
 class Configurator {
 public:
   Configurator(const Controller &controller);
-  Configurator(const Configurator &other) = delete;
+  DISALLOW_COPY_AND_MOVE(Configurator);
 
   void ConfigureWorkers();
 

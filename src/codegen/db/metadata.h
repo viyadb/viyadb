@@ -19,6 +19,7 @@
 
 #include "codegen/generator.h"
 #include "db/table.h"
+#include "util/macros.h"
 
 namespace viya {
 namespace codegen {
@@ -32,7 +33,7 @@ public:
   TableMetadata(Compiler &compiler, const db::Table &table)
       : FunctionGenerator(compiler), table_(table) {}
 
-  TableMetadata(const TableMetadata &other) = delete;
+  DISALLOW_COPY_AND_MOVE(TableMetadata);
 
   Code GenerateCode() const;
   TableMetadataFn Function();

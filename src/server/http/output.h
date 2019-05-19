@@ -18,6 +18,7 @@
 #define VIYA_SERVER_HTTP_OUTPUT_H_
 
 #include "query/output.h"
+#include "util/macros.h"
 #include <ostream>
 
 namespace viya {
@@ -33,7 +34,7 @@ public:
       : stream_(stream), chunk_size_(16384), col_sep_(col_sep),
         row_sep_(row_sep) {}
 
-  ChunkedTsvOutput(const ChunkedTsvOutput &other) = delete;
+  DISALLOW_COPY_AND_MOVE(ChunkedTsvOutput);
   ~ChunkedTsvOutput() {}
 
   void Start() {
