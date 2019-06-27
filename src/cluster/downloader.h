@@ -36,16 +36,19 @@ public:
 
 class S3Downloader : public DownloaderBase {
 public:
+  S3Downloader() {}
   std::string Download(const std::string &path) const;
 };
 
 class FSDownloader : public DownloaderBase {
 public:
+  FSDownloader() {}
   std::string Download(const std::string &path) const;
 };
 
 class Downloader : public DownloaderBase {
 public:
+  Downloader() {}
   static Downloader &Instance();
   std::string Download(const std::string &path) const;
   static std::string Fetch(const std::string &path);

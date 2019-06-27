@@ -28,9 +28,9 @@ using json = nlohmann::json;
 std::unique_ptr<Message> MessageFactory::Create(const std::string &message,
                                                 IndexerType indexer_type) {
   if (indexer_type == IndexerType::REALTIME) {
-    return std::move(std::make_unique<MicroBatchInfo>(json::parse(message)));
+    return std::make_unique<MicroBatchInfo>(json::parse(message));
   }
-  return std::move(std::make_unique<BatchInfo>(json::parse(message)));
+  return std::make_unique<BatchInfo>(json::parse(message));
 }
 
 Notifier *NotifierFactory::Create(const std::string &indexer_id,

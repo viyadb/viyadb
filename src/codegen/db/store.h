@@ -42,34 +42,25 @@ namespace db = viya::db;
 
 class Compiler;
 
-class DimensionsStruct : public CodeGenerator {
+// This tuple structure is used:
+//  - During ingestion, representing an incoming row
+//  - During query to aggregate results
+//
+class TupleStruct : public CodeGenerator {
 public:
-  DimensionsStruct(const std::vector<const db::Dimension *> &dimensions,
-                   std::string struct_name)
-      : dimensions_(dimensions), struct_name_(struct_name) {}
+  TupleStruct(const std::vector<const db::Dimension *> &dimensions,
+              const std::vector<const db::Metric *> &metrics,
+              const std::string &struct_name)
+      : dimensions_(dimensions), metrics_(metrics), struct_name_(struct_name) {}
 
-  DISALLOW_COPY_AND_MOVE(DimensionsStruct);
+  DISALLOW_COPY_AND_MOVE(TupleStruct);
 
   Code GenerateCode() const;
 
 private:
   const std::vector<const db::Dimension *> &dimensions_;
-  std::string struct_name_;
-};
-
-class MetricsStruct : public CodeGenerator {
-public:
-  MetricsStruct(const std::vector<const db::Metric *> &metrics,
-                std::string struct_name)
-      : metrics_(metrics), struct_name_(struct_name) {}
-
-  DISALLOW_COPY_AND_MOVE(MetricsStruct);
-
-  Code GenerateCode() const;
-
-private:
   const std::vector<const db::Metric *> &metrics_;
-  std::string struct_name_;
+  const std::string struct_name_;
 };
 
 class SegmentStatsStruct : public CodeGenerator {

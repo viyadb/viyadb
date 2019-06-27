@@ -50,29 +50,31 @@ void ScanVisitor::IterationStart(query::FilterBasedQuery *query) {
   code_ << " if (!process_segment) continue;\n";
   code_ << " stats.scanned_segments++;\n";
 
+  code_ << " auto& tuple_dims = segment->d;\n";
+  code_ << " auto& tuple_metrics = segment->m;\n";
+
   // Iterate on tuples:
-  code_ << " for (size_t tuple_idx = 0; tuple_idx < segment_size; ++tuple_idx) "
-           "{\n";
-  code_ << "  Dimensions& tuple_dims = segment->d[tuple_idx];\n";
-  code_ << "  Metrics& tuple_metrics = segment->m[tuple_idx];\n";
+  code_ << " for (size_t tuple_idx = 0; "
+           "tuple_idx < segment_size; ++tuple_idx) {\n";
 
   // Apply filter, and check it's return code:
   // TODO : is it possible to do it without IF branch?
-  FilterComparison comparison(query->table(), query->filter(), "farg");
-  code_ << "  auto r = " << comparison.GenerateCode() << ";\n";
-  code_ << "  if (r) {\n";
+  FilterComparison comparison(query->table(), query->filter(), "farg",
+                              "[tuple_idx]");
+  code_ << "  auto r = " << comparison.GenerateCode() << ";\n"
+        << "  if (r) {\n";
 }
 
 void ScanVisitor::IterationEnd() {
   // Close iteration loop:
-  code_ << "  }\n";
-  code_ << " }\n";
-  code_ << "}\n";
+  code_ << "  }\n"
+           " }\n"
+           "}\n";
 }
 
 void ScanVisitor::Visit(query::SelectQuery *query) {
-#ifdef NDEBUG
-  code_ << "// ========= scan ==========\n";
+#ifndef NDEBUG
+  code_ << "\n// ========= scan ==========\n";
 #endif
   UnpackArguments(query);
 
@@ -86,13 +88,14 @@ void ScanVisitor::Visit(query::SelectQuery *query) {
     }
   }
 
-  code_ << "typedef std::vector<std::string> Row;\n";
-  code_ << "Row row(" << std::to_string(query->dimension_cols().size() +
-                                        query->metric_cols().size())
-        << ");\n";
-  code_ << "util::Format fmt;\n";
-  code_ << "size_t row_index = 0;\n";
-  code_ << "output.Start();\n";
+  code_ << "typedef std::vector<std::string> Row;\n"
+        << "Row row("
+        << std::to_string(query->dimension_cols().size() +
+                          query->metric_cols().size())
+        << ");\n"
+        << "util::Format fmt;\n"
+        << "size_t row_index = 0;\n"
+        << "output.Start();\n";
 
   // Print header if requested:
   HeaderGenerator header_gen(code_);
@@ -108,23 +111,24 @@ void ScanVisitor::Visit(query::SelectQuery *query) {
     auto dim_idx = std::to_string(dim->index());
 
     if (dim->dim_type() == db::Dimension::DimType::STRING) {
-      code_ << "dict" << dim_idx << "->lock().lock_shared();\n";
-      code_ << "row[" << std::to_string(dim_col.index()) << "] = dict"
-            << dim_idx << "->c2v()[tuple_dims._" << dim_idx << "];\n";
-      code_ << " dict" << dim_idx << "->lock().unlock_shared();\n";
+      code_ << " dict" << dim_idx << "->lock().lock_shared();\n"
+            << " row[" << std::to_string(dim_col.index()) << "] = dict"
+            << dim_idx << "->c2v()[tuple_dims._" << dim_idx << "[tuple_idx]];\n"
+            << " dict" << dim_idx << "->lock().unlock_shared();\n";
 
     } else if (dim->dim_type() == db::Dimension::DimType::TIME &&
                !dim_col.format().empty()) {
-      code_ << "row[" << std::to_string(dim_col.index()) << "] = fmt.date(\""
-            << dim_col.format() << "\", tuple_dims._" << dim_idx << ");\n";
+      code_ << " row[" << std::to_string(dim_col.index()) << "] = fmt.date(\""
+            << dim_col.format() << "\", tuple_dims._" << dim_idx
+            << "[tuple_idx]);\n";
 
     } else if (dim->dim_type() == db::Dimension::DimType::BOOLEAN) {
-      code_ << "row[" << std::to_string(dim_col.index()) << "] = tuple_dims._"
-            << dim_idx << "? \"true\" : \"false\";\n";
+      code_ << " row[" << std::to_string(dim_col.index()) << "] = tuple_dims._"
+            << dim_idx << "[tuple_idx] ? \"true\" : \"false\";\n";
 
     } else {
-      code_ << "row[" << std::to_string(dim_col.index())
-            << "] = fmt.num(tuple_dims._" << dim_idx << ");\n";
+      code_ << " row[" << std::to_string(dim_col.index())
+            << "] = fmt.num(tuple_dims._" << dim_idx << "[tuple_idx]);\n";
     }
   }
 
@@ -142,9 +146,9 @@ void ScanVisitor::Visit(query::SelectQuery *query) {
     auto metric = metric_col.metric();
     auto metric_idx = std::to_string(metric->index());
     code_ << "row[" << std::to_string(metric_col.index())
-          << "] = fmt.num(tuple_metrics._" << metric_idx;
+          << "] = fmt.num(tuple_metrics._" << metric_idx << "[tuple_idx]";
     if (metric->agg_type() == db::Metric::AggregationType::AVG) {
-      code_ << "/(double) tuple_metrics._" << count_field;
+      code_ << "/(double) tuple_metrics._" << count_field << "[tuple_idx]";
     } else if (metric->agg_type() == db::Metric::AggregationType::BITSET) {
       code_ << ".cardinality()";
     }
@@ -162,15 +166,15 @@ void ScanVisitor::Visit(query::SelectQuery *query) {
 }
 
 void ScanVisitor::Visit(query::AggregateQuery *query) {
-#ifdef NDEBUG
-  code_ << "// ========= scan ==========\n";
+#ifndef NDEBUG
+  code_ << "\n// ========= scan ==========\n";
 #endif
 
   // Structures for aggragation in memory:
-  code_ << "AggDimensions agg_dims;\n";
-  code_ << "AggMetrics agg_metrics;\n";
-  code_ << "std::unordered_map<AggDimensions,AggMetrics,AggDimensionsHasher> "
-           "agg_map;\n";
+  code_ << "AggTuple agg_tuple;\n"
+           "std::unordered_map<AggTuple::Dimensions,"
+           "AggTuple::Metrics,AggTuple::Dimensions::Hash,"
+           "AggTuple::Dimensions::KeyEqual> agg_map;\n";
 
   UnpackArguments(query);
 
@@ -198,9 +202,10 @@ void ScanVisitor::Visit(query::AggregateQuery *query) {
         time_rollup = true;
 
         code_ << "time" << dim_idx << ".set_ts(tuple_dims._" << dim_idx
-              << ");\n";
+              << "[tuple_idx]);\n";
 
-        TimestampRollup ts_rollup(time_dim, "tuple_dims._" + dim_idx);
+        TimestampRollup ts_rollup(time_dim,
+                                  "tuple_dims._" + dim_idx + "[tuple_idx]");
         code_ << ts_rollup.GenerateCode();
 
         if (!dim_col.granularity().empty()) {
@@ -208,12 +213,13 @@ void ScanVisitor::Visit(query::AggregateQuery *query) {
                 << static_cast<int>(dim_col.granularity().time_unit())
                 << ")>();\n";
         }
-        code_ << "agg_dims._" << dim_idx << " = time" << dim_idx
+        code_ << "   agg_tuple.d._" << dim_idx << " = time" << dim_idx
               << ".get_ts();\n";
       }
     }
     if (!time_rollup) {
-      code_ << "agg_dims._" << dim_idx << " = tuple_dims._" << dim_idx << ";\n";
+      code_ << "   agg_tuple.d._" << dim_idx << " = tuple_dims._" << dim_idx
+            << "[tuple_idx];\n";
     }
   }
 
@@ -221,8 +227,8 @@ void ScanVisitor::Visit(query::AggregateQuery *query) {
   bool has_avg_metric = false;
   for (auto &metric_col : query->metric_cols()) {
     auto metric_idx = std::to_string(metric_col.metric()->index());
-    code_ << "agg_metrics._" << metric_idx << " = tuple_metrics._" << metric_idx
-          << ";\n";
+    code_ << "   agg_tuple.m._" << metric_idx << " = tuple_metrics._"
+          << metric_idx << "[tuple_idx];\n";
     if (metric_col.metric()->agg_type() == db::Metric::AggregationType::AVG) {
       has_avg_metric = true;
     } else if (metric_col.metric()->agg_type() ==
@@ -231,10 +237,9 @@ void ScanVisitor::Visit(query::AggregateQuery *query) {
     }
   }
   if (has_avg_metric && !has_count_metric) {
-    code_ << "agg_metrics._count = tuple_metrics._count;\n";
+    code_ << "   agg_tuple.m._count = tuple_metrics._count[tuple_idx];\n";
   }
-
-  code_ << "agg_map[agg_dims].Update(agg_metrics);\n";
+  code_ << "   agg_map[agg_tuple.d].Update(agg_tuple.m);\n";
 
   IterationEnd();
 
@@ -242,8 +247,8 @@ void ScanVisitor::Visit(query::AggregateQuery *query) {
 }
 
 void ScanVisitor::Visit(query::SearchQuery *query) {
-#ifdef NDEBUG
-  code_ << "// ========= scan ==========\n";
+#ifndef NDEBUG
+  code_ << "\n// ========= scan ==========\n";
 #endif
   auto dim = query->dimension();
   auto dim_idx = std::to_string(dim->index());
@@ -264,20 +269,22 @@ void ScanVisitor::Visit(query::SearchQuery *query) {
 
   IterationStart(query);
 
-  code_ << "if (codes.insert(tuple_dims._" << dim_idx << ").second) {\n";
+  code_ << "if (codes.insert(tuple_dims._" << dim_idx
+        << "[tuple_idx]).second) {\n";
 
   if (dim->dim_type() == db::Dimension::DimType::STRING) {
     code_ << "dict" << dim_idx << "->lock().lock_shared();\n";
     code_ << "check_value = dict" << dim_idx << "->c2v()[tuple_dims._"
-          << dim_idx << "];\n";
+          << dim_idx << "[tuple_idx]];\n";
     code_ << " dict" << dim_idx << "->lock().unlock_shared();\n";
 
   } else if (dim->dim_type() == db::Dimension::DimType::BOOLEAN) {
     code_ << "check_value = tuple_dims._" << dim_idx
-          << "? \"true\" : \"false\";\n";
+          << "[tuple_idx] ? \"true\" : \"false\";\n";
 
   } else {
-    code_ << "check_value = fmt.num(tuple_dims._" << dim_idx << ");\n";
+    code_ << "check_value = fmt.num(tuple_dims._" << dim_idx
+          << "[tuple_idx]);\n";
   }
 
   code_ << " if (check_value.find(term) != std::string::npos) {\n";

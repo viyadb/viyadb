@@ -36,6 +36,7 @@ rm -rf \
   ${package_name}/lib/libevent*.a \
   ${package_name}/lib/libcppkafka*.a \
   ${package_name}/lib/libglog*.a \
+  ${package_name}/lib/libfmt.a \
   ${package_name}/include/curl \
   ${package_name}/bin/curl-config
 

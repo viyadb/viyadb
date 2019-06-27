@@ -27,11 +27,9 @@ namespace viya {
 namespace cluster {
 namespace query {
 
-SearchQueryRunner::SearchQueryRunner(Controller &controller,
-                                     WorkersStates &workers_states,
+SearchQueryRunner::SearchQueryRunner(WorkersStates &workers_states,
                                      query::RowOutput &output)
-    : controller_(controller), workers_states_(workers_states),
-      output_(output) {}
+    : workers_states_(workers_states), output_(output) {}
 
 void SearchQueryRunner::Run(const RemoteQuery *remote_query) {
   auto &target_workers = remote_query->target_workers();

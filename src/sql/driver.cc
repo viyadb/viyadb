@@ -95,7 +95,7 @@ std::vector<Statement> Driver::ParseStatements(std::istream &stream) {
   for (auto stmt : stmts_) {
     stmts.emplace_back(*stmt);
   }
-  return std::move(stmts);
+  return stmts;
 }
 
 void Driver::AddStatement(Statement *stmt) { stmts_.push_back(stmt); }

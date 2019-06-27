@@ -42,8 +42,8 @@ Code SearchQueryGenerator::GenerateCode() const {
        << "std::vector<db::AnyNum> fargs, const std::string& term, size_t "
           "limit) {\n";
 
-#ifdef NDEBUG
-  code << "// ========= definitions ==========\n";
+#ifndef NDEBUG
+  code << "\n// ========= definitions ==========\n";
 #endif
 
   StoreDefs store_defs(query_.table());

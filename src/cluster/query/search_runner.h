@@ -46,13 +46,11 @@ namespace query = viya::query;
 
 class SearchQueryRunner {
 public:
-  SearchQueryRunner(Controller &controller, WorkersStates &workers_states,
-                    query::RowOutput &output);
+  SearchQueryRunner(WorkersStates &workers_states, query::RowOutput &output);
 
   void Run(const RemoteQuery *query);
 
 private:
-  Controller &controller_;
   WorkersStates &workers_states_;
   query::RowOutput &output_;
 };

@@ -17,11 +17,6 @@
 #ifndef VIYA_DB_SEGMENT_H_
 #define VIYA_DB_SEGMENT_H_
 
-#if ENABLE_PERSISTENCE
-#include <istream>
-#include <ostream>
-#endif
-
 #include "util/macros.h"
 #include "util/rwlock.h"
 
@@ -44,11 +39,6 @@ public:
   }
 
   size_t capacity() const { return capacity_; }
-
-#if ENABLE_PERSISTENCE
-  virtual void save(std::ostream &) = 0;
-  virtual void load(std::istream &) = 0;
-#endif
 
 protected:
   size_t size_;

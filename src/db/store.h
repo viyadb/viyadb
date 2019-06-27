@@ -40,7 +40,7 @@ public:
   const std::vector<SegmentBase *> segments_copy() {
     folly::RWSpinLock::ReadHolder guard(lock_);
     std::vector<SegmentBase *> copy = segments_;
-    return std::move(copy);
+    return copy;
   }
 
   SegmentBase *last() {

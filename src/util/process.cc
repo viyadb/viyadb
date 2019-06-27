@@ -15,7 +15,7 @@
  */
 
 #include "util/process.h"
-#include <cpp-subprocess/subprocess.hpp>
+#include "subprocess.hpp"
 
 namespace viya {
 namespace util {

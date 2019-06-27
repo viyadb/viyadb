@@ -36,7 +36,7 @@ namespace cr = std::chrono;
 Compiler::Compiler(const util::Config &config) {
   cmd_ = {
     "g++",
-    "-std=c++14",
+    "-std=c++17",
 
 // start dependencies ==>
 #if VIYA_IS_RELEASE
@@ -54,14 +54,10 @@ Compiler::Compiler(const util::Config &config) {
     "-L./third_party/CRoaring/src",
 #endif // VIYA_IS_RELEASE
 
-#if !(CXX_COMPILER_IS_CLANG)
     "-Wl,--whole-archive",
-#endif
     "-lroaring",
     "-lviya_util",
-#if !(CXX_COMPILER_IS_CLANG)
     "-Wl,--no-whole-archive",
-#endif
 // <== end of dependencies
 
 // start optimizations ==>
@@ -71,6 +67,8 @@ Compiler::Compiler(const util::Config &config) {
     "-march=native",
     "-fvisibility=hidden",
     "-fno-implement-inlines",
+    "-Wno-unused-parameter",
+    "-Wno-unused-variable",
     "-DNDEBUG",
 #else
     "-Wall",

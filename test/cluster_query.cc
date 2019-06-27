@@ -116,9 +116,10 @@ TEST_F(ClusterQuery, NonKeyFieldCondition) {
       " \"metrics\": [\"revenue\"],"
       " \"filter\": {\"op\": \"and\", \"filters\": ["
       "               {\"op\": \"eq\", \"column\": \"user\", \"value\": \"" +
-      value + "\"},"
-              "               {\"op\": \"ne\", \"column\": \"country\", "
-              "\"value\": \"\"}]}}");
+      value +
+      "\"},"
+      "               {\"op\": \"ne\", \"column\": \"country\", "
+      "\"value\": \"\"}]}}");
 
   cluster::query::RemoteQuery remote_query(query, partitioning, plan);
   auto actual = remote_query.target_workers();

@@ -35,6 +35,23 @@ TEST_F(InappEvents, LoadEvents) {
   EXPECT_EQ(1, table->store()->segments()[0]->size());
 }
 
+TEST_F(InappEvents, LoadMultipleSegments) {
+  db::Database db(std::move(util::Config(
+      json{{"tables",
+            {{{"name", "events"},
+              {"segment_size", 1},
+              {"dimensions", {{{"name", "country"}}}},
+              {"metrics", {{{"name", "count"}, {"type", "count"}}}}}}}})));
+  auto table = db.GetTable("events");
+  input::SimpleLoader loader(*table);
+  loader.Load({{"US"}, {"IL"}, {"UK"}});
+
+  EXPECT_EQ(3, table->store()->segments().size());
+  EXPECT_EQ(1, table->store()->segments()[0]->size());
+  EXPECT_EQ(1, table->store()->segments()[1]->size());
+  EXPECT_EQ(1, table->store()->segments()[2]->size());
+}
+
 TEST_F(InappEvents, UpsertEvents) {
   auto table = db.GetTable("events");
 

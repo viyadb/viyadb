@@ -38,7 +38,7 @@ namespace util {
 
 class Config;
 
-} // namespace query
+} // namespace util
 } // namespace viya
 
 namespace viya {
@@ -171,14 +171,14 @@ public:
     for (auto &col : metric_cols_) {
       columns.push_back(col.metric()->name());
     }
-    return std::move(columns);
+    return columns;
   }
 
   size_t skip() const { return skip_; }
 
   size_t limit() const { return limit_; }
 
-  void Accept(class QueryVisitor &visitor);
+  void Accept(class QueryVisitor &visitor) override;
 
 private:
   std::vector<DimOutputColumn> dimension_cols_;
@@ -197,7 +197,7 @@ public:
 
   const std::vector<SortColumn> &sort_cols() const { return sort_cols_; }
 
-  void Accept(class QueryVisitor &visitor);
+  void Accept(class QueryVisitor &visitor) override;
 
 private:
   std::vector<SortColumn> sort_cols_;
@@ -208,7 +208,7 @@ class SearchQuery : public FilterBasedQuery {
 public:
   SearchQuery(const util::Config &config, db::Table &table);
 
-  void Accept(class QueryVisitor &visitor);
+  void Accept(class QueryVisitor &visitor) override;
 
   const db::Dimension *dimension() const { return dimension_; }
   const std::string &term() const { return term_; }
@@ -223,7 +223,7 @@ private:
 class ShowTablesQuery : public DatabaseQuery {
 public:
   ShowTablesQuery(db::Database &db);
-  void Accept(class QueryVisitor &visitor);
+  void Accept(class QueryVisitor &visitor) override;
 };
 
 class QueryVisitor {

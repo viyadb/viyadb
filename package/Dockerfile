@@ -1,4 +1,4 @@
-from ubuntu:artful
+from ubuntu:18.04
 
 MAINTAINER Michael Spector <michael@viyadb.com>
 LABEL Description="ViyaDB is in-memory analytical data store"
@@ -10,12 +10,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     bsdmainutils \
     awscli \
-    g++-7 \
-  && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 60 --slave /usr/bin/g++ g++ /usr/bin/g++-7 \
+    g++-8 \
   && apt-get purge -y \
     manpages-dev \
+    gcc-7 \
   && apt-get autoremove -y \
   && apt-get clean \
+  && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 60 --slave /usr/bin/g++ g++ /usr/bin/g++-8 \
   && strip $(gcc -print-prog-name=cc1plus) \
   && strip $(gcc -print-prog-name=lto1) \
   && find /usr/lib | grep -E "(__pycache__|\.pyc|\.pyo$)" | xargs rm -rf \

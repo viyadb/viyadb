@@ -20,6 +20,7 @@
 #include "codegen/compiler.h"
 #include "util/macros.h"
 #include <sstream>
+#include <unordered_set>
 #include <vector>
 
 namespace viya {
@@ -31,12 +32,12 @@ public:
   DISALLOW_COPY(Code);
   Code(Code &&other) = default;
 
-  void AddHeaders(std::vector<std::string> headers) {
-    headers_.insert(headers_.end(), headers.begin(), headers.end());
+  void AddHeaders(const std::vector<std::string> &headers) {
+    headers_.insert(headers.begin(), headers.end());
   }
 
-  void AddNamespaces(std::vector<std::string> namespaces) {
-    namespaces_.insert(namespaces_.end(), namespaces.begin(), namespaces.end());
+  void AddNamespaces(const std::vector<std::string> &namespaces) {
+    namespaces_.insert(namespaces.begin(), namespaces.end());
   }
 
   template <typename T> Code &operator<<(const T &v) {
@@ -46,8 +47,8 @@ public:
 
   Code &operator<<(const Code &c) {
     body_ << c.body_.str();
-    AddHeaders(c.headers_);
-    AddNamespaces(c.namespaces_);
+    headers_.insert(c.headers_.begin(), c.headers_.end());
+    namespaces_.insert(c.namespaces_.begin(), c.namespaces_.end());
     return *this;
   }
 
@@ -55,8 +56,8 @@ public:
 
 private:
   std::ostringstream body_;
-  std::vector<std::string> headers_;
-  std::vector<std::string> namespaces_;
+  std::unordered_set<std::string> headers_;
+  std::unordered_set<std::string> namespaces_;
 };
 
 class CodeGenerator {

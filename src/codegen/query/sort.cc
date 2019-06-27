@@ -24,8 +24,8 @@ namespace codegen {
 void SortVisitor::Visit(query::AggregateQuery *query) {
   auto sort_columns = query->sort_cols();
   if (!sort_columns.empty()) {
-#ifdef NDEBUG
-    code_ << "// ========= sort ==========\n";
+#ifndef NDEBUG
+    code_ << "\n// ========= sort ==========\n";
 #endif
 
     // Sort the materialized records:

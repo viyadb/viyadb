@@ -39,11 +39,11 @@ If for some reason you'd like to use your own system tools, please read on.
 
 The following components are required for building ViyaDB:
 
- * CMake >= 3.9
+ * CMake >= 3.10
  * Boost >= 1.65.1
  * Flex >= 2.6.1
  * Bison >= 2:3.0.4
- * g++ >= 7.1
+ * g++ >= 8.3
 
 Additional third party dependencies are included into the project as [Git submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules).
 

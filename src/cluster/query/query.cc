@@ -93,12 +93,12 @@ ClusterQueryFactory::Create(const util::Config &query,
                             const Controller &controller) {
   auto type = query.str("type");
   if (type == "show") {
-    return std::move(std::make_unique<LocalQuery>(query));
+    return std::make_unique<LocalQuery>(query);
   }
   if (type == "load") {
-    return std::move(std::make_unique<LoadQuery>(query));
+    return std::make_unique<LoadQuery>(query);
   }
-  return std::move(std::make_unique<RemoteQuery>(query, controller));
+  return std::make_unique<RemoteQuery>(query, controller);
 }
 
 } // namespace query
