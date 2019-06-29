@@ -5,6 +5,8 @@ include(cityhash.cmake)
 
 add_subdirectory(gflags)
 add_subdirectory(glog)
+
+set(FMT_INSTALL ON CACHE BOOL "fmt: generate install target" FORCE)
 add_subdirectory(fmt)
 
 include_directories(
@@ -12,7 +14,7 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/CRoaring/cpp
 )
 
-set(BUILD_STATIC ON CACHE BOOL "croaring: build static library" FORCE)
+set(ROARING_BUILD_STATIC ON CACHE BOOL "croaring: build static library" FORCE)
 add_subdirectory(CRoaring)
 
 install(FILES
@@ -23,10 +25,6 @@ install(FILES
 install(FILES
   json/include/nlohmann/json_fwd.hpp
   DESTINATION include/nlohmann)
-
-install(DIRECTORY fmt/include/fmt
-  DESTINATION include
-  FILES_MATCHING PATTERN "*.h" PATTERN "format.cc")
 
 add_subdirectory(Simple-Web-Server EXCLUDE_FROM_ALL)
 add_subdirectory(googletest EXCLUDE_FROM_ALL)
@@ -50,3 +48,6 @@ set(EVENT__DISABLE_TESTS ON CACHE BOOL "libevent: disable tests")
 set(EVENT__DISABLE_THREAD_SUPPORT ON CACHE BOOL "libevent: disable threads")
 add_subdirectory(libevent)
 
+install(FILES
+  subprocess.hpp
+  DESTINATION include)

@@ -46,7 +46,6 @@ void Service::SendError(ResponsePtr response, const std::string &error) {
 void Service::Start() {
   server_.resource["^/tables$"]["POST"] = [&](ResponsePtr response,
                                               RequestPtr request) {
-
     auto table_conf = request->content.string();
     database_.write_pool().enqueue([=] {
       try {
@@ -79,8 +78,9 @@ void Service::Start() {
     });
   };
 
-  server_.resource["^/database/meta$"]["GET"] = [&](
-      ResponsePtr response, RequestPtr request __attribute__((unused))) {
+  server_.resource["^/database/meta$"]["GET"] = [&](ResponsePtr response,
+                                                    RequestPtr request
+                                                    __attribute__((unused))) {
     database_.read_pool().enqueue([=] {
       try {
         std::string meta;

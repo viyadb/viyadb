@@ -83,8 +83,9 @@ private:
 class FilterComparison : CodeGenerator {
 public:
   FilterComparison(const db::Table &table, const query::Filter *filter,
-                   const std::string &var_prefix)
-      : table_(table), filter_(filter), var_prefix_(var_prefix) {}
+                   const std::string &var_prefix, const std::string &tuple_idx)
+      : table_(table), filter_(filter), var_prefix_(var_prefix),
+        tuple_idx_(tuple_idx) {}
 
   DISALLOW_COPY_AND_MOVE(FilterComparison);
 
@@ -94,6 +95,7 @@ private:
   const db::Table &table_;
   const query::Filter *filter_;
   const std::string var_prefix_;
+  const std::string tuple_idx_;
 };
 
 } // namespace codegen

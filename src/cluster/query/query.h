@@ -63,7 +63,7 @@ public:
 
   std::string GetRedirectWorker() const override;
 
-  void Accept(class ClusterQueryVisitor &visitor) const;
+  void Accept(class ClusterQueryVisitor &visitor) const override;
 
 private:
   void FindTargetWorkers();

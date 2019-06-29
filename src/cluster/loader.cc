@@ -61,9 +61,9 @@ util::Config Loader::GetPartitionFilter(const std::string &table_name,
     }
   }
 
-  return std::move(util::Config(json{{"total_partitions", partitioning.total()},
-                                     {"columns", partitioning.columns()},
-                                     {"values", values}}));
+  return util::Config(json{{"total_partitions", partitioning.total()},
+                           {"columns", partitioning.columns()},
+                           {"values", values}});
 }
 
 void Loader::Load(const util::Config &load_desc, const std::string &worker_id) {
@@ -122,8 +122,7 @@ void Loader::Load(const util::Config &load_desc, const std::string &worker_id) {
     util::CountDownLatch latch(own_workers.size());
 
     for (auto &worker_id : own_workers) {
-      auto partition_filter =
-          std::move(GetPartitionFilter(table_name, worker_id));
+      auto partition_filter = GetPartitionFilter(table_name, worker_id);
       tmp_desc.set_sub("partition_filter", partition_filter);
       auto data = tmp_desc.dump();
 
@@ -173,9 +172,8 @@ std::string Loader::ExtractFiles(const std::string &path) {
     }
     in.push(infile);
 
-    std::ofstream outfile(tmpfile,
-                          std::ios_base::out | std::ios_base::binary |
-                              std::ios_base::app);
+    std::ofstream outfile(tmpfile, std::ios_base::out | std::ios_base::binary |
+                                       std::ios_base::app);
     bi::filtering_streambuf<bi::output> out;
     out.push(outfile);
     bi::copy(in, out);

@@ -39,7 +39,7 @@ void ClusterQueryProcessor::Visit(const RemoteQuery *remote_query) const {
     runner.Run(remote_query);
 
   } else if (query_type == "search") {
-    SearchQueryRunner runner(controller_, workers_states_, output_);
+    SearchQueryRunner runner(workers_states_, output_);
     runner.Run(remote_query);
 
   } else {

@@ -59,11 +59,11 @@ void Feeder::Start() {
 util::Config Feeder::GetLoadDesc(const std::string &file,
                                  const std::string &table_name,
                                  const std::vector<std::string> &columns) {
-  return std::move(util::Config(json{{"table", table_name},
-                                     {"type", "file"},
-                                     {"file", file},
-                                     {"format", "tsv"},
-                                     {"columns", columns}}));
+  return util::Config(json{{"table", table_name},
+                           {"type", "file"},
+                           {"file", file},
+                           {"format", "tsv"},
+                           {"columns", columns}});
 }
 
 void Feeder::LoadHistoricalData(const std::string &target_worker) {
@@ -114,8 +114,7 @@ void Feeder::LoadMicroBatch(const MicroBatchInfo &mb_info,
     auto &table_info = it.second;
 
     for (auto &path : table_info.paths()) {
-      auto load_desc =
-          std::move(GetLoadDesc(path, table_name, table_info.columns()));
+      auto load_desc = GetLoadDesc(path, table_name, table_info.columns());
       LoadData(load_desc, target_worker);
     }
   }

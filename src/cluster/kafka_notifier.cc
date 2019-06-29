@@ -87,7 +87,7 @@ KafkaNotifier::GetLatestOffsets(cppkafka::Consumer &consumer) {
       last_offsets[partition.get_id()] = last_offset - 1;
     }
   }
-  return std::move(last_offsets);
+  return last_offsets;
 }
 
 std::vector<std::unique_ptr<Message>> KafkaNotifier::GetAllMessages() {
@@ -110,8 +110,8 @@ std::vector<std::unique_ptr<Message>> KafkaNotifier::GetAllMessages() {
                        << msg.get_error();
         }
       } else {
-        messages.emplace_back(std::move(
-            MessageFactory::Create(msg.get_payload(), indexer_type_)));
+        messages.emplace_back(
+            MessageFactory::Create(msg.get_payload(), indexer_type_));
       }
       auto msg_partition = msg.get_partition();
       if (latest_offsets[msg_partition] <= msg.get_offset()) {
@@ -121,7 +121,7 @@ std::vector<std::unique_ptr<Message>> KafkaNotifier::GetAllMessages() {
   }
 
   LOG(INFO) << "Read " << messages.size() << " messages";
-  return std::move(messages);
+  return messages;
 }
 
 std::unique_ptr<Message> KafkaNotifier::GetLastMessage() {
@@ -153,8 +153,7 @@ std::unique_ptr<Message> KafkaNotifier::GetLastMessage() {
         } else {
           auto &payload = msg.get_payload();
           LOG(INFO) << "Read last message: " << payload;
-          last_message =
-              std::move(MessageFactory::Create(payload, indexer_type_));
+          last_message = MessageFactory::Create(payload, indexer_type_);
         }
         if (latest_offset->second <= msg.get_offset()) {
           break;
@@ -164,7 +163,7 @@ std::unique_ptr<Message> KafkaNotifier::GetLastMessage() {
   } else {
     LOG(INFO) << "No messages available";
   }
-  return std::move(last_message);
+  return last_message;
 }
 
 } // namespace cluster

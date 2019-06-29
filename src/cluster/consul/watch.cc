@@ -50,7 +50,7 @@ std::unique_ptr<json> Watch::LastChanges(int32_t timeout) {
     response = std::make_unique<json>(json::parse(r.text)[0].get<json>());
     index_ = (*response)["ModifyIndex"].get<long>();
   }
-  return std::move(response);
+  return response;
 }
 
 } // namespace consul

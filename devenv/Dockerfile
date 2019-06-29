@@ -1,4 +1,4 @@
-from ubuntu:artful
+from ubuntu:18.04
 
 MAINTAINER Michael Spector <spektom@gmail.com>
 LABEL Description="Build environment for ViyaDB"
@@ -11,7 +11,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     automake \
     binutils-dev \
     bison \
-    build-essential \
     git \
     flex \
     libfl-dev \
@@ -25,9 +24,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     zlib1g-dev \
     clang-format \
-    g++-7 \
-  && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 60 --slave /usr/bin/g++ g++ /usr/bin/g++-7 \
-  && curl -sS -L https://cmake.org/files/v3.10/cmake-3.10.2-Linux-x86_64.sh -o cmake-install.sh \
+    gdb \
+    g++-8 \
+  && apt-get autoremove -y gcc-7 \
+  && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 60 --slave /usr/bin/g++ g++ /usr/bin/g++-8 \
+  && curl -sS -L https://cmake.org/files/v3.14/cmake-3.14.0-Linux-x86_64.sh -o cmake-install.sh \
     && sh ./cmake-install.sh --prefix=/usr/local --skip-license \
     && rm -f ./cmake-install.sh \
   && curl -sS -L https://dl.bintray.com/boostorg/release/1.65.1/source/boost_1_65_1.tar.gz | tar -zxf - \
@@ -37,9 +38,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && cd .. \
     && rm -rf boost_1_65_1 \
   && ldconfig \
-  && apt-get purge -y \
-    manpages-dev \
-  && apt-get autoremove -y \
   && apt-get clean \
   && rm -rf \
     /usr/local/doc \

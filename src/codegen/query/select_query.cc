@@ -33,15 +33,15 @@ Code SelectQueryGenerator::GenerateCode() const {
 
   code << "extern \"C\" void viya_query_select(db::Table& table, "
           "query::RowOutput& output, query::QueryStats& stats,"
-       << "std::vector<db::AnyNum> fargs, size_t skip, size_t limit) "
+          "std::vector<db::AnyNum> fargs, size_t skip, size_t limit) "
           "__attribute__((__visibility__(\"default\")));\n";
 
   code << "extern \"C\" void viya_query_select(db::Table& table, "
           "query::RowOutput& output, query::QueryStats& stats,"
-       << "std::vector<db::AnyNum> fargs, size_t skip, size_t limit) {\n";
+          "std::vector<db::AnyNum> fargs, size_t skip, size_t limit) {\n";
 
-#ifdef NDEBUG
-  code << "// ========= definitions ==========\n";
+#ifndef NDEBUG
+  code << "\n// ========= definitions ==========\n";
 #endif
   StoreDefs store_defs(query_.table());
   code << store_defs.GenerateCode();

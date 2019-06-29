@@ -122,7 +122,7 @@ const std::vector<const Column *> Table::columns() const {
   columns.reserve(dimensions_.size() + metrics_.size());
   columns.insert(columns.end(), dimensions_.begin(), dimensions_.end());
   columns.insert(columns.end(), metrics_.begin(), metrics_.end());
-  return std::move(columns);
+  return columns;
 }
 
 const std::vector<std::string> Table::column_names() const {
@@ -136,7 +136,7 @@ const std::vector<std::string> Table::column_names() const {
   std::transform(metrics_.begin(), metrics_.end(),
                  std::back_inserter(column_names),
                  [](auto m) { return m->name(); });
-  return std::move(column_names);
+  return column_names;
 }
 
 const Dimension *Table::dimension(const std::string &name) const {

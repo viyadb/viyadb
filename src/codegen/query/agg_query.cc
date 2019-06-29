@@ -34,31 +34,28 @@ Code AggQueryGenerator::GenerateCode() const {
 
   code << "extern \"C\" void viya_query_agg(db::Table& table, "
           "query::RowOutput& output, query::QueryStats& stats,"
-       << "std::vector<db::AnyNum> fargs, size_t skip, size_t limit, "
+          "std::vector<db::AnyNum> fargs, size_t skip, size_t limit, "
           "std::vector<db::AnyNum> hargs) "
           "__attribute__((__visibility__(\"default\")));\n";
 
   code << "extern \"C\" void viya_query_agg(db::Table& table, "
           "query::RowOutput& output, query::QueryStats& stats,"
-       << "std::vector<db::AnyNum> fargs, size_t skip, size_t limit, "
+          "std::vector<db::AnyNum> fargs, size_t skip, size_t limit, "
           "std::vector<db::AnyNum> hargs) {\n";
 
-#ifdef NDEBUG
-  code << "// ========= definitions ==========\n";
+#ifndef NDEBUG
+  code << "\n// ========= definitions ==========\n";
 #endif
   std::vector<const db::Dimension *> dims;
   for (auto &dim_col : query_.dimension_cols()) {
     dims.push_back(dim_col.dim());
   }
-  DimensionsStruct dims_struct(dims, "AggDimensions");
-  code << dims_struct.GenerateCode();
-
   std::vector<const db::Metric *> metrics;
   for (auto &metric_col : query_.metric_cols()) {
     metrics.push_back(metric_col.metric());
   }
-  MetricsStruct metrics_struct(metrics, "AggMetrics");
-  code << metrics_struct.GenerateCode();
+  TupleStruct tuple_struct(dims, metrics, "AggTuple");
+  code << tuple_struct.GenerateCode();
 
   StoreDefs store_defs(query_.table());
   code << store_defs.GenerateCode();

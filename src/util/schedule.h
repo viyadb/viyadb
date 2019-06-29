@@ -30,7 +30,8 @@ public:
     std::thread([after_ms, callback]() {
       std::this_thread::sleep_for(std::chrono::milliseconds(after_ms));
       callback();
-    }).detach();
+    })
+        .detach();
   }
 };
 

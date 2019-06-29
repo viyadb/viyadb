@@ -24,8 +24,8 @@ namespace viya {
 namespace codegen {
 
 void PostAggVisitor::Visit(query::AggregateQuery *query) {
-#ifdef NDEBUG
-  code_ << "// ========= post aggregation ==========\n";
+#ifndef NDEBUG
+  code_ << "\n// ========= post aggregation ==========\n";
 #endif
   code_ << "output.Start();\n";
 
@@ -41,8 +41,9 @@ void PostAggVisitor::Visit(query::AggregateQuery *query) {
 
   auto sort_columns = query->sort_cols();
   code_ << "typedef std::vector<std::string> Row;\n";
-  code_ << "Row row(" << std::to_string(query->dimension_cols().size() +
-                                        query->metric_cols().size())
+  code_ << "Row row("
+        << std::to_string(query->dimension_cols().size() +
+                          query->metric_cols().size())
         << ");\n";
   code_ << "util::Format fmt;\n";
 
@@ -74,7 +75,7 @@ void PostAggVisitor::Visit(query::AggregateQuery *query) {
 
   // Apply HAVING filter:
   if (query->having() != nullptr) {
-    FilterComparison comparison(query->table(), query->having(), "harg");
+    FilterComparison comparison(query->table(), query->having(), "harg", "");
     code_ << " auto& tuple_dims = agg_it->first;\n";
     code_ << " auto& tuple_metrics = agg_it->second;\n";
     code_ << " auto r = " << comparison.GenerateCode() << ";\n";
@@ -146,8 +147,8 @@ void PostAggVisitor::Visit(query::AggregateQuery *query) {
 }
 
 void PostAggVisitor::Visit(query::SearchQuery *query) {
-#ifdef NDEBUG
-  code_ << "// ========= post aggregation ==========\n";
+#ifndef NDEBUG
+  code_ << "\n// ========= post aggregation ==========\n";
 #endif
   code_ << "output.Start();\n";
 

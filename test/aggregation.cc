@@ -150,7 +150,8 @@ TEST_F(AggregationEvents, OutputColumnsOrder) {
       output);
 
   std::vector<query::MemoryRowOutput::Row> expected = {
-      {"20141112", "US", "2"}, {"20141113", "US", "1"},
+      {"20141112", "US", "2"},
+      {"20141113", "US", "1"},
   };
   std::sort(expected.begin(), expected.end());
 
@@ -209,7 +210,8 @@ TEST_F(AggregationEvents, NoFilter) {
            output);
 
   std::vector<query::MemoryRowOutput::Row> expected = {
-      {"donate", "5"}, {"purchase", "1.2"},
+      {"donate", "5"},
+      {"purchase", "1.2"},
   };
   std::sort(expected.begin(), expected.end());
 

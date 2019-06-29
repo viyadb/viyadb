@@ -42,7 +42,7 @@ void ValueParser::Visit(const db::StrDimension *dimension) {
 
   code_ << " auto it = uctx->v2c" << dim_idx << "->find(value);\n";
   code_ << " if (LIKELY(it != uctx->v2c" << dim_idx << "->end())) {\n";
-  code_ << "  upsert_dims._" << dim_idx << " = it->second;\n";
+  code_ << "  upsert_tuple.d._" << dim_idx << " = it->second;\n";
   code_ << " } else {\n";
   code_ << "  uctx->dict" << dim_idx << "->lock().lock();\n";
   code_ << "  auto code = uctx->dict" << dim_idx << "->c2v().size();\n";
@@ -52,12 +52,12 @@ void ValueParser::Visit(const db::StrDimension *dimension) {
   if (check_cardinality) {
     code_ << "  if(LIKELY(code <= " << cardinality << "U)) {\n";
   }
-  code_ << "  upsert_dims._" << dim_idx << " = code;\n";
+  code_ << "  upsert_tuple.d._" << dim_idx << " = code;\n";
   code_ << "  uctx->v2c" << dim_idx << "->emplace(value, code);\n";
   code_ << "  uctx->dict" << dim_idx << "->c2v().emplace_back(value);\n";
   if (check_cardinality) {
     code_ << "  } else {\n";
-    code_ << "   upsert_dims._" << dim_idx << " = 0;\n";
+    code_ << "   upsert_tuple.d._" << dim_idx << " = 0;\n";
     code_ << "  }\n";
   }
 
@@ -66,7 +66,7 @@ void ValueParser::Visit(const db::StrDimension *dimension) {
 }
 
 void ValueParser::Visit(const db::NumDimension *dimension) {
-  code_ << " upsert_dims._" << std::to_string(dimension->index()) << " = "
+  code_ << " upsert_tuple.d._" << std::to_string(dimension->index()) << " = "
         << dimension->num_type().cpp_parse_fn() << "(values["
         << tuple_idx_map_[value_idx_++] << "]);\n";
 }
@@ -98,24 +98,25 @@ void ValueParser::Visit(const db::TimeDimension *dimension) {
         code_ << "  ts_val /= 1000000L;\n";
       }
     }
-    code_ << "  upsert_dims._" << dim_idx << " = ts_val;\n";
+    code_ << "  upsert_tuple.d._" << dim_idx << " = ts_val;\n";
     code_ << " }\n";
     if (!dimension->rollup_rules().empty() ||
         !dimension->granularity().empty()) {
-      code_ << " uctx->time" << dim_idx << ".set_ts(upsert_dims._" << dim_idx
+      code_ << " uctx->time" << dim_idx << ".set_ts(upsert_tuple.d._" << dim_idx
             << ");\n";
     }
   } else {
     code_ << " uctx->time" << dim_idx << ".parse(\"" << format << "\", values["
           << tuple_idx_map_[value_idx_] << "]);\n";
     if (!dimension->rollup_rules().empty()) {
-      code_ << " upsert_dims._" << dim_idx << " = uctx->time" << dim_idx
+      code_ << " upsert_tuple.d._" << dim_idx << " = uctx->time" << dim_idx
             << ".get_ts();\n";
     }
   }
 
   if (!dimension->rollup_rules().empty()) {
-    TimestampRollup ts_rollup(dimension, "upsert_dims._" + dim_idx, "uctx->");
+    TimestampRollup ts_rollup(dimension, "upsert_tuple.d._" + dim_idx,
+                              "uctx->");
     code_ << ts_rollup.GenerateCode();
   } else if (!dimension->granularity().empty()) {
     code_ << " uctx->time" << dim_idx << ".trunc<static_cast<util::TimeUnit>("
@@ -125,7 +126,7 @@ void ValueParser::Visit(const db::TimeDimension *dimension) {
 
   if (!is_num_input || !dimension->rollup_rules().empty() ||
       !dimension->granularity().empty()) {
-    code_ << " upsert_dims._" << dim_idx << " = uctx->time" << dim_idx
+    code_ << " upsert_tuple.d._" << dim_idx << " = uctx->time" << dim_idx
           << ".get_ts();\n";
   }
 
@@ -133,13 +134,13 @@ void ValueParser::Visit(const db::TimeDimension *dimension) {
 }
 
 void ValueParser::Visit(const db::BoolDimension *dimension) {
-  code_ << " upsert_dims._" << std::to_string(dimension->index())
+  code_ << " upsert_tuple.d._" << std::to_string(dimension->index())
         << " = values[" << tuple_idx_map_[value_idx_++] << "] == \"true\";\n";
 }
 
 void ValueParser::Visit(const db::ValueMetric *metric) {
   auto metric_idx = std::to_string(metric->index());
-  code_ << " upsert_metrics._" << metric_idx << " = ";
+  code_ << " upsert_tuple.m._" << metric_idx << " = ";
   if (metric->agg_type() == db::Metric::AggregationType::COUNT) {
     code_ << "1";
   } else {
@@ -151,7 +152,7 @@ void ValueParser::Visit(const db::ValueMetric *metric) {
 
 void ValueParser::Visit(const db::BitsetMetric *metric) {
   auto metric_idx = std::to_string(metric->index());
-  code_ << " upsert_metrics._" << metric_idx << " = "
+  code_ << " upsert_tuple.m._" << metric_idx << " = "
         << metric->num_type().cpp_parse_fn() << "(values["
         << tuple_idx_map_[value_idx_++] << "]);\n";
 }
@@ -178,21 +179,22 @@ Code UpsertGenerator::LoaderContextCode() const {
 Code UpsertGenerator::OptimizeCode() const {
   Code code;
   auto &table = desc_.table();
-  std::vector<const db::Metric *> bitset_metrics;
-  for (auto *metric : table.metrics()) {
-    if (metric->agg_type() == db::Metric::AggregationType::BITSET) {
-      bitset_metrics.push_back(metric);
-    }
-  }
-  if (!bitset_metrics.empty()) {
+  bool has_bitset_metric = std::any_of(
+      table.metrics().cbegin(), table.metrics().cend(),
+      [](const db::Metric *metric) {
+        return metric->agg_type() == db::Metric::AggregationType::BITSET;
+      });
+  if (!has_bitset_metric) {
     code << " for (auto* s : lctx->table->store()->segments_copy()) {\n";
     code << "  auto segment_size = s->size();\n";
     code << "  auto metrics = static_cast<Segment*>(s)->m;\n";
     code << "  for (size_t tuple_idx = 0; tuple_idx < segment_size; "
             "++tuple_idx) {\n";
-    for (auto *metric : bitset_metrics) {
-      code << "   (metrics + tuple_idx)->_" << std::to_string(metric->index())
-           << ".optimize();\n";
+    for (auto *metric : table.metrics()) {
+      if (metric->agg_type() == db::Metric::AggregationType::BITSET) {
+        code << "   metrics._" << std::to_string(metric->index())
+             << "[tuple_idx].optimize();\n";
+      }
     }
     code << "  }\n";
     code << " }\n";
@@ -285,26 +287,26 @@ Code UpsertGenerator::CardinalityProtection() const {
     for (auto per_dim : guard.dimensions()) {
       auto per_dim_idx = std::to_string(per_dim->index());
       code << " uctx->card_dim_key" << dim_idx << "._" << per_dim_idx
-           << " = upsert_dims._" << per_dim_idx << ";\n";
+           << " = upsert_tuple.d._" << per_dim_idx << ";\n";
     }
     code << " auto it = uctx->card_stats" << dim_idx
          << ".find(uctx->card_dim_key" << dim_idx << ");\n";
     code << " if (it == uctx->card_stats" << dim_idx << ".end()) {\n";
     code << "  util::Bitset<" << std::to_string(guard.dim()->num_type().size())
          << "> bitset;\n";
-    code << "  bitset.add(upsert_dims._" << dim_idx << ");\n";
+    code << "  bitset.add(upsert_tuple.d._" << dim_idx << ");\n";
     code << "  uctx->card_stats" << dim_idx << ".emplace(uctx->card_dim_key"
          << dim_idx << ", std::move(bitset));\n";
     code << " } else {\n";
     code << "  auto& bitset = it->second;\n";
     code << "  if (UNLIKELY(bitset.cardinality() >= " << guard.limit()
          << ")) {\n";
-    code << "   if (UNLIKELY(!bitset.contains(upsert_dims._" << dim_idx
+    code << "   if (UNLIKELY(!bitset.contains(upsert_tuple.d._" << dim_idx
          << "))) {\n";
-    code << "    upsert_dims._" << dim_idx << " = 0;\n";
+    code << "    upsert_tuple.d._" << dim_idx << " = 0;\n";
     code << "   }\n";
     code << "  } else {\n";
-    code << "   bitset.add(upsert_dims._" << dim_idx << ");\n";
+    code << "   bitset.add(upsert_tuple.d._" << dim_idx << ");\n";
     code << "  }\n";
     code << " }\n";
     code << "}\n";
@@ -350,8 +352,7 @@ Code UpsertGenerator::GenerateCode() const {
   code << " LoaderContext* lctx = static_cast<LoaderContext*>(lctx_ptr);\n";
   code << " UpsertContext* uctx = "
           "static_cast<UpsertContext*>(lctx->table->upsert_ctx());\n";
-  code << " auto& upsert_dims = uctx->upsert_dims;\n";
-  code << " auto& upsert_metrics = uctx->upsert_metrics;\n";
+  code << " auto& upsert_tuple = uctx->upsert_tuple;\n";
 
   code << PartitionFilter();
 
@@ -375,22 +376,21 @@ Code UpsertGenerator::GenerateCode() const {
     metric->Accept(value_parser);
   }
   if (has_avg_metric && !has_count_metric) {
-    code << " upsert_metrics._count = 1;\n";
+    code << " upsert_tuple.m._count = 1;\n";
   }
 
   code << CardinalityProtection();
 
   code << " auto* store = lctx->table->store();\n";
   code << " auto& segments = store->segments();\n";
-  code << " auto offset_it = uctx->tuple_offsets.find(upsert_dims);\n";
+  code << " auto offset_it = uctx->tuple_offsets.find(upsert_tuple.d);\n";
   code << " if (offset_it != uctx->tuple_offsets.end()) {\n";
   auto segment_size = std::to_string(table.segment_size());
   code << "  size_t global_idx = offset_it->second;\n";
   code << "  size_t segment_idx = global_idx / " << segment_size << ";\n";
   code << "  size_t tuple_idx = global_idx % " << segment_size << ";\n";
-  code << "  Metrics* metrics = "
-          "static_cast<Segment*>(segments[segment_idx])->m;\n";
-  code << "  (metrics + tuple_idx)->Update(upsert_metrics);\n";
+  code << "  static_cast<Segment*>(segments[segment_idx])";
+  code << "->m.Update(upsert_tuple.m,tuple_idx);\n";
 
   if (AddOptimize()) {
     code << "  if (--uctx->updates_before_optimize == 0) {\n";
@@ -403,10 +403,10 @@ Code UpsertGenerator::GenerateCode() const {
   code << "  auto last_segment = static_cast<Segment*>(store->last());\n";
   code << "  size_t segment_idx = segments.size() - 1;\n";
   code << "  size_t tuple_idx = last_segment->size();\n";
-  code << "  last_segment->insert(upsert_dims, upsert_metrics);\n";
-  code << "  last_segment->stats.Update(upsert_dims);\n";
+  code << "  last_segment->Insert(upsert_tuple);\n";
+  code << "  last_segment->stats.Update(upsert_tuple);\n";
   code << "  uctx->stats.new_recs++;\n";
-  code << "  uctx->tuple_offsets.emplace(upsert_dims, segment_idx * "
+  code << "  uctx->tuple_offsets.emplace(upsert_tuple.d, segment_idx * "
        << segment_size << " + tuple_idx);\n";
   code << " }\n";
 
@@ -414,7 +414,7 @@ Code UpsertGenerator::GenerateCode() const {
   for (auto *metric : table.metrics()) {
     if (metric->agg_type() == db::Metric::AggregationType::BITSET) {
       auto metric_idx = std::to_string(metric->index());
-      code << " upsert_metrics._" << metric_idx << " = uctx->empty_bitset"
+      code << " upsert_tuple.m._" << metric_idx << " = uctx->empty_bitset"
            << metric_idx << ";\n";
     }
   }

@@ -66,14 +66,14 @@ std::vector<std::string> Consul::ListKeys(const std::string &key) const {
     throw std::runtime_error("Can't contact Consul at: " + url_ +
                              " (host is unreachable)");
   case 404:
-    return std::move(std::vector<std::string>{});
+    return std::vector<std::string>{};
   default:
     throw std::runtime_error("Can't list keys (" + r.text + ")");
   }
   auto keys = json::parse(r.text).get<std::vector<std::string>>();
   std::for_each(keys.begin(), keys.end(),
                 [](std::string &key) { key.erase(0, key.rfind("/") + 1); });
-  return std::move(keys);
+  return keys;
 }
 
 std::string Consul::GetKey(const std::string &key, bool throw_if_not_exists,

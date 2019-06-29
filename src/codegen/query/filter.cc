@@ -70,8 +70,10 @@ private:
 class ComparisonBuilder : public query::FilterVisitor {
 public:
   ComparisonBuilder(const db::Table &table, Code &code,
-                    const std::string &var_prefix = "farg")
-      : table_(table), argidx_(0), code_(code), var_prefix_(var_prefix) {}
+                    const std::string &var_prefix = "farg",
+                    const std::string &tuple_idx = "")
+      : table_(table), argidx_(0), code_(code), var_prefix_(var_prefix),
+        tuple_idx_(tuple_idx) {}
 
   void Visit(const query::RelOpFilter *filter);
   void Visit(const query::InFilter *filter);
@@ -83,6 +85,7 @@ protected:
   size_t argidx_;
   Code &code_;
   const std::string var_prefix_;
+  const std::string tuple_idx_;
 };
 
 class SegmentSkipBuilder : public ComparisonBuilder {
@@ -203,10 +206,11 @@ void ValueDecoder::Visit(const db::BitsetMetric *metric) {
 void ComparisonBuilder::Visit(const query::RelOpFilter *filter) {
   const auto column = table_.column(filter->column());
   if (column->type() == db::Column::Type::DIMENSION) {
-    code_ << "(tuple_dims._" << std::to_string(column->index())
+    code_ << "(tuple_dims._" << std::to_string(column->index()) << tuple_idx_
           << filter->opstr() << var_prefix_ << std::to_string(argidx_++) << ")";
   } else {
-    code_ << "(tuple_metrics._" << std::to_string(column->index());
+    code_ << "(tuple_metrics._" << std::to_string(column->index())
+          << tuple_idx_;
     auto metric = static_cast<const db::Metric *>(column);
     if (metric->agg_type() == db::Metric::AggregationType::BITSET) {
       code_ << ".cardinality()";
@@ -217,18 +221,17 @@ void ComparisonBuilder::Visit(const query::RelOpFilter *filter) {
 
 void ComparisonBuilder::Visit(const query::InFilter *filter) {
   const auto column = table_.column(filter->column());
-  auto dim_idx = std::to_string(column->index());
+  auto col_idx = std::to_string(column->index());
   code_ << "(";
   bool is_dim = column->type() == db::Column::Type::DIMENSION;
-  auto struct_name = is_dim ? "tuple_dims" : "tuple_metrics";
+  auto var_name = is_dim ? "tuple_dims" : "tuple_metrics";
   for (size_t i = 0; i < filter->values().size(); ++i) {
     if (i > 0) {
       code_ << (filter->equal() ? "|" : "&");
     }
-    code_ << "(" << struct_name << "._" << dim_idx;
-    if (!is_dim &&
-        static_cast<const db::Metric *>(column)->agg_type() ==
-            db::Metric::AggregationType::BITSET) {
+    code_ << "(" << var_name << "._" << col_idx << tuple_idx_;
+    if (!is_dim && static_cast<const db::Metric *>(column)->agg_type() ==
+                       db::Metric::AggregationType::BITSET) {
       code_ << ".cardinality()";
     }
     code_ << (filter->equal() ? "==" : "!=") << var_prefix_
@@ -347,7 +350,7 @@ Code SegmentSkip::GenerateCode() const {
 
 Code FilterComparison::GenerateCode() const {
   Code code;
-  ComparisonBuilder b(table_, code, var_prefix_);
+  ComparisonBuilder b(table_, code, var_prefix_, tuple_idx_);
   filter_->Accept(b);
   return code;
 }

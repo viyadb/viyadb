@@ -28,62 +28,48 @@ namespace codegen {
 
 namespace db = viya::db;
 
-Code DimensionsStruct::GenerateCode() const {
+Code TupleStruct::GenerateCode() const {
   Code code;
-  code.AddHeaders({"cstdio"});
+  code.AddHeaders({"cstdio", "cstdint", "cstddef", "cfloat"});
 
   code << "struct " << struct_name_ << " {\n";
 
-  // Field declarations:
+  // ========================
+  // Dimensions substructure
+  // ========================
+  code << " struct Dimensions {\n";
+
+  // Dimension fields
   const db::Dimension *last_dim = nullptr;
   for (auto *dim : dimensions_) {
-    code << " " << dim->num_type().cpp_type() << " _"
+    code << "  " << dim->num_type().cpp_type() << " _"
          << std::to_string(dim->index()) << ";\n";
     last_dim = dim;
   }
 
-  // Equality operator:
-  code << " bool operator==(const " << struct_name_ << " &other) const {\n";
-  code << "  return \n";
+  // Equality predicate functor:
+  code << "  struct KeyEqual {\n"
+          "   bool operator()("
+          "const Dimensions &d1,const Dimensions &d2) const {\n"
+          "    return \n";
   if (dimensions_.empty()) {
     code << "   true;\n";
   } else {
     for (auto *dim : dimensions_) {
       auto dim_idx = std::to_string(dim->index());
-      code << "   _" << dim_idx << "==other._" << dim_idx
+      code << "     d1._" << dim_idx << "==d2._" << dim_idx
            << (dim == last_dim ? ";" : " &&") << "\n";
     }
   }
-  code << " }\n";
-
-#if ENABLE_PERSISTENCE
-  // Save function:
-  code << " void save(std::ostream& os) const {\n";
-  for (auto *dim : dimensions_) {
-    code << "  os.write(reinterpret_cast<const char*>(&_"
-         << std::to_string(dim->index()) << "), "
-         << std::to_string(dim->num_type().size()) << ");\n";
-  }
-  code << " }\n";
-
-  // Load function:
-  code << " void load(std::istream& is) {\n";
-  for (auto *dim : dimensions_) {
-    code << "  is.read(reinterpret_cast<char*>(&_"
-         << std::to_string(dim->index()) << "), "
-         << std::to_string(dim->num_type().size()) << ");\n";
-  }
-  code << " }\n";
-#endif
-
-  code << "};\n";
+  code << "   }\n";
+  code << "  };\n";
 
   // Hash generator functor:
-  code << "struct " << struct_name_ << "Hasher {\n";
-  code << " std::size_t operator()(const " << struct_name_ << "& k) const {\n";
-  code << "  size_t h = 0L;\n";
+  code << "  struct Hash {\n"
+          "   std::size_t operator()(const Dimensions &k) const {\n"
+          "    size_t h = 0L;\n";
   for (auto *dim : dimensions_) {
-    code << "  h ^= ";
+    code << "    h ^= ";
     if (dim->dim_type() == db::Dimension::DimType::NUMERIC &&
         static_cast<const db::NumDimension *>(dim)->fp()) {
       code << "std::hash<" << dim->num_type().cpp_type() << ">{} (k._"
@@ -93,38 +79,31 @@ Code DimensionsStruct::GenerateCode() const {
     }
     code << " + 0x9e3779b9 + (h<<6) + (h>>2);\n";
   }
-  code << "  return h;\n";
-  code << " }\n};\n";
+  code << "    return h;\n"
+          "   }\n"
+          "  };\n"
+          " };\n";
 
-  return code;
-}
+  // ======================
+  // Metrics substructure
+  // ======================
+  code << " struct Metrics {\n";
 
-Code MetricsStruct::GenerateCode() const {
-  Code code;
-  code.AddHeaders({"cstdint", "cstddef", "cfloat"});
-
-  for (auto *metric : metrics_) {
-    if (metric->agg_type() == db::Metric::AggregationType::BITSET) {
-      code.AddHeaders({"util/bitset.h"});
-      code.AddNamespaces({"util = viya::util"});
-      break;
-    }
-  }
-
-  code << "struct " << struct_name_ << " {\n";
-
-  // Field declarations:
+  // Metric fields
   bool has_count_metric = false;
   bool has_avg_metric = false;
+
   for (auto *metric : metrics_) {
     auto metric_idx = std::to_string(metric->index());
     auto &num_type = metric->num_type();
-    code << " ";
+    code << "  ";
     if (metric->agg_type() == db::Metric::AggregationType::BITSET) {
+      code.AddHeaders({"util/bitset.h"});
+      code.AddNamespaces({"util = viya::util"});
       code << "util::Bitset<" << std::to_string(num_type.size()) << "> _"
            << metric_idx;
     } else {
-      code << num_type.cpp_type() << " _" << metric_idx << "=";
+      code << num_type.cpp_type() << " _" << metric_idx << " = ";
       switch (metric->agg_type()) {
       case db::Metric::AggregationType::MAX:
         code << num_type.cpp_min_value();
@@ -146,14 +125,14 @@ Code MetricsStruct::GenerateCode() const {
   }
   if (has_avg_metric && !has_count_metric) {
     // Add special count metric for calculating averages:
-    code << " uint64_t _count = 0;\n";
+    code << "  uint64_t _count=0;\n";
   }
 
-  // Aggregate function:
-  code << " void Update(const " << struct_name_ << " &metrics) {\n";
+  // Tuple aggregate function:
+  code << "  void Update(const Metrics &metrics) {\n";
   for (auto *metric : metrics_) {
     auto metric_idx = std::to_string(metric->index());
-    code << "  _" << metric_idx;
+    code << "   _" << metric_idx;
     switch (metric->agg_type()) {
     case db::Metric::AggregationType::SUM:
     case db::Metric::AggregationType::AVG:
@@ -177,55 +156,14 @@ Code MetricsStruct::GenerateCode() const {
     code << ";\n";
   }
   if (has_avg_metric && !has_count_metric) {
-    code << "  _count += metrics._count;\n";
+    code << "   _count += metrics._count;\n";
   }
-  code << " }\n";
+  code << "  }\n";
+  code << " };\n";
 
-#if ENABLE_PERSISTENCE
-  // Save function:
-  code
-      << " void save(std::ostream& os, char** buf, size_t& buf_size) const {\n";
-  for (auto *metric : metrics_) {
-    std::string field = "_" + std::to_string(metric->index());
-    if (metric->agg_type() == db::Metric::AggregationType::BITSET) {
-      code << "  {\n";
-      code << "   size_t s = " << field << ".size();\n";
-      code << "   if (s > buf_size) { *buf = static_cast<char*>(realloc(*buf, "
-              "s)); buf_size = s; }\n";
-      code << "   " << field << ".write(*buf);\n";
-      code << "   os.write(reinterpret_cast<const char*>(&s), "
-              "sizeof(size_t));\n";
-      code << "   os.write(*buf, s);\n";
-      code << "  }\n";
-    } else {
-      code << "  os.write(reinterpret_cast<const char*>(&" << field << "), "
-           << std::to_string(metric->num_type().size()) << ");\n";
-    }
-  }
-  code << " }\n";
-
-  // Load function:
-  code << " void load(std::istream& is, char** buf, size_t& buf_size) {\n";
-  for (auto *metric : metrics_) {
-    std::string field = "_" + std::to_string(metric->index());
-    if (metric->agg_type() == db::Metric::AggregationType::BITSET) {
-      code << "  {\n";
-      code << "   size_t s;\n";
-      code << "   is.read(reinterpret_cast<char*>(&s), sizeof(size_t));\n";
-      code << "   if (s > buf_size) { *buf = static_cast<char*>(realloc(*buf, "
-              "s)); buf_size = s; }\n";
-      code << "   is.read(*buf, s);\n";
-      code << "   " << field << ".read(*buf);\n";
-      code << "  }\n";
-    } else {
-      code << "  is.read(reinterpret_cast<char*>(&" << field << "), "
-           << std::to_string(metric->num_type().size()) << ");\n";
-    }
-  }
-  code << " }\n";
-#endif
-
-  code << "};\n";
+  code << " Dimensions d;\n"
+       << " Metrics m;\n"
+       << "};\n";
 
   return code;
 }
@@ -239,22 +177,22 @@ Code SegmentStatsStruct::GenerateCode() const {
       auto dim_idx = std::to_string(dim->index());
       auto &num_type = dim->num_type();
       code << " " << num_type.cpp_type() << " dmax" << dim_idx << " = "
-           << num_type.cpp_min_value() << ";\n";
-      code << " " << num_type.cpp_type() << " dmin" << dim_idx << " = "
+           << num_type.cpp_min_value() << ";\n"
+           << " " << num_type.cpp_type() << " dmin" << dim_idx << " = "
            << num_type.cpp_max_value() << ";\n";
     }
   }
 
   // Update function:
-  code << " void Update(const Dimensions& dims) {\n";
+  code << " void Update(const Tuple& tuple) {\n";
   for (auto *dim : table_.dimensions()) {
     if (dim->dim_type() == db::Dimension::DimType::NUMERIC ||
         dim->dim_type() == db::Dimension::DimType::TIME) {
       auto dim_idx = std::to_string(dim->index());
-      code << "  dmax" << dim_idx << " = std::max(dims._" << dim_idx << ", dmax"
-           << dim_idx << ");\n";
-      code << "  dmin" << dim_idx << " = std::min(dims._" << dim_idx << ", dmin"
-           << dim_idx << ");\n";
+      code << "  dmax" << dim_idx << " = std::max(tuple.d._" << dim_idx
+           << ", dmax" << dim_idx << ");\n"
+           << "  dmin" << dim_idx << " = std::min(tuple.d._" << dim_idx
+           << ", dmin" << dim_idx << ");\n";
     }
   }
   code << " }\n";
@@ -264,64 +202,154 @@ Code SegmentStatsStruct::GenerateCode() const {
 
 Code StoreDefs::GenerateCode() const {
   Code code;
-  code.AddHeaders({"db/segment.h"});
+  code.AddHeaders({"db/segment.h", "cstdio", "cstdint", "cstddef", "cfloat"});
   code.AddNamespaces({"db = viya::db"});
 
-  DimensionsStruct dims_struct(table_.dimensions(), "Dimensions");
-  code << dims_struct.GenerateCode();
-
-  MetricsStruct metrics_struct(table_.metrics(), "Metrics");
-  code << metrics_struct.GenerateCode();
+  TupleStruct tuple_struct(table_.dimensions(), table_.metrics(), "Tuple");
+  code << tuple_struct.GenerateCode();
 
   SegmentStatsStruct stats_struct(table_);
   code << stats_struct.GenerateCode();
 
-  auto size = std::to_string(table_.segment_size());
   code << "class Segment: public db::SegmentBase {\n";
-  code << "public:\n";
-  code << " Dimensions* d;\n";
-  code << " Metrics* m;\n";
-  code << " SegmentStats stats;\n";
 
-  code << " Segment():SegmentBase(" << size << ") {\n";
-  code << "  d = new Dimensions[" << size << "];\n";
-  code << "  m = new Metrics[" << size << "];\n";
-  code << " }\n";
+  std::string size = std::to_string(table_.segment_size());
 
-  code << " ~Segment() {\n";
-  code << "  delete[] d;\n";
-  code << "  delete[] m;\n";
-  code << " }\n";
+  // ========================
+  // Dimensions substructure
+  // ========================
+  code << " struct Dimensions {\n";
 
-  code << " void insert(Dimensions& dims, Metrics& metrics) {\n";
-  code << "  lock_.lock();\n";
-  code << "  d[size_] = dims;\n";
-  code << "  m[size_] = metrics;\n";
-  code << "  ++size_;\n";
-  code << "  lock_.unlock();\n";
-  code << " }\n";
+  // Dimension fields
+  for (auto *dim : table_.dimensions()) {
+    code << "  " << dim->num_type().cpp_type() << " _"
+         << std::to_string(dim->index()) << "[" << size << "];\n";
+  }
 
-#if ENABLE_PERSISTENCE
-  code << " void save(std::ostream& os) {\n";
-  code << "  char* buf = nullptr;\n";
-  code << "  size_t buf_size = 0L;\n";
-  code << "  for (size_t i = 0; i < size_; ++i) {\n";
-  code << "   d[i].save(os);\n";
-  code << "   m[i].save(os, &buf, buf_size);\n";
+  // Tuple insert function:
+  code << "  void Insert(const Tuple::Dimensions &dims, size_t tuple_idx) {\n";
+  for (auto *dim : table_.dimensions()) {
+    auto dim_idx = std::to_string(dim->index());
+    code << "  _" << dim_idx << "[tuple_idx] = dims._" << dim_idx << ";\n";
+  }
   code << "  }\n";
-  code << "  if (buf != nullptr) { free(buf); }\n";
-  code << " }\n";
+  code << " };\n";
 
-  code << " void load(std::istream& is) {\n";
-  code << "  char* buf = nullptr;\n";
-  code << "  size_t buf_size = 0L;\n";
-  code << "  for (size_t i = 0; i < size_; ++i) {\n";
-  code << "   d[i].load(is);\n";
-  code << "   m[i].load(is, &buf, buf_size);\n";
+  // ========================
+  // Metrics substructure
+  // ========================
+  code << " struct Metrics {\n";
+
+  // Metric fields
+  bool has_count_metric = false;
+  bool has_avg_metric = false;
+
+  Code constructor_code;
+  constructor_code << "  Metrics() {\n";
+
+  for (auto *metric : table_.metrics()) {
+    auto metric_idx = std::to_string(metric->index());
+    auto &num_type = metric->num_type();
+
+    code << "  ";
+    if (metric->agg_type() == db::Metric::AggregationType::BITSET) {
+      code.AddHeaders({"util/bitset.h"});
+      code.AddNamespaces({"util = viya::util"});
+      code << "util::Bitset<" << std::to_string(num_type.size()) << "> _"
+           << metric_idx << "[" << size << "]";
+    } else {
+      code << num_type.cpp_type() << " _" << metric_idx << "[" << size << "]";
+      switch (metric->agg_type()) {
+      case db::Metric::AggregationType::MAX:
+        constructor_code << "  std::fill_n("
+                         << "_" << metric_idx << "," << size << ","
+                         << num_type.cpp_min_value() << ");\n";
+        break;
+      case db::Metric::AggregationType::MIN:
+        constructor_code << "   std::fill_n("
+                         << "_" << metric_idx << "," << size << ","
+                         << num_type.cpp_max_value() << ");\n";
+        break;
+      default:
+        code << " = {0}";
+        break;
+      }
+
+      if (metric->agg_type() == db::Metric::AggregationType::AVG) {
+        has_avg_metric = true;
+      } else if (metric->agg_type() == db::Metric::AggregationType::COUNT) {
+        has_count_metric = true;
+      }
+    }
+    code << ";\n";
+  }
+  if (has_avg_metric && !has_count_metric) {
+    // Add special count metric for calculating averages:
+    code << "  uint64_t _count[" << size << "] = {0};\n";
+  }
+
+  constructor_code << "  }\n";
+  code << constructor_code;
+
+  // Tuple insert function:
+  code << "  void Insert(const Tuple::Metrics &metrics, size_t tuple_idx) {\n";
+  for (auto *metric : table_.metrics()) {
+    auto metric_idx = std::to_string(metric->index());
+    code << "   _" << metric_idx << "[tuple_idx] = metrics._" << metric_idx
+         << ";\n";
+  }
+  if (has_avg_metric && !has_count_metric) {
+    code << "   _count[tuple_idx] = metrics._count;\n";
+  }
   code << "  }\n";
-  code << "  if (buf != nullptr) { free(buf); }\n";
-  code << " }\n";
-#endif
+
+  // Tuple aggreagate function:
+  code << "  void Update(const Tuple::Metrics &metrics, size_t tuple_idx) {\n";
+  for (auto *metric : table_.metrics()) {
+    auto metric_idx = std::to_string(metric->index());
+    code << "   _" << metric_idx << "[tuple_idx]";
+    switch (metric->agg_type()) {
+    case db::Metric::AggregationType::SUM:
+    case db::Metric::AggregationType::AVG:
+    case db::Metric::AggregationType::COUNT:
+      code << " += metrics._" << metric_idx;
+      break;
+    case db::Metric::AggregationType::MAX:
+      code << " = std::max(_" << metric_idx << "[tuple_idx], metrics._"
+           << metric_idx << ")";
+      break;
+    case db::Metric::AggregationType::MIN:
+      code << " = std::min(_" << metric_idx << "[tuple_idx], metrics._"
+           << metric_idx << ")";
+      break;
+    case db::Metric::AggregationType::BITSET:
+      code << " |= metrics._" << metric_idx;
+      break;
+    default:
+      throw std::runtime_error("Unsupported metric aggregation type!");
+    }
+    code << ";\n";
+  }
+  if (has_avg_metric && !has_count_metric) {
+    code << "   _count[tuple_idx] += metrics._count;\n";
+  }
+  code << "  }\n"
+       << " };\n";
+
+  code << "public:\n"
+          " Dimensions d;\n"
+          " Metrics m;\n"
+          " SegmentStats stats;\n"
+          " Segment():SegmentBase("
+       << size
+       << ") {}\n"
+          " void Insert(Tuple& tuple) {\n"
+          "  lock_.lock();\n"
+          "  d.Insert(tuple.d, size_);\n"
+          "  m.Insert(tuple.m, size_);\n"
+          "  ++size_;\n"
+          "  lock_.unlock();\n"
+          " }\n";
 
   code << "};\n";
   return code;
@@ -345,13 +373,13 @@ bool UpsertContextDefs::HasTimeDimension() const {
 
 Code UpsertContextDefs::ResetFunctionCode() const {
   Code code;
-  code << "void Reset() {\n";
-  code << " stats = db::UpsertStats();\n";
+  code << " void Reset() {\n"
+          "  stats = db::UpsertStats();\n";
   if (HasTimeDimension()) {
     RollupReset rollup_reset(table_.dimensions());
     code << rollup_reset.GenerateCode();
   }
-  code << "}\n";
+  code << " }\n";
   return code;
 }
 
@@ -361,12 +389,13 @@ Code UpsertContextDefs::OptimizeFunctionCode() const {
   for (auto &guard : table_.cardinality_guards()) {
     auto dim_idx = std::to_string(guard.dim()->index());
     code << " for (auto it = card_stats" << dim_idx
-         << ".begin(); it != card_stats" << dim_idx << ".end(); ++it) {\n";
-    code << "  it->second.optimize();\n";
-    code << " }\n";
+         << ".begin(); it != card_stats" << dim_idx
+         << ".end(); ++it) {\n"
+            "  it->second.optimize();\n"
+            " }\n";
   }
-  code << " updates_before_optimize = 1000000L;\n";
-  code << "}\n";
+  code << " updates_before_optimize = 1000000L;\n"
+          "}\n";
   return code;
 }
 
@@ -374,11 +403,10 @@ Code UpsertContextDefs::UpsertContextStruct() const {
   Code code;
   code.AddNamespaces({"util = viya::util"});
 
-  code << "struct UpsertContext {\n";
-  code << " Dimensions upsert_dims;\n";
-  code << " Metrics upsert_metrics;\n";
-  code << " std::unordered_map<Dimensions,size_t,DimensionsHasher> "
-          "tuple_offsets;\n";
+  code << "struct UpsertContext {\n"
+          " Tuple upsert_tuple;\n"
+          " std::unordered_map<Tuple::Dimensions,size_t,Tuple::Dimensions::"
+          "Hash, Tuple::Dimensions::KeyEqual> tuple_offsets;\n";
 
   bool add_optimize = AddOptimize();
   if (add_optimize) {
@@ -394,14 +422,60 @@ Code UpsertContextDefs::UpsertContextStruct() const {
   for (auto &guard : cardinality_guards) {
     auto dim_idx = std::to_string(guard.dim()->index());
     std::string struct_name = "CardDimKey" + dim_idx;
-    DimensionsStruct card_key_struct(guard.dimensions(), struct_name);
-    code << card_key_struct.GenerateCode();
+    code << "struct " << struct_name << " {\n";
+
+    // Dimension fields
+    const db::Dimension *last_dim = nullptr;
+    for (auto *dim : guard.dimensions()) {
+      code << " " << dim->num_type().cpp_type() << " _"
+           << std::to_string(dim->index()) << ";\n";
+      last_dim = dim;
+    }
+
+    // Equality predicate functor:
+    code << " struct KeyEqual {\n";
+    code << "  bool operator()(const " << struct_name << " &d1, const "
+         << struct_name << " &d2) const {\n";
+    code << "   return \n";
+    if (last_dim == nullptr) {
+      code << "   true;\n";
+    } else {
+      for (auto *dim : guard.dimensions()) {
+        auto dim_idx = std::to_string(dim->index());
+        code << "   d1. _" << dim_idx << "==d2._" << dim_idx
+             << (dim == last_dim ? ";" : " &&") << "\n";
+      }
+    }
+    code << "  }\n";
+    code << " };\n";
+
+    // Hash generator functor:
+    code << " struct Hash {\n";
+    code << "  std::size_t operator()(const " << struct_name
+         << "& k) const {\n";
+    code << "   size_t h = 0L;\n";
+    for (auto *dim : guard.dimensions()) {
+      code << "   h ^= ";
+      if (dim->dim_type() == db::Dimension::DimType::NUMERIC &&
+          static_cast<const db::NumDimension *>(dim)->fp()) {
+        code << "std::hash<" << dim->num_type().cpp_type() << ">{} (k._"
+             << std::to_string(dim->index()) << ")";
+      } else {
+        code << "k._" << std::to_string(dim->index());
+      }
+      code << " + 0x9e3779b9 + (h<<6) + (h>>2);\n";
+    }
+    code << "   return h;\n"
+            "  }\n"
+            " };\n"
+            "};\n";
+
     code << " " << struct_name << " card_dim_key" << dim_idx << ";\n";
 
     code << " std::unordered_map<" << struct_name << ","
          << "util::Bitset<" << std::to_string(guard.dim()->num_type().size())
-         << ">"
-         << "," << struct_name << "Hasher> card_stats" << dim_idx << ";\n";
+         << ">," << struct_name << "::Hash," << struct_name
+         << "::KeyEqual> card_stats" << dim_idx << ";\n";
   }
 
   for (auto *dimension : table_.dimensions()) {
@@ -426,8 +500,8 @@ Code UpsertContextDefs::UpsertContextStruct() const {
     code << OptimizeFunctionCode();
   }
 
-  code << " db::UpsertStats stats;\n";
-  code << "};\n";
+  code << " db::UpsertStats stats;\n"
+          "};\n";
   return code;
 }
 
@@ -454,10 +528,9 @@ Code StoreFunctions::GenerateCode() const {
   code << defs.GenerateCode();
 
   code << "extern \"C\" void* viya_upsert_context(const db::Table &table) "
-          "__attribute__((__visibility__(\"default\")));\n";
-  code << "extern \"C\" void* viya_upsert_context(const db::Table &table) "
-          "{\n";
-  code << " UpsertContext* ctx = new UpsertContext();\n";
+          "__attribute__((__visibility__(\"default\")));\n"
+          "extern \"C\" void* viya_upsert_context(const db::Table &table) {\n"
+          " UpsertContext* ctx = new UpsertContext();\n";
   for (auto *dimension : table_.dimensions()) {
     if (dimension->dim_type() == db::Dimension::DimType::STRING) {
       auto dim_idx = std::to_string(dimension->index());
@@ -469,14 +542,13 @@ Code StoreFunctions::GenerateCode() const {
            << "->v2c());\n";
     }
   }
-  code << " return static_cast<void*>(ctx);\n";
-  code << "}\n";
-
-  code << "extern \"C\" db::SegmentBase* viya_segment_create() "
-          "__attribute__((__visibility__(\"default\")));\n";
-  code << "extern \"C\" db::SegmentBase* viya_segment_create() {\n";
-  code << " return new Segment();\n";
-  code << "}\n";
+  code << " return static_cast<void*>(ctx);\n"
+          "}\n"
+          "extern \"C\" db::SegmentBase* viya_segment_create() "
+          "__attribute__((__visibility__(\"default\")));\n"
+          "extern \"C\" db::SegmentBase* viya_segment_create() {\n"
+          " return new Segment();\n"
+          "}\n";
 
   return code;
 }

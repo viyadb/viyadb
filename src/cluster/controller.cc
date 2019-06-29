@@ -289,9 +289,9 @@ bool Controller::GeneratePlan() {
   tables_plans_.clear();
 
   for (auto &it : tables_partitioning_) {
-    tables_plans_.emplace(
-        it.first, std::move(plan_generator.Generate(
-                      it.second.total(), replication_factor, workers_configs)));
+    tables_plans_.emplace(it.first, plan_generator.Generate(it.second.total(),
+                                                            replication_factor,
+                                                            workers_configs));
   }
 
   LOG(INFO) << "Storing plan to Consul";
