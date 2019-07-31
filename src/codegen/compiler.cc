@@ -74,6 +74,10 @@ Compiler::Compiler(const util::Config &config) {
     "-Wall",
     "-Wextra",
     "-g",
+    "-O0",
+#if CODE_COVERAGE
+    "--coverage",
+#endif // CODE_COVERAGE
 #endif // NDEBUG
     // <== end of optimizations
 

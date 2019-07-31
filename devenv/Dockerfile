@@ -28,6 +28,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     g++-8 \
   && apt-get autoremove -y gcc-7 \
   && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 60 --slave /usr/bin/g++ g++ /usr/bin/g++-8 \
+  && update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-8 100 \
   && curl -sS -L https://cmake.org/files/v3.14/cmake-3.14.0-Linux-x86_64.sh -o cmake-install.sh \
     && sh ./cmake-install.sh --prefix=/usr/local --skip-license \
     && rm -f ./cmake-install.sh \
@@ -37,6 +38,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && ./b2 --without-python -j 4 link=static runtime-link=shared install \
     && cd .. \
     && rm -rf boost_1_65_1 \
+  && curl -sS -L https://netix.dl.sourceforge.net/project/ltp/Coverage%20Analysis/LCOV-1.14/lcov-1.14.tar.gz | tar -zxf - \
+    && cd lcov-1.14 \
+    && make install \
+    && cd .. \
+    && rm -rf lcov-1.14 \
   && ldconfig \
   && apt-get clean \
   && rm -rf \

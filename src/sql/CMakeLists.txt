@@ -13,5 +13,6 @@ add_library(viya_sql
   ${SOURCES})
 
 target_link_libraries(viya_sql
+  coverage_config
   glog)
 
