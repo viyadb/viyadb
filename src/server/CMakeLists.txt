@@ -4,6 +4,7 @@ file(GLOB_RECURSE SOURCES *.cc)
 add_executable(viyad ${SOURCES})
 
 target_link_libraries(viyad
+  coverage_config
   viya_db
   viya_input
   viya_query

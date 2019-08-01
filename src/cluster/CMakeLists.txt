@@ -7,6 +7,7 @@ include_directories(${CPR_INCLUDE_DIRS}
   ${RDKAFKA_INCLUDE_DIR})
 
 target_link_libraries(viya_cluster
+  coverage_config
   glog
   ${Boost_SYSTEM_LIBRARY_RELEASE}
   ${Boost_FILESYSTEM_LIBRARY_RELEASE}
