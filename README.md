@@ -5,6 +5,8 @@ ViyaDB
 
 [![Build Status](https://travis-ci.org/viyadb/viyadb.svg?branch=master)](https://travis-ci.org/viyadb/viyadb)
 
+[![Coverage](https://codecov.io/github/viyadb/viyadb/coverage.svg?branch=master)](https://codecov.io/github/viyadb/viyadb?branch=master)
+
 ViyaDB is in-memory columnar analytical data store, featuring:
 
  * Fast ad-hoc analytical queries

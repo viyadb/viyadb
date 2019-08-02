@@ -46,7 +46,10 @@ echo "Running unit tests (debug, coverage)"
 echo "===================================="
 echo
 rm -rf /tmp/viyadb
+lcov --capture --initial --directory . --output-file baseline.info
 ./test/unit_tests
-lcov --capture --directory . --output-file coverage.info
-lcov --remove coverage.info '/usr/*' '/tmp/*' '*/third_party/*' '*/test/*' --output-file coverage.info
-bash <(curl -s https://codecov.io/bash) -f coverage.info
+lcov --capture --directory . --output-file test.info
+lcov --add-tracefile baseline.info --add-tracefile test.info --output-file total.info
+lcov --remove total.info '/usr/*' '/tmp/*' '*/third_party/*' '*/test/*' --output-file total.info
+bash <(curl -s https://codecov.io/bash) -f total.info
+
