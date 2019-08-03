@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 if ! which clang-format >/dev/null 2>&1; then
   echo "Please install clang-format version 3.8 or greater!"
