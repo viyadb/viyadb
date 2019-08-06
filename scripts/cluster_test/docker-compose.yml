@@ -8,10 +8,13 @@ services:
 
   kafka:
     image: wurstmeister/kafka
+    hostname: kafka
     environment:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_HOST_NAME: kafka
+      KAFKA_LISTENERS: PLAINTEXT://:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       LOG4J_LOGGER_KAFKA: WARN
+      LOG4J_LOGGER_ORG_APACHE_ZOOKEEPER: WARN
     depends_on:
       - zookeeper
 
@@ -33,6 +36,7 @@ services:
       - ./:/viyadb
     working_dir: /viyadb/build
     command: ./src/server/viyad ../scripts/cluster_test/node1.json
+    restart: on-failure
     depends_on:
       - kafka
       - consul
@@ -43,6 +47,17 @@ services:
       - ./:/viyadb
     working_dir: /viyadb/build
     command: ./src/server/viyad ../scripts/cluster_test/node1.json
+    restart: on-failure
     depends_on:
       - kafka
       - consul
+
+  test:
+    image: python:3-slim
+    volumes:
+      - ./:/viyadb
+    working_dir: /viyadb
+    command: timeout 60s ./scripts/cluster_test/test.py 
+    depends_on:
+      - viyadb_1
+      - viyadb_2

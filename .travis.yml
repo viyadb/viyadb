@@ -7,4 +7,4 @@ before_install:
   - travis_wait docker pull viyadb/devenv
 
 script:
-  - docker run --rm -e CODECOV_TOKEN=${CODECOV_TOKEN} -v $(pwd):/viyadb viyadb/devenv /viyadb/scripts/travis-build.sh
+  - /viyadb/scripts/travis-build.sh
