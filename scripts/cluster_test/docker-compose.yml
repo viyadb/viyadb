@@ -1,0 +1,63 @@
+version: '3'
+
+services:
+  zookeeper:
+    image: zookeeper
+    environment:
+      ZOO_LOG4J_PROP: WARN
+
+  kafka:
+    image: wurstmeister/kafka
+    hostname: kafka
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      LOG4J_LOGGER_KAFKA: WARN
+      LOG4J_LOGGER_ORG_APACHE_ZOOKEEPER: WARN
+    depends_on:
+      - zookeeper
+
+  consul:
+    image: consul
+    command: agent -dev -client 0.0.0.0 -log-level warn
+
+  config:
+    image: viyadb/devenv
+    volumes:
+      - ./:/viyadb
+    command: /viyadb/scripts/cluster_test/config.sh
+    depends_on:
+      - consul
+
+  viyadb_1:
+    image: viyadb/devenv
+    volumes:
+      - ./:/viyadb
+    working_dir: /viyadb/build
+    command: ./src/server/viyad ../scripts/cluster_test/node1.json
+    restart: on-failure
+    depends_on:
+      - kafka
+      - consul
+
+  viyadb_2:
+    image: viyadb/devenv
+    volumes:
+      - ./:/viyadb
+    working_dir: /viyadb/build
+    command: ./src/server/viyad ../scripts/cluster_test/node1.json
+    restart: on-failure
+    depends_on:
+      - kafka
+      - consul
+
+  test:
+    image: python:3-slim
+    volumes:
+      - ./:/viyadb
+    working_dir: /viyadb
+    command: timeout 60s ./scripts/cluster_test/test.py 
+    depends_on:
+      - viyadb_1
+      - viyadb_2

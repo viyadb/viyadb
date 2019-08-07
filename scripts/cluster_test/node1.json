@@ -1,0 +1,8 @@
+{
+  "supervise": true,
+  "workers": 2,
+  "cluster_id": "cluster001",
+  "consul_url": "http://consul:8500",
+  "state_dir": "/tmp/viyadb",
+  "http_port": 5000
+}

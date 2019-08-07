@@ -1,9 +1,21 @@
 #!/bin/bash -e
 
+echo
+echo "======================="
+echo "Checking C++ code style"
+echo "======================="
+echo
+
+if [ ! -f CODE_OF_CONDUCT.md ]; then
+  echo "This script is supposed to run from the root directory!"
+  exit 1
+fi
+
 if ! which clang-format >/dev/null 2>&1; then
   echo "Please install clang-format version 3.8 or greater!"
   exit 1
 fi
+
 cmd="clang-format -style=LLVM"
 
 source_dirs="src/ test/"
