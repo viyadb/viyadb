@@ -79,6 +79,37 @@ private:
   std::thread thread_;
 };
 
+class WaitFor {
+public:
+  template <class Func>
+  WaitFor(uint64_t timeout_ms, Func &&callback) : running_(true) {
+    thread_ = std::thread([timeout_ms, callback, this]() {
+      uint8_t retries = 0;
+      uint64_t remaining_time = timeout_ms;
+      do {
+        auto wait_ms = std::min(2 ^ retries * 200UL, remaining_time);
+        std::this_thread::sleep_for(std::chrono::milliseconds(wait_ms));
+        remaining_time -= wait_ms;
+        running_ = !callback() && remaining_time > 0;
+        ++retries;
+      } while (running_);
+
+      if (remaining_time <= 0) {
+        throw std::runtime_error("Timeout waiting for operation");
+      }
+    });
+  }
+
+  ~WaitFor() {
+    running_ = false;
+    thread_.join();
+  }
+
+private:
+  std::atomic<bool> running_;
+  std::thread thread_;
+};
+
 } // namespace util
 } // namespace viya
 

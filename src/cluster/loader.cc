@@ -38,11 +38,6 @@ namespace cluster {
 namespace fs = boost::filesystem;
 namespace bi = boost::iostreams;
 
-void DeleteFile(const std::string &file) {
-  LOG(INFO) << "Deleting " << file;
-  fs::remove(file);
-}
-
 Loader::Loader(const Controller &controller, const std::string &load_prefix)
     : controller_(controller), load_prefix_(load_prefix),
       load_pool_(controller.config().num("workers")) {}
@@ -75,12 +70,12 @@ void Loader::Load(const util::Config &load_desc, const std::string &worker_id) {
 
   if (!worker_id.empty()) {
     load_pool_.enqueue([tmpfile, worker_id, data, this] {
-      util::ScopeGuard cleanup = [tmpfile]() { DeleteFile(tmpfile); };
+      util::ScopeGuard cleanup = [tmpfile]() { fs::remove(tmpfile); };
       SendRequest(worker_id, data);
     });
 
   } else {
-    util::ScopeGuard cleanup = [&tmpfile]() { DeleteFile(tmpfile); };
+    util::ScopeGuard cleanup = [&tmpfile]() { fs::remove(tmpfile); };
 
     int fd = open(tmpfile.c_str(), O_RDONLY);
     if (fd == -1) {
@@ -111,10 +106,9 @@ void Loader::Load(const util::Config &load_desc, const std::string &worker_id) {
     auto &workers_parts =
         controller_.tables_plans().at(table_name).workers_partitions();
     std::vector<std::string> own_workers;
-    auto hostname = util::get_hostname();
     for (auto &it : workers_parts) {
       auto &worker_id = it.first;
-      if (worker_id.substr(0, worker_id.find(":")) == hostname) {
+      if (controller_.IsOwnWorker(worker_id)) {
         own_workers.emplace_back(worker_id);
       }
     }

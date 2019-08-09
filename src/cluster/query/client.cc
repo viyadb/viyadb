@@ -17,6 +17,7 @@
 #include "cluster/query/client.h"
 #include "cluster/query/worker_state.h"
 #include <evhttp.h>
+#include <glog/logging.h>
 
 namespace viya {
 namespace cluster {
@@ -101,6 +102,8 @@ void WorkersClient::Send(WorkersToTry *workers_to_try, const char *uri,
     if (workers_states_.IsFailing(worker_id)) {
       continue;
     }
+
+    DLOG(INFO) << "Sending query request to worker: " << worker_id;
     auto sep = worker_id.find(":");
     auto host = worker_id.substr(0, sep);
     auto port = worker_id.substr(sep + 1);

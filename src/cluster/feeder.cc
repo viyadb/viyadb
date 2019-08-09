@@ -85,14 +85,15 @@ void Feeder::LoadHistoricalData(const std::string &target_worker) {
 
         for (auto &part_it : partitions) {
           auto &worker_id = part_it.first;
-          if (!target_worker.empty() && worker_id != target_worker) {
+          if ((!target_worker.empty() && worker_id != target_worker) ||
+              !controller_.IsOwnWorker(worker_id)) {
             continue;
           }
           auto &partition = part_it.second;
 
           std::string target_path =
               Downloader::Fetch(prefix + "/part=" + std::to_string(partition));
-          if (target_path != path) {
+          if (target_path.find(path) == std::string::npos) {
             delete_paths.push_back(target_path);
           }
 
@@ -137,7 +138,7 @@ void Feeder::LoadData(const util::Config &load_desc,
 
 bool Feeder::IsNewMicroBatch(const std::string &indexer_id,
                              const MicroBatchInfo &mb_info) {
-  uint32_t last_microbatch = 0L;
+  long last_microbatch = 0L;
   auto &indexers_batches = controller_.indexers_batches();
   if (indexers_batches.size() > 0) {
     last_microbatch =

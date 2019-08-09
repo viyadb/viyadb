@@ -116,7 +116,23 @@ void Service::Start() {
     }
   };
 
-  LOG(INFO) << "Started HTTP service on port "
+  server_.resource["^/config$"]["GET"] = [&](ResponsePtr response,
+                                             RequestPtr request
+                                             __attribute__((unused))) {
+    try {
+      std::string config(controller_.config().dump());
+      *response << "HTTP/1.1 200 OK\r\nContent-Type: "
+                   "application/json\r\nContent-Length: "
+                << config.length() << "\r\n\r\n"
+                << config;
+    } catch (const std::exception &e) {
+      SendError(response, e.what());
+    } catch (...) {
+      SendError(response, boost::current_exception_diagnostic_information());
+    }
+  };
+
+  LOG(INFO) << "Started controller HTTP service on port "
             << std::to_string(server_.config.port) << std::endl;
   server_.start();
 }

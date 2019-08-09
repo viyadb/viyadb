@@ -17,6 +17,7 @@
 #include "cluster/batch_info.h"
 #include <nlohmann/json.hpp>
 #include <set>
+#include <glog/logging.h>
 
 namespace viya {
 namespace cluster {

@@ -71,6 +71,8 @@ public:
   bool leader() const { return le_->Leader(); }
   Feeder &feeder() const { return *feeder_; }
 
+  bool IsOwnWorker(const std::string &worker_id) const;
+
 private:
   void ReadClusterConfig();
   bool ReadWorkersConfigs(std::map<std::string, util::Config> &workers_configs);
