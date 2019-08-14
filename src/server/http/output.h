@@ -20,6 +20,7 @@
 #include "query/output.h"
 #include "util/macros.h"
 #include <ostream>
+#include <unordered_map>
 
 namespace viya {
 namespace server {
@@ -37,11 +38,19 @@ public:
   DISALLOW_COPY_AND_MOVE(ChunkedTsvOutput);
   ~ChunkedTsvOutput() {}
 
+  void AddHeader(const std::string &name, const std::string &value) {
+    headers_.emplace(name, value);
+  }
+
   void Start() {
     stream_ << std::hex;
     stream_ << "HTTP/1.1 200 OK\r\nContent-Type: "
                "text/tab-separated-values\r\nTransfer-Encoding: "
-               "chunked\r\n\r\n";
+               "chunked\r\n";
+    for (auto it = headers_.begin(); it != headers_.end(); ++it) {
+      stream_ << it->first << ": " << it->second << "\r\n";
+    }
+    stream_ << "\r\n";
   }
 
   void SendAsCol(const Row &row) {
@@ -81,6 +90,7 @@ private:
   char col_sep_;
   char row_sep_;
   std::ostringstream buf_;
+  std::unordered_map<std::string, std::string> headers_;
 };
 } // namespace http
 } // namespace server

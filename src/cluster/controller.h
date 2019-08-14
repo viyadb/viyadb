@@ -77,7 +77,7 @@ private:
   void ReadClusterConfig();
   bool ReadWorkersConfigs(std::map<std::string, util::Config> &workers_configs);
   void FetchLatestBatchInfo();
-  std::string FindIndexerForTable(const std::string &table_name);
+  std::string FindIndexerForTable(const std::string &table_name) const;
   void Initialize();
   void InitializePartitioning(
       size_t replication_factor,

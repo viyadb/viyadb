@@ -69,12 +69,18 @@ def send_new_notifications():
 
     for e in new_notifications:
         producer.send('rt-notifications', e).get()
-        time.sleep(5)
 
 
-def send_sql_query(query, host, port):
-    r = requests.post('http://{}:{}/sql'.format(host, port), data=query)
-    r.raise_for_status()
+def send_sql_query(query, host, port, wait_for_batch=None):
+    while True:
+        r = requests.post('http://{}:{}/sql'.format(host, port), data=query)
+        r.raise_for_status()
+        if wait_for_batch:
+            last_batch = r.headers.get("X-Last-Batch-ID")
+            if last_batch and int(last_batch) < wait_for_batch:
+                time.sleep(3)
+                continue
+        break
     return csv.reader(
         r.text.splitlines(), delimiter='\t', quoting=csv.QUOTE_NONE)
 
@@ -90,27 +96,27 @@ if __name__ == '__main__':
     query = 'SELECT app_id,count FROM events WHERE app_id IN (\'com.dropbox.android\', \'com.skype.raider\')'
     for host in nodes:
         compare_results({
+            'com.skype.raider': '44'
+        }, dict(send_sql_query(query, host, 5000, 1565439460000)))
+        compare_results({
+            'com.dropbox.android': '68'
+        }, dict(send_sql_query(query, host, 5001, 1565439460000)))
+        compare_results({
             'com.dropbox.android': '68',
             'com.skype.raider': '44'
         }, dict(send_sql_query(query, host, 5555)))
-        compare_results({
-            'com.skype.raider': '44'
-        }, dict(send_sql_query(query, host, 5000)))
-        compare_results({
-            'com.dropbox.android': '68'
-        }, dict(send_sql_query(query, host, 5001)))
 
     send_new_notifications()
 
     time.sleep(5)
     for host in nodes:
         compare_results({
+            'com.skype.raider': '76'
+        }, dict(send_sql_query(query, host, 5000, 1565439620000)))
+        compare_results({
+            'com.dropbox.android': '164'
+        }, dict(send_sql_query(query, host, 5001, 1565439620000)))
+        compare_results({
             'com.dropbox.android': '164',
             'com.skype.raider': '76'
         }, dict(send_sql_query(query, host, 5555)))
-        compare_results({
-            'com.skype.raider': '76'
-        }, dict(send_sql_query(query, host, 5000)))
-        compare_results({
-            'com.dropbox.android': '164'
-        }, dict(send_sql_query(query, host, 5001)))

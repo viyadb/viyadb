@@ -60,7 +60,8 @@ protected:
 
   util::Config GetLoadDesc(const std::string &file,
                            const std::string &table_name,
-                           const std::vector<std::string> &columns);
+                           const std::vector<std::string> &columns,
+                           long batch_id);
 
 private:
   const Controller &controller_;

@@ -62,6 +62,7 @@ public:
   const std::unordered_map<std::string, Table *> &tables() const {
     return tables_;
   }
+  long last_batch_id() const { return last_batch_id_; }
 
   query::QueryStats Query(const util::Config &query_conf,
                           query::RowOutput &output);
@@ -78,6 +79,8 @@ private:
 
   input::Watcher watcher_;
   util::Statsd statsd_;
+
+  long last_batch_id_;
 };
 } // namespace db
 } // namespace viya

@@ -58,12 +58,14 @@ void Feeder::Start() {
 
 util::Config Feeder::GetLoadDesc(const std::string &file,
                                  const std::string &table_name,
-                                 const std::vector<std::string> &columns) {
+                                 const std::vector<std::string> &columns,
+                                 long batch_id) {
   return util::Config(json{{"table", table_name},
                            {"type", "file"},
                            {"file", file},
                            {"format", "tsv"},
-                           {"columns", columns}});
+                           {"columns", columns},
+                           {"batch_id", batch_id}});
 }
 
 void Feeder::LoadHistoricalData(const std::string &target_worker) {
@@ -74,7 +76,8 @@ void Feeder::LoadHistoricalData(const std::string &target_worker) {
   };
 
   for (auto &batches_it : controller_.indexers_batches()) {
-    for (auto &tables_it : batches_it.second->tables_info()) {
+    auto &batch = batches_it.second;
+    for (auto &tables_it : batch->tables_info()) {
       auto &table_name = tables_it.first;
       auto &table_info = tables_it.second;
       auto partitions =
@@ -98,7 +101,8 @@ void Feeder::LoadHistoricalData(const std::string &target_worker) {
           }
 
           loader_.Load(std::move(GetLoadDesc(target_path, table_name,
-                                             table_info.columns())),
+                                             table_info.columns(),
+                                             batch->last_microbatch())),
                        worker_id);
         }
       }
@@ -115,7 +119,8 @@ void Feeder::LoadMicroBatch(const MicroBatchInfo &mb_info,
     auto &table_info = it.second;
 
     for (auto &path : table_info.paths()) {
-      auto load_desc = GetLoadDesc(path, table_name, table_info.columns());
+      auto load_desc =
+          GetLoadDesc(path, table_name, table_info.columns(), mb_info.id());
       LoadData(load_desc, target_worker);
     }
   }
