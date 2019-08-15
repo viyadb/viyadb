@@ -122,7 +122,6 @@ std::shared_ptr<SharedLibrary> Compiler::Compile(const std::string &code) {
       cmd_.back() = tmp_so_file;
 
       LOG(INFO) << boost::algorithm::join(cmd_, " ");
-      DLOG(INFO) << code;
       auto begin = cr::steady_clock::now();
 
       if (util::Process::RunWithInput(cmd_, code) != 0) {

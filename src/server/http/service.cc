@@ -123,6 +123,8 @@ void Service::Start() {
           query_conf.set_boolean("header", true);
         }
         ChunkedTsvOutput output(*response);
+        output.AddHeader("X-Last-Batch-ID",
+                         std::to_string(database_.last_batch_id()));
         database_.Query(query_conf, output);
       } catch (const std::exception &e) {
         SendError(response, e.what());
@@ -141,6 +143,8 @@ void Service::Start() {
         bool add_header = params.find("header") != params.end();
         sql::Driver sql_driver(database_, add_header);
         ChunkedTsvOutput output(*response);
+        output.AddHeader("X-Last-Batch-ID",
+                         std::to_string(database_.last_batch_id()));
 
         std::istringstream query(sql_query);
         sql_driver.Run(query, &output);

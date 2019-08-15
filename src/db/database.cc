@@ -31,7 +31,7 @@ Database::Database(const util::Config &config)
 Database::Database(const util::Config &config, size_t write_threads,
                    size_t read_threads)
     : compiler_(config), write_pool_(write_threads), read_pool_(read_threads),
-      watcher_(*this) {
+      watcher_(*this), last_batch_id_(0L) {
 
   if (config.exists("tables")) {
     for (const util::Config &table_conf : config.sublist("tables")) {
@@ -115,6 +115,13 @@ void Database::Load(const util::Config &load_conf) {
   std::unique_ptr<input::Loader> loader(
       loader_factory.Create(load_conf, *this));
   loader->LoadData();
+
+  if (load_conf.exists("batch_id")) {
+    auto id = load_conf.num("batch_id");
+    if (id > last_batch_id_) {
+      last_batch_id_ = id;
+    }
+  }
 }
 } // namespace db
 } // namespace viya

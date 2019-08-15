@@ -142,6 +142,7 @@ std::unique_ptr<Message> KafkaNotifier::GetLastMessage() {
     consumer.assign({{topic_, last_partition}});
 
     LOG(INFO) << "Start reading from partition: " << last_partition;
+    std::string last_payload;
     while (true) {
       auto msg = consumer.poll();
       if (msg) {
@@ -151,11 +152,11 @@ std::unique_ptr<Message> KafkaNotifier::GetLastMessage() {
                          << msg.get_error();
           }
         } else {
-          auto &payload = msg.get_payload();
-          LOG(INFO) << "Read last message: " << payload;
-          last_message = MessageFactory::Create(payload, indexer_type_);
+          last_payload = msg.get_payload();
         }
         if (latest_offset->second <= msg.get_offset()) {
+          LOG(INFO) << "Read last message: " << last_payload;
+          last_message = MessageFactory::Create(last_payload, indexer_type_);
           break;
         }
       }

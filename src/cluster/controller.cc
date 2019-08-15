@@ -93,6 +93,10 @@ void Controller::ReadClusterConfig() {
   LOG(INFO) << "Read " << tables_configs_.size() << " tables configurations";
 }
 
+bool Controller::IsOwnWorker(const std::string &worker_id) const {
+  return worker_id.substr(0, worker_id.find(":")) == id_;
+}
+
 bool Controller::ReadWorkersConfigs(
     std::map<std::string, util::Config> &workers_configs) {
   workers_configs.clear();
@@ -150,7 +154,8 @@ void Controller::FetchLatestBatchInfo() {
             << " batches from indexers notifiers";
 }
 
-std::string Controller::FindIndexerForTable(const std::string &table_name) {
+std::string
+Controller::FindIndexerForTable(const std::string &table_name) const {
   for (auto &indexer_it : indexers_configs_) {
     auto indexer_tables = indexer_it.second.strlist("tables");
     if (std::find(indexer_tables.begin(), indexer_tables.end(), table_name) !=

@@ -13,6 +13,7 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_LISTENERS: PLAINTEXT://:9092
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CREATE_TOPICS: rt-notifications:1:1,batch-notifications:1:1
       LOG4J_LOGGER_KAFKA: WARN
       LOG4J_LOGGER_ORG_APACHE_ZOOKEEPER: WARN
     depends_on:
@@ -22,42 +23,53 @@ services:
     image: consul
     command: agent -dev -client 0.0.0.0 -log-level warn
 
-  config:
-    image: viyadb/devenv
+  setup:
+    build:
+      context: ./test/cluster_test
+      dockerfile: Dockerfile-setup
     volumes:
       - ./:/viyadb
-    command: /viyadb/scripts/cluster_test/config.sh
+    command: /viyadb/test/cluster_test/setup.py
     depends_on:
       - consul
+      - kafka
 
   viyadb_1:
     image: viyadb/devenv
+    hostname: viyadb_1
     volumes:
       - ./:/viyadb
+      - ./test/cluster_test/data/deepstore:/tmp/viyadb/deepstore:ro
     working_dir: /viyadb/build
-    command: ./src/server/viyad ../scripts/cluster_test/node1.json
+    command: ../test/cluster_test/start-node.sh 1
     restart: on-failure
     depends_on:
       - kafka
       - consul
+      - setup
 
   viyadb_2:
     image: viyadb/devenv
+    hostname: viyadb_2
     volumes:
       - ./:/viyadb
+      - ./test/cluster_test/data/deepstore:/tmp/viyadb/deepstore:ro
     working_dir: /viyadb/build
-    command: ./src/server/viyad ../scripts/cluster_test/node1.json
+    command: ../test/cluster_test/start-node.sh 2
     restart: on-failure
     depends_on:
       - kafka
       - consul
+      - setup
 
   test:
-    image: python:3-slim
+    build:
+      context: ./test/cluster_test
+      dockerfile: Dockerfile-test
     volumes:
       - ./:/viyadb
     working_dir: /viyadb
-    command: timeout 60s ./scripts/cluster_test/test.py 
+    command: timeout 1060s ./test/cluster_test/test.py 
     depends_on:
       - viyadb_1
       - viyadb_2
