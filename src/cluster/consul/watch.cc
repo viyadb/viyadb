@@ -16,6 +16,7 @@
 
 #include "cluster/consul/watch.h"
 #include "cluster/consul/consul.h"
+#include "util/base64.h"
 #include <cpr/cpr.h>
 #include <glog/logging.h>
 
@@ -38,19 +39,41 @@ std::unique_ptr<json> Watch::LastChanges(int32_t timeout) {
   if (r.error.code != cpr::ErrorCode::OPERATION_TIMEDOUT) {
     switch (r.status_code) {
     case 200:
+      response = std::make_unique<json>(json::parse(r.text));
+      index_ = std::stol(r.header["x-consul-index"]);
+      break;
+    case 404:
+      // Key doesn't exist yet - return empty result
       break;
     case 0:
       throw std::runtime_error("Can't contact Consul at: " + url_ +
                                " (host is unreachable)");
-    case 404:
-      throw std::runtime_error("Key doesn't exist: " + key_);
     default:
       throw std::runtime_error("Can't watch key (" + r.text + ")");
     }
-    response = std::make_unique<json>(json::parse(r.text)[0].get<json>());
-    index_ = (*response)["ModifyIndex"].get<long>();
   }
   return response;
+}
+
+std::vector<Watch::UpdatedKey> Watch::GetUpdatedKeys(int32_t timeout) {
+  auto result_json = LastChanges(timeout);
+  if (!result_json) {
+    return std::vector<UpdatedKey>{};
+  }
+  auto result_list = result_json->get<std::vector<json>>();
+  std::vector<UpdatedKey> keys(result_list.size());
+  auto out = keys.begin();
+  for (auto in = result_list.begin(); in != result_list.end(); ++in, ++out) {
+    auto key = (*in)["Key"].get<std::string>();
+    out->key = key.erase(0, key.rfind("/") + 1);
+    auto value_base64 = (*in)["Value"];
+    if (value_base64 != nullptr) {
+      out->value = base64_decode(value_base64);
+    }
+    out->session = (*in)["Session"];
+    out->modify_index = (*in)["ModifyIndex"];
+  }
+  return keys;
 }
 
 } // namespace consul

@@ -20,6 +20,7 @@
 #include "util/macros.h"
 #include <memory>
 #include <nlohmann/json.hpp>
+#include <vector>
 
 namespace viya {
 namespace cluster {
@@ -31,10 +32,21 @@ class Consul;
 
 class Watch {
 public:
+  struct UpdatedKey {
+    std::string key;
+    std::string value;
+    std::string session;
+    long modify_index;
+  };
+
+public:
   Watch(const Consul &consul, const std::string &key, bool recurse = false);
   DISALLOW_COPY_AND_MOVE(Watch);
 
-  std::unique_ptr<json> LastChanges(int32_t timeout = 86400000L);
+  std::vector<UpdatedKey> GetUpdatedKeys(int32_t timeout = 86400000L);
+
+private:
+  std::unique_ptr<json> LastChanges(int32_t timeout);
 
 private:
   const Consul &consul_;

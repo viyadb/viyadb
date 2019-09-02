@@ -19,9 +19,11 @@
 
 #include "cluster/batch_info.h"
 #include "cluster/consul/consul.h"
+#include "cluster/consul/watch.h"
 #include "cluster/feeder.h"
 #include "cluster/http/service.h"
 #include "cluster/partitioning.h"
+#include "cluster/workers_watch.h"
 #include "cluster/plan.h"
 #include "db/database.h"
 #include "util/config.h"
@@ -46,6 +48,10 @@ public:
   const util::Config &cluster_config() const { return cluster_config_; }
   const std::string &cluster_id() const { return cluster_id_; }
   db::Database &db() { return db_; }
+
+  size_t total_workers_num() const {
+    return (size_t)cluster_config_.num("workers");
+  }
 
   const std::map<std::string, util::Config> &tables_configs() const {
     return tables_configs_;
@@ -75,13 +81,10 @@ public:
 
 private:
   void ReadClusterConfig();
-  bool ReadWorkersConfigs(std::map<std::string, util::Config> &workers_configs);
   void FetchLatestBatchInfo();
   std::string FindIndexerForTable(const std::string &table_name) const;
   void Initialize();
-  void InitializePartitioning(
-      size_t replication_factor,
-      const std::map<std::string, util::Config> &workers_configs);
+  void InitializePartitioning(size_t replication_factor);
   void InitializePlan();
   void AssignPartitionsToWorkers();
   bool ReadPlan();
@@ -106,6 +109,7 @@ private:
   std::map<std::string, Plan> tables_plans_;
   std::map<std::string, Partitioning> tables_partitioning_;
   std::unique_ptr<Feeder> feeder_;
+  std::unique_ptr<WorkersWatch> workers_watch_;
 };
 
 } // namespace cluster

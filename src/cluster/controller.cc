@@ -36,7 +36,9 @@ Controller::Controller(const util::Config &config)
   le_ = consul_.ElectLeader(*session_,
                             "clusters/" + cluster_id_ + "/nodes/leader");
 
-  initializer_ = std::make_unique<util::Later>(10000L, [this]() {
+  workers_watch_ = std::make_unique<WorkersWatch>(*this);
+
+  initializer_ = std::make_unique<util::Later>(100L, [this]() {
     try {
       Initialize();
     } catch (...) {
@@ -56,9 +58,6 @@ void Controller::ReadClusterConfig() {
   }
   if (!cluster_config_.exists("http_port")) {
     cluster_config_.set_num("http_port", 5555);
-  }
-  if (!cluster_config_.exists("workers")) {
-    cluster_config_.set_num("workers", 0);
   }
 
   LOG(INFO) << "Using cluster configuration: " << cluster_config_.dump();
@@ -95,33 +94,6 @@ void Controller::ReadClusterConfig() {
 
 bool Controller::IsOwnWorker(const std::string &worker_id) const {
   return worker_id.substr(0, worker_id.find(":")) == id_;
-}
-
-bool Controller::ReadWorkersConfigs(
-    std::map<std::string, util::Config> &workers_configs) {
-  workers_configs.clear();
-
-  auto active_workers =
-      consul_.ListKeys("clusters/" + cluster_id_ + "/nodes/workers");
-  auto workers_num = (size_t)cluster_config_.num("workers");
-
-  if (workers_num > 0 && active_workers.size() < workers_num) {
-    LOG(INFO) << "Number of active workers is less than the expected number of "
-                 "workers ("
-              << workers_num << ")";
-    return false;
-  }
-
-  LOG(INFO) << "Found " << active_workers.size() << " active workers";
-  for (auto &worker_id : active_workers) {
-    LOG(INFO) << "Inserting worker ID: " << worker_id;
-    workers_configs.emplace(worker_id,
-                            consul_.GetKey("clusters/" + cluster_id_ +
-                                               "/nodes/workers/" + worker_id,
-                                           false, "{}"));
-  }
-  LOG(INFO) << "Read " << workers_configs.size() << " workers configurations";
-  return true;
 }
 
 void Controller::Initialize() {
@@ -166,10 +138,7 @@ Controller::FindIndexerForTable(const std::string &table_name) const {
   return std::string();
 }
 
-void Controller::InitializePartitioning(
-    size_t replication_factor,
-    const std::map<std::string, util::Config> &workers_configs) {
-
+void Controller::InitializePartitioning(size_t replication_factor) {
   FetchLatestBatchInfo();
 
   tables_partitioning_.clear();
@@ -201,8 +170,7 @@ void Controller::InitializePartitioning(
                                  "table or indexer configuration!");
       }
 
-      size_t default_partitions_num =
-          workers_configs.size() / replication_factor;
+      size_t default_partitions_num = total_workers_num() / replication_factor;
 
       size_t total_partitions =
           partitioning.num("partitions", default_partitions_num);
@@ -279,28 +247,26 @@ bool Controller::ReadPlan() {
 }
 
 bool Controller::GeneratePlan() {
-  std::map<std::string, util::Config> workers_configs;
-  while (!ReadWorkersConfigs(workers_configs)) {
-    std::this_thread::sleep_for(std::chrono::seconds(10));
-  }
-
   size_t replication_factor = cluster_config_.num("replication_factor");
 
   LOG(INFO) << "Initializing table partitioning";
-  InitializePartitioning(replication_factor, workers_configs);
+  InitializePartitioning(replication_factor);
+
+  LOG(INFO) << "Waiting for all workers to connect";
+  workers_watch_->WaitForAllWorkers();
 
   LOG(INFO) << "Generating partitioning plan";
   PlanGenerator plan_generator;
   tables_plans_.clear();
 
+  auto active_workers = workers_watch_->GetActiveWorkers();
   for (auto &it : tables_partitioning_) {
     tables_plans_.emplace(it.first, plan_generator.Generate(it.second.total(),
                                                             replication_factor,
-                                                            workers_configs));
+                                                            active_workers));
   }
 
   LOG(INFO) << "Storing plan to Consul";
-
   json cached_plan = json({});
   for (auto &it : tables_plans_) {
     cached_plan[it.first] = it.second.ToJson();

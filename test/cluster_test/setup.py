@@ -33,6 +33,7 @@ def write_config():
 
     consul_put_kv('viyadb/clusters/cluster001/config', {
         'replication_factor': 2,
+        'workers': 4,
         'tables': ['events'],
         'indexers': ['main']
     })
