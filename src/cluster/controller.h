@@ -19,10 +19,12 @@
 
 #include "cluster/batch_info.h"
 #include "cluster/consul/consul.h"
+#include "cluster/consul/watch.h"
 #include "cluster/feeder.h"
 #include "cluster/http/service.h"
 #include "cluster/partitioning.h"
 #include "cluster/plan.h"
+#include "cluster/workers_watch.h"
 #include "db/database.h"
 #include "util/config.h"
 #include "util/macros.h"
@@ -46,6 +48,10 @@ public:
   const util::Config &cluster_config() const { return cluster_config_; }
   const std::string &cluster_id() const { return cluster_id_; }
   db::Database &db() { return db_; }
+
+  size_t total_workers_num() const {
+    return (size_t)cluster_config_.num("workers");
+  }
 
   const std::map<std::string, util::Config> &tables_configs() const {
     return tables_configs_;
@@ -72,22 +78,23 @@ public:
   Feeder &feeder() const { return *feeder_; }
 
   bool IsOwnWorker(const std::string &worker_id) const;
+  void RecoverWorker(const std::string &worker_id) const;
 
 private:
   void ReadClusterConfig();
-  bool ReadWorkersConfigs(std::map<std::string, util::Config> &workers_configs);
   void FetchLatestBatchInfo();
   std::string FindIndexerForTable(const std::string &table_name) const;
   void Initialize();
-  void InitializePartitioning(
-      size_t replication_factor,
-      const std::map<std::string, util::Config> &workers_configs);
+  void InitializePartitioning(size_t replication_factor);
   void InitializePlan();
   void AssignPartitionsToWorkers();
   bool ReadPlan();
   bool GeneratePlan();
   void StartHttpServer();
   void CreateKey() const;
+  void ConfigureWorkers(const std::string &target_worker = std::string()) const;
+  void CreateTableInWorker(const util::Config &table_config,
+                           const std::string &worker_id) const;
 
 private:
   const std::string id_;
@@ -106,6 +113,7 @@ private:
   std::map<std::string, Plan> tables_plans_;
   std::map<std::string, Partitioning> tables_partitioning_;
   std::unique_ptr<Feeder> feeder_;
+  std::unique_ptr<WorkersWatch> workers_watch_;
 };
 
 } // namespace cluster

@@ -73,7 +73,14 @@ def send_new_notifications():
 
 def send_sql_query(query, host, port, wait_for_batch=None):
     while True:
-        r = requests.post('http://{}:{}/sql'.format(host, port), data=query)
+        try:
+            r = requests.post(
+                'http://{}:{}/sql'.format(host, port), data=query)
+        except requests.exceptions.ConnectionError:
+            print('Host {}:{} is not available ... will retry in 3s'.format(
+                host, port))
+            time.sleep(3)
+            continue
         r.raise_for_status()
         if wait_for_batch:
             last_batch = r.headers.get("X-Last-Batch-ID")
@@ -90,33 +97,49 @@ def compare_results(expected, actual):
         raise Exception('Expected: {}\nActual: {}'.format(expected, actual))
 
 
+def check_node_bootstrapped(host):
+    compare_results({
+        'com.skype.raider': '44'
+    }, dict(send_sql_query(query, host, 5000, 1565439460000)))
+    compare_results({
+        'com.dropbox.android': '68'
+    }, dict(send_sql_query(query, host, 5001, 1565439460000)))
+    compare_results({
+        'com.dropbox.android': '68',
+        'com.skype.raider': '44'
+    }, dict(send_sql_query(query, host, 5555)))
+
+
+def check_node_uptodate(host):
+    compare_results({
+        'com.skype.raider': '76'
+    }, dict(send_sql_query(query, host, 5000, 1565439620000)))
+    compare_results({
+        'com.dropbox.android': '164'
+    }, dict(send_sql_query(query, host, 5001, 1565439620000)))
+    compare_results({
+        'com.dropbox.android': '164',
+        'com.skype.raider': '76'
+    }, dict(send_sql_query(query, host, 5555)))
+
+
+def send_control_cmd(host, cmd):
+    r = requests.get('http://{}:8080/{}'.format(host, cmd))
+    r.raise_for_status()
+
+
 if __name__ == '__main__':
     wait_for_viyadb_cluster()
 
     query = 'SELECT app_id,count FROM events WHERE app_id IN (\'com.dropbox.android\', \'com.skype.raider\')'
     for host in nodes:
-        compare_results({
-            'com.skype.raider': '44'
-        }, dict(send_sql_query(query, host, 5000, 1565439460000)))
-        compare_results({
-            'com.dropbox.android': '68'
-        }, dict(send_sql_query(query, host, 5001, 1565439460000)))
-        compare_results({
-            'com.dropbox.android': '68',
-            'com.skype.raider': '44'
-        }, dict(send_sql_query(query, host, 5555)))
+        check_node_bootstrapped(host)
 
     send_new_notifications()
 
-    time.sleep(5)
+    time.sleep(3)
     for host in nodes:
-        compare_results({
-            'com.skype.raider': '76'
-        }, dict(send_sql_query(query, host, 5000, 1565439620000)))
-        compare_results({
-            'com.dropbox.android': '164'
-        }, dict(send_sql_query(query, host, 5001, 1565439620000)))
-        compare_results({
-            'com.dropbox.android': '164',
-            'com.skype.raider': '76'
-        }, dict(send_sql_query(query, host, 5555)))
+        check_node_uptodate(host)
+
+    send_control_cmd(nodes[0], 'kill_worker')
+    check_node_uptodate(nodes[0])

@@ -15,11 +15,11 @@
  */
 
 #include "cluster/controller.h"
-#include "cluster/configurator.h"
 #include "cluster/notifier.h"
 #include "util/hostname.h"
 #include <boost/exception/diagnostic_information.hpp>
 #include <chrono>
+#include <cpr/cpr.h>
 #include <glog/logging.h>
 
 namespace viya {
@@ -36,7 +36,9 @@ Controller::Controller(const util::Config &config)
   le_ = consul_.ElectLeader(*session_,
                             "clusters/" + cluster_id_ + "/nodes/leader");
 
-  initializer_ = std::make_unique<util::Later>(10000L, [this]() {
+  workers_watch_ = std::make_unique<WorkersWatch>(*this);
+
+  initializer_ = std::make_unique<util::Later>(100L, [this]() {
     try {
       Initialize();
     } catch (...) {
@@ -56,9 +58,6 @@ void Controller::ReadClusterConfig() {
   }
   if (!cluster_config_.exists("http_port")) {
     cluster_config_.set_num("http_port", 5555);
-  }
-  if (!cluster_config_.exists("workers")) {
-    cluster_config_.set_num("workers", 0);
   }
 
   LOG(INFO) << "Using cluster configuration: " << cluster_config_.dump();
@@ -97,40 +96,12 @@ bool Controller::IsOwnWorker(const std::string &worker_id) const {
   return worker_id.substr(0, worker_id.find(":")) == id_;
 }
 
-bool Controller::ReadWorkersConfigs(
-    std::map<std::string, util::Config> &workers_configs) {
-  workers_configs.clear();
-
-  auto active_workers =
-      consul_.ListKeys("clusters/" + cluster_id_ + "/nodes/workers");
-  auto workers_num = (size_t)cluster_config_.num("workers");
-
-  if (workers_num > 0 && active_workers.size() < workers_num) {
-    LOG(INFO) << "Number of active workers is less than the expected number of "
-                 "workers ("
-              << workers_num << ")";
-    return false;
-  }
-
-  LOG(INFO) << "Found " << active_workers.size() << " active workers";
-  for (auto &worker_id : active_workers) {
-    LOG(INFO) << "Inserting worker ID: " << worker_id;
-    workers_configs.emplace(worker_id,
-                            consul_.GetKey("clusters/" + cluster_id_ +
-                                               "/nodes/workers/" + worker_id,
-                                           false, "{}"));
-  }
-  LOG(INFO) << "Read " << workers_configs.size() << " workers configurations";
-  return true;
-}
-
 void Controller::Initialize() {
   InitializePlan();
 
   std::string load_prefix = config_.str("state_dir") + "/input";
 
-  Configurator configurator(*this);
-  configurator.ConfigureWorkers();
+  ConfigureWorkers();
 
   feeder_ = std::make_unique<Feeder>(*this, load_prefix);
 
@@ -166,10 +137,7 @@ Controller::FindIndexerForTable(const std::string &table_name) const {
   return std::string();
 }
 
-void Controller::InitializePartitioning(
-    size_t replication_factor,
-    const std::map<std::string, util::Config> &workers_configs) {
-
+void Controller::InitializePartitioning(size_t replication_factor) {
   FetchLatestBatchInfo();
 
   tables_partitioning_.clear();
@@ -201,8 +169,7 @@ void Controller::InitializePartitioning(
                                  "table or indexer configuration!");
       }
 
-      size_t default_partitions_num =
-          workers_configs.size() / replication_factor;
+      size_t default_partitions_num = total_workers_num() / replication_factor;
 
       size_t total_partitions =
           partitioning.num("partitions", default_partitions_num);
@@ -279,28 +246,26 @@ bool Controller::ReadPlan() {
 }
 
 bool Controller::GeneratePlan() {
-  std::map<std::string, util::Config> workers_configs;
-  while (!ReadWorkersConfigs(workers_configs)) {
-    std::this_thread::sleep_for(std::chrono::seconds(10));
-  }
-
   size_t replication_factor = cluster_config_.num("replication_factor");
 
   LOG(INFO) << "Initializing table partitioning";
-  InitializePartitioning(replication_factor, workers_configs);
+  InitializePartitioning(replication_factor);
+
+  LOG(INFO) << "Waiting for all workers";
+  workers_watch_->WaitForAllWorkers();
 
   LOG(INFO) << "Generating partitioning plan";
   PlanGenerator plan_generator;
   tables_plans_.clear();
 
+  auto active_workers = workers_watch_->GetActiveWorkers();
   for (auto &it : tables_partitioning_) {
     tables_plans_.emplace(it.first, plan_generator.Generate(it.second.total(),
                                                             replication_factor,
-                                                            workers_configs));
+                                                            active_workers));
   }
 
   LOG(INFO) << "Storing plan to Consul";
-
   json cached_plan = json({});
   for (auto &it : tables_plans_) {
     cached_plan[it.first] = it.second.ToJson();
@@ -333,6 +298,45 @@ void Controller::CreateKey() const {
     LOG(WARNING) << "The controller key is still locked by the previous "
                     "process... waiting";
     std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+  }
+}
+
+void Controller::RecoverWorker(const std::string &worker_id) const {
+  ConfigureWorkers(worker_id);
+  feeder_->ReloadWorker(worker_id);
+}
+
+void Controller::ConfigureWorkers(const std::string &target_worker) const {
+  for (auto &plans_it : tables_plans_) {
+    auto &table_name = plans_it.first;
+    auto &plan = plans_it.second;
+    for (auto &replicas : plan.partitions()) {
+      for (auto &placement : replicas) {
+        std::string worker_id =
+            placement.hostname() + ":" + std::to_string(placement.port());
+        if ((target_worker.empty() || target_worker == worker_id) &&
+            IsOwnWorker(worker_id)) {
+          CreateTableInWorker(tables_configs_.at(table_name), worker_id);
+        }
+      }
+    }
+  }
+}
+
+void Controller::CreateTableInWorker(const util::Config &table_config,
+                                     const std::string &worker_id) const {
+  std::string url = "http://" + worker_id + "/tables";
+  auto data = table_config.dump();
+  auto r = cpr::Post(
+      cpr::Url{url}, cpr::Body{data},
+      cpr::Header{{"Content-Type", "application/json"}, {"Expect", "None"}},
+      cpr::Timeout{3000L});
+  if (r.status_code != 201) {
+    if (r.status_code == 0) {
+      throw std::runtime_error("Can't contact worker at: " + url +
+                               " (host is unreachable)");
+    }
+    throw std::runtime_error("Can't create table in worker (" + r.text + ")");
   }
 }
 

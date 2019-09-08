@@ -165,6 +165,10 @@ bool Feeder::ProcessMessage(const std::string &indexer_id,
 }
 
 void Feeder::ReloadWorker(const std::string &worker_id) {
+  if (!controller_.IsOwnWorker(worker_id)) {
+    return;
+  }
+
   LoadHistoricalData(worker_id);
 
   for (auto notifier : notifiers_) {

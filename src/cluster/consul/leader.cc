@@ -46,8 +46,8 @@ void LeaderElector::Start() {
       }
     }
     try {
-      auto changes = watch_->LastChanges();
-      if (changes && leader_ && session_.id() != (*changes)["Session"]) {
+      auto keys = watch_->GetUpdatedKeys();
+      if (!keys.empty() && leader_ && session_.id() != keys[0].session) {
         LOG(INFO) << "Not a leader anymore";
         leader_ = false;
       }

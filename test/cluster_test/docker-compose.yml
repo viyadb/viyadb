@@ -41,7 +41,7 @@ services:
       - ./:/viyadb
       - ./test/cluster_test/data/deepstore:/tmp/viyadb/deepstore:ro
     working_dir: /viyadb/build
-    command: ../test/cluster_test/start-node.sh 1
+    command: ../test/cluster_test/run-node.py 1
     restart: on-failure
     depends_on:
       - kafka
@@ -55,7 +55,7 @@ services:
       - ./:/viyadb
       - ./test/cluster_test/data/deepstore:/tmp/viyadb/deepstore:ro
     working_dir: /viyadb/build
-    command: ../test/cluster_test/start-node.sh 2
+    command: ../test/cluster_test/run-node.py 2
     restart: on-failure
     depends_on:
       - kafka
@@ -69,7 +69,7 @@ services:
     volumes:
       - ./:/viyadb
     working_dir: /viyadb
-    command: timeout 1060s ./test/cluster_test/test.py 
+    command: timeout 120s ./test/cluster_test/test.py
     depends_on:
       - viyadb_1
       - viyadb_2
