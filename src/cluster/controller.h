@@ -23,8 +23,8 @@
 #include "cluster/feeder.h"
 #include "cluster/http/service.h"
 #include "cluster/partitioning.h"
-#include "cluster/workers_watch.h"
 #include "cluster/plan.h"
+#include "cluster/workers_watch.h"
 #include "db/database.h"
 #include "util/config.h"
 #include "util/macros.h"
@@ -78,6 +78,7 @@ public:
   Feeder &feeder() const { return *feeder_; }
 
   bool IsOwnWorker(const std::string &worker_id) const;
+  void RecoverWorker(const std::string &worker_id) const;
 
 private:
   void ReadClusterConfig();
@@ -91,6 +92,9 @@ private:
   bool GeneratePlan();
   void StartHttpServer();
   void CreateKey() const;
+  void ConfigureWorkers(const std::string &target_worker = std::string()) const;
+  void CreateTableInWorker(const util::Config &table_config,
+                           const std::string &worker_id) const;
 
 private:
   const std::string id_;

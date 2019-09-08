@@ -25,6 +25,7 @@
 #include "util/schedule.h"
 #include <map>
 #include <mutex>
+#include <unordered_set>
 
 namespace viya {
 namespace cluster {
@@ -45,7 +46,7 @@ public:
   DISALLOW_COPY_AND_MOVE(WorkersWatch);
 
   void WaitForAllWorkers();
-  std::map<std::string, util::Config> GetActiveWorkers();
+  const std::map<std::string, util::Config> GetActiveWorkers();
 
 private:
   void WatchActiveWorkers();
@@ -57,6 +58,8 @@ private:
   std::unique_ptr<util::Always> always_;
   std::unique_ptr<consul::Watch> watch_;
   util::CountDownLatch workers_ready_;
+  bool workers_initialized_;
+  std::unordered_set<std::string> failing_workers_;
 };
 
 } // namespace cluster

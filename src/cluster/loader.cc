@@ -66,9 +66,14 @@ void Loader::Load(const util::Config &load_desc, const std::string &worker_id) {
 
   util::Config tmp_desc = load_desc;
   tmp_desc.set_str("file", tmpfile);
-  auto data = tmp_desc.dump();
+
+  auto table_name = load_desc.str("table");
 
   if (!worker_id.empty()) {
+    auto partition_filter = GetPartitionFilter(table_name, worker_id);
+    tmp_desc.set_sub("partition_filter", partition_filter);
+    auto data = tmp_desc.dump();
+
     load_pool_.enqueue([tmpfile, worker_id, data, this] {
       util::ScopeGuard cleanup = [tmpfile]() { fs::remove(tmpfile); };
       SendRequest(worker_id, data);
@@ -102,7 +107,6 @@ void Loader::Load(const util::Config &load_desc, const std::string &worker_id) {
       LOG(WARNING) << "Can't madvise() on file: " << tmpfile;
     }
 
-    auto table_name = load_desc.str("table");
     auto &workers_parts =
         controller_.tables_plans().at(table_name).workers_partitions();
     std::vector<std::string> own_workers;

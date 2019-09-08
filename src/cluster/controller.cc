@@ -15,11 +15,11 @@
  */
 
 #include "cluster/controller.h"
-#include "cluster/configurator.h"
 #include "cluster/notifier.h"
 #include "util/hostname.h"
 #include <boost/exception/diagnostic_information.hpp>
 #include <chrono>
+#include <cpr/cpr.h>
 #include <glog/logging.h>
 
 namespace viya {
@@ -101,8 +101,7 @@ void Controller::Initialize() {
 
   std::string load_prefix = config_.str("state_dir") + "/input";
 
-  Configurator configurator(*this);
-  configurator.ConfigureWorkers();
+  ConfigureWorkers();
 
   feeder_ = std::make_unique<Feeder>(*this, load_prefix);
 
@@ -252,7 +251,7 @@ bool Controller::GeneratePlan() {
   LOG(INFO) << "Initializing table partitioning";
   InitializePartitioning(replication_factor);
 
-  LOG(INFO) << "Waiting for all workers to connect";
+  LOG(INFO) << "Waiting for all workers";
   workers_watch_->WaitForAllWorkers();
 
   LOG(INFO) << "Generating partitioning plan";
@@ -299,6 +298,45 @@ void Controller::CreateKey() const {
     LOG(WARNING) << "The controller key is still locked by the previous "
                     "process... waiting";
     std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+  }
+}
+
+void Controller::RecoverWorker(const std::string &worker_id) const {
+  ConfigureWorkers(worker_id);
+  feeder_->ReloadWorker(worker_id);
+}
+
+void Controller::ConfigureWorkers(const std::string &target_worker) const {
+  for (auto &plans_it : tables_plans_) {
+    auto &table_name = plans_it.first;
+    auto &plan = plans_it.second;
+    for (auto &replicas : plan.partitions()) {
+      for (auto &placement : replicas) {
+        std::string worker_id =
+            placement.hostname() + ":" + std::to_string(placement.port());
+        if ((target_worker.empty() || target_worker == worker_id) &&
+            IsOwnWorker(worker_id)) {
+          CreateTableInWorker(tables_configs_.at(table_name), worker_id);
+        }
+      }
+    }
+  }
+}
+
+void Controller::CreateTableInWorker(const util::Config &table_config,
+                                     const std::string &worker_id) const {
+  std::string url = "http://" + worker_id + "/tables";
+  auto data = table_config.dump();
+  auto r = cpr::Post(
+      cpr::Url{url}, cpr::Body{data},
+      cpr::Header{{"Content-Type", "application/json"}, {"Expect", "None"}},
+      cpr::Timeout{3000L});
+  if (r.status_code != 201) {
+    if (r.status_code == 0) {
+      throw std::runtime_error("Can't contact worker at: " + url +
+                               " (host is unreachable)");
+    }
+    throw std::runtime_error("Can't create table in worker (" + r.text + ")");
   }
 }
 
