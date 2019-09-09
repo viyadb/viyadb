@@ -59,7 +59,7 @@ template <> inline void Truncator::trunc<TimeUnit::YEAR>(std::tm &tm) {
   tm.tm_min = 0;
   tm.tm_hour = 0;
   tm.tm_mday = 1;
-  tm.tm_mon = 1;
+  tm.tm_mon = 0;
 }
 
 template <> inline void Truncator::trunc<TimeUnit::MONTH>(std::tm &tm) {
