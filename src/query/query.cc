@@ -36,7 +36,8 @@ DimOutputColumn::DimOutputColumn(const util::Config &config,
                                  const db::Dimension *dim, size_t index)
     : OutputColumn(index), dim_(dim) {
   if (dim->dim_type() == db::Dimension::DimType::TIME) {
-    format_ = config.str("format", "");
+    format_ = config.str("format",
+                         static_cast<const db::TimeDimension *>(dim)->format());
     util::check_legal_string("Time format", format_);
     if (config.exists("granularity")) {
       granularity_ = db::Granularity(config.str("granularity"));

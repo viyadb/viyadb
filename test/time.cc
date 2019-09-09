@@ -576,3 +576,123 @@ TEST_F(TimeEvents, QueryGranularity) {
 
   EXPECT_EQ(expected, actual);
 }
+
+TEST_F(TimeGranularitiesEvents, IngestRollupYear) {
+  LoadEvents();
+
+  query::MemoryRowOutput output;
+  db.Query(std::move(util::Config(
+               json{{"type", "aggregate"},
+                    {"table", "events"},
+                    {"select", {{{"column", "t1"}}, {{"column", "count"}}}}})),
+           output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {
+      {"2000-01-01 00:00:00", "4"}, {"2001-01-01 00:00:00", "4"}};
+  auto actual = output.rows();
+
+  std::sort(expected.begin(), expected.end());
+  std::sort(actual.begin(), actual.end());
+
+  EXPECT_EQ(expected, actual);
+}
+
+TEST_F(TimeGranularitiesEvents, IngestRollupMonth) {
+  LoadEvents();
+
+  query::MemoryRowOutput output;
+  db.Query(std::move(util::Config(
+               json{{"type", "aggregate"},
+                    {"table", "events"},
+                    {"select", {{{"column", "t2"}}, {{"column", "count"}}}}})),
+           output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {
+      {"2001-01-01 00:00:00", "4"}, {"2001-02-01 00:00:00", "4"}};
+  auto actual = output.rows();
+
+  std::sort(expected.begin(), expected.end());
+  std::sort(actual.begin(), actual.end());
+
+  EXPECT_EQ(expected, actual);
+}
+
+TEST_F(TimeGranularitiesEvents, IngestRollupDay) {
+  LoadEvents();
+
+  query::MemoryRowOutput output;
+  db.Query(std::move(util::Config(
+               json{{"type", "aggregate"},
+                    {"table", "events"},
+                    {"select", {{{"column", "t3"}}, {{"column", "count"}}}}})),
+           output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {
+      {"2003-03-03 00:00:00", "4"}, {"2003-03-04 00:00:00", "4"}};
+  auto actual = output.rows();
+
+  std::sort(expected.begin(), expected.end());
+  std::sort(actual.begin(), actual.end());
+
+  EXPECT_EQ(expected, actual);
+}
+
+TEST_F(TimeGranularitiesEvents, IngestRollupHour) {
+  LoadEvents();
+
+  query::MemoryRowOutput output;
+  db.Query(std::move(util::Config(
+               json{{"type", "aggregate"},
+                    {"table", "events"},
+                    {"select", {{{"column", "t4"}}, {{"column", "count"}}}}})),
+           output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {
+      {"2004-04-04 04:00:00", "4"}, {"2004-04-04 05:00:00", "4"}};
+  auto actual = output.rows();
+
+  std::sort(expected.begin(), expected.end());
+  std::sort(actual.begin(), actual.end());
+
+  EXPECT_EQ(expected, actual);
+}
+
+TEST_F(TimeGranularitiesEvents, IngestRollupMinute) {
+  LoadEvents();
+
+  query::MemoryRowOutput output;
+  db.Query(std::move(util::Config(
+               json{{"type", "aggregate"},
+                    {"table", "events"},
+                    {"select", {{{"column", "t5"}}, {{"column", "count"}}}}})),
+           output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {
+      {"2005-05-05 05:05:00", "4"}, {"2005-05-05 05:06:00", "4"}};
+  auto actual = output.rows();
+
+  std::sort(expected.begin(), expected.end());
+  std::sort(actual.begin(), actual.end());
+
+  EXPECT_EQ(expected, actual);
+}
+
+TEST_F(TimeGranularitiesEvents, IngestRollupSecond) {
+  LoadEvents();
+
+  query::MemoryRowOutput output;
+  db.Query(std::move(util::Config(
+               json{{"type", "aggregate"},
+                    {"table", "events"},
+                    {"select", {{{"column", "t6"}}, {{"column", "count"}}}}})),
+           output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {
+      {"2006-06-06 06:06:06", "4"}, {"2006-06-06 06:06:07", "4"}};
+  auto actual = output.rows();
+
+  std::sort(expected.begin(), expected.end());
+  std::sort(actual.begin(), actual.end());
+
+  EXPECT_EQ(expected, actual);
+}
