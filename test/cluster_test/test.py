@@ -126,6 +126,7 @@ def check_node_uptodate(host):
 def send_control_cmd(host, cmd):
     r = requests.get('http://{}:8080/{}'.format(host, cmd))
     r.raise_for_status()
+    return r.json()
 
 
 if __name__ == '__main__':
@@ -143,3 +144,11 @@ if __name__ == '__main__':
 
     send_control_cmd(nodes[0], 'kill_worker')
     check_node_uptodate(nodes[0])
+
+    for host in nodes:
+        if len([
+                m for m in send_control_cmd(host, 'statsd_metrics')
+                if m.startswith('viyadb.{}'.format(host))
+        ]) == 0:
+            raise Exception(
+                'No StatsD metrics received from host: {}'.format(host))
