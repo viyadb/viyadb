@@ -8,3 +8,7 @@ before_install:
 
 script:
   - ./scripts/travis-build.sh
+
+branches:
+  only:
+  - master
