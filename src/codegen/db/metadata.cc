@@ -30,6 +30,7 @@ Code TableMetadata::GenerateCode() const {
   Code code;
   code.AddHeaders(
       {"db/table.h", "db/store.h", "db/dictionary.h", "nlohmann/json.hpp"});
+  code.AddUsings({"json = nlohmann::json"});
 
   StoreDefs store_defs(table_);
   code << store_defs.GenerateCode();

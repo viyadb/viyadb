@@ -40,6 +40,10 @@ public:
     namespaces_.insert(namespaces.begin(), namespaces.end());
   }
 
+  void AddUsings(const std::vector<std::string> &usings) {
+    usings_.insert(usings.begin(), usings.end());
+  }
+
   template <typename T> Code &operator<<(const T &v) {
     body_ << v;
     return *this;
@@ -49,6 +53,7 @@ public:
     body_ << c.body_.str();
     headers_.insert(c.headers_.begin(), c.headers_.end());
     namespaces_.insert(c.namespaces_.begin(), c.namespaces_.end());
+    usings_.insert(c.usings_.begin(), c.usings_.end());
     return *this;
   }
 
@@ -58,6 +63,7 @@ private:
   std::ostringstream body_;
   std::unordered_set<std::string> headers_;
   std::unordered_set<std::string> namespaces_;
+  std::unordered_set<std::string> usings_;
 };
 
 class CodeGenerator {
