@@ -29,6 +29,9 @@ std::string Code::str() const {
   for (auto &ns : namespaces_) {
     ss << "namespace " << ns << ";\n";
   }
+  for (auto &u : usings_) {
+    ss << "using " << u << ";\n";
+  }
   ss << "\n";
   ss << body_.str();
   return ss.str();

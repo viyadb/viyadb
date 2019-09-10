@@ -123,10 +123,37 @@ def check_node_uptodate(host):
     }, dict(send_sql_query(query, host, 5555)))
 
 
-def send_control_cmd(host, cmd):
-    r = requests.get('http://{}:8080/{}'.format(host, cmd))
+def get_json(host, port, cmd):
+    r = requests.get('http://{}:{}/{}'.format(host, port, cmd))
     r.raise_for_status()
     return r.json()
+
+
+def send_control_cmd(host, cmd):
+    return get_json(host, 8080, cmd)
+
+
+def validate_statsd_metrics(host):
+    if len([
+            m for m in send_control_cmd(host, 'statsd_metrics')
+            if m.startswith('viyadb.{}'.format(host))
+    ]) == 0:
+        raise Exception(
+            'No StatsD metrics received from host: {}'.format(host))
+
+
+def validate_metadata(host):
+    for port in [5000, 5001]:
+        db_meta = get_json(host, port, 'database/meta')
+        if db_meta['tables'][0]['name'] != 'events':
+            raise Exception(
+                'Wrong database metadata received from host: {}'.format(host))
+        table_meta = get_json(host, port, 'tables/events/meta')
+        if not 'cardinality' in [
+                d for d in table_meta['dimensions'] if d['name'] == 'app_id'
+        ][0]:
+            raise Exception(
+                'Wrong table metadata received from host: {}'.format(host))
 
 
 if __name__ == '__main__':
@@ -146,9 +173,5 @@ if __name__ == '__main__':
     check_node_uptodate(nodes[0])
 
     for host in nodes:
-        if len([
-                m for m in send_control_cmd(host, 'statsd_metrics')
-                if m.startswith('viyadb.{}'.format(host))
-        ]) == 0:
-            raise Exception(
-                'No StatsD metrics received from host: {}'.format(host))
+        validate_statsd_metrics(host)
+        validate_metadata(host)
