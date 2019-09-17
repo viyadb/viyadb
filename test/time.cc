@@ -457,8 +457,9 @@ TEST(DynamicRollup, FormatIngestion) {
                  {"type", "time"},
                  {"format", "%Y-%m-%d %T"},
                  {"rollup_rules",
-                  {{{"granularity", "hour"}, {"after", "1 days"}},
-                   {{"granularity", "day"}, {"after", "1 weeks"}},
+                  {{{"granularity", "minute"}, {"after", "1 hours"}},
+                   {{"granularity", "hour"}, {"after", "1 days"}},
+                   {{"granularity", "day"}, {"after", "1 months"}},
                    {{"granularity", "month"}, {"after", "1 years"}}}}}}},
               {"metrics", {{{"name", "count"}, {"type", "count"}}}}}}}})));
 
@@ -466,34 +467,42 @@ TEST(DynamicRollup, FormatIngestion) {
 
   std::vector<query::MemoryRowOutput::Row> expected;
 
-  // First day not rolled up:
+  // First hour is not rolled up:
   input::SimpleLoader loader1(*table);
-  loader1.Load({{"2017-06-04 08:14:13"},
-                {"2017-06-04 05:55:17"},
-                {"2017-06-03 15:27:21"}});
-  expected.push_back({"2017-06-04 08:14:13", "1"});
-  expected.push_back({"2017-06-04 05:55:17", "1"});
-  expected.push_back({"2017-06-03 15:27:21", "1"});
+  loader1.Load({{"2017-06-04 09:55:50"},
+                {"2017-06-04 10:11:01"},
+                {"2017-06-04 10:54:10"}});
+  expected.push_back({"2017-06-04 09:55:50", "1"});
+  expected.push_back({"2017-06-04 10:11:01", "1"});
+  expected.push_back({"2017-06-04 10:54:10", "1"});
+
+  // Rollup by minute after 1 hour:
+  input::SimpleLoader loader2(*table);
+  loader2.Load({{"2017-06-04 08:55:39"},
+                {"2017-06-04 08:55:30"},
+                {"2017-06-04 07:15:10"}});
+  expected.push_back({"2017-06-04 08:55:00", "2"});
+  expected.push_back({"2017-06-04 07:15:00", "1"});
 
   // Rollup by hour after 1 day:
-  input::SimpleLoader loader2(*table);
-  loader2.Load({{"2017-06-03 08:14:13"},
+  input::SimpleLoader loader3(*table);
+  loader3.Load({{"2017-06-03 08:14:13"},
                 {"2017-06-02 18:13:22"},
                 {"2017-06-02 18:24:10"}});
   expected.push_back({"2017-06-02 18:00:00", "2"});
   expected.push_back({"2017-06-03 08:00:00", "1"});
 
-  // Rollup by day after 1 week:
-  input::SimpleLoader loader3(*table);
-  loader3.Load({{"2017-05-27 12:14:05"},
-                {"2017-05-28 08:41:45"},
-                {"2017-05-27 15:25:32"}});
-  expected.push_back({"2017-05-27 00:00:00", "2"});
-  expected.push_back({"2017-05-28 00:00:00", "1"});
+  // Rollup by day after 1 month:
+  input::SimpleLoader loader4(*table);
+  loader4.Load({{"2017-05-03 12:14:05"},
+                {"2017-05-02 08:41:45"},
+                {"2017-05-03 15:25:32"}});
+  expected.push_back({"2017-05-03 00:00:00", "2"});
+  expected.push_back({"2017-05-02 00:00:00", "1"});
 
   // Rollup by month after 1 year:
-  input::SimpleLoader loader4(*table);
-  loader4.Load({{"2016-02-03 18:21:09"},
+  input::SimpleLoader loader5(*table);
+  loader5.Load({{"2016-02-03 18:21:09"},
                 {"2012-06-03 12:31:57"},
                 {"2016-02-04 04:44:45"}});
   expected.push_back({"2016-02-01 00:00:00", "2"});
