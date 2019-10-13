@@ -214,7 +214,8 @@ TEST(Watch, LoadEvents) {
   out.close();
   fs::rename(tmpfile, load_dir + "/input.tsv");
 
-  for (int retries = 15; retries > 0 && table->store()->segments().empty(); --retries) {
+  for (int retries = 15; retries > 0 && table->store()->segments().empty();
+       --retries) {
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
   }
 
