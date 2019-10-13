@@ -18,6 +18,7 @@
 #define VIYA_INPUT_WATCHER_H_
 
 #include "util/config.h"
+#include <atomic>
 #include <mutex>
 #include <thread>
 #include <vector>
@@ -67,6 +68,7 @@ private:
   std::thread thread_;
   std::mutex mutex_;
   std::vector<Watch> watches_;
+  std::atomic<bool> running_;
 };
 } // namespace input
 } // namespace viya

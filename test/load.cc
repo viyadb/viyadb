@@ -18,12 +18,16 @@
 #include "db/store.h"
 #include "db/table.h"
 #include "input/simple.h"
+#include <boost/filesystem.hpp>
+#include <chrono>
 #include <fstream>
 #include <gtest/gtest.h>
 #include <unistd.h>
+#include <util/scope_guard.h>
 
 namespace query = viya::query;
 namespace input = viya::input;
+namespace fs = boost::filesystem;
 
 TEST_F(InappEvents, LoadEvents) {
   auto table = db.GetTable("events");
@@ -184,5 +188,44 @@ TEST_F(InappEvents, LoadFromTsvColsMapping) {
       output);
 
   std::vector<query::MemoryRowOutput::Row> expected = {{"US", "1.5", "1.1"}};
+  EXPECT_EQ(expected, output.rows());
+}
+
+TEST(Watch, LoadEvents) {
+  char tmpdir[] = "/tmp/viyadb-test-watch-load.XXXXXX";
+  std::string load_dir(mkdtemp(tmpdir));
+  util::ScopeGuard cleanup = [&load_dir]() { fs::remove_all(load_dir); };
+
+  db::Database db(std::move(util::Config(json{
+      {"tables",
+       {{{"name", "events"},
+         {"dimensions", {{{"name", "country"}}, {{"name", "event"}}}},
+         {"metrics", {{{"name", "count"}, {"type", "count"}}}},
+         {"watch", {{"directory", load_dir}, {"extensions", {".tsv"}}}}}}}})));
+  auto table = db.GetTable("events");
+
+  char tmpfile[] = "/tmp/viyadb-data.XXXXXX";
+  mkstemp(tmpfile);
+  std::ofstream out(tmpfile);
+  out << "US\tpurchase\n";
+  out << "US\tpurchase\n";
+  out << "US\tsell\n";
+  out << "IL\tpurchase\n";
+  out.close();
+  fs::rename(tmpfile, load_dir + "/input.tsv");
+
+  for (int retries = 15; retries > 0 && table->store()->segments().empty(); --retries) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  }
+
+  query::MemoryRowOutput output;
+  db.Query(std::move(util::Config(json{{"type", "aggregate"},
+                                       {"table", "events"},
+                                       {"dimensions", {"country", "event"}},
+                                       {"metrics", {"count"}}})),
+           output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {
+      {"IL", "purchase", "1"}, {"US", "purchase", "2"}, {"US", "sell", "1"}};
   EXPECT_EQ(expected, output.rows());
 }
