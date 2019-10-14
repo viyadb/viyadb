@@ -23,9 +23,11 @@
 #include <cerrno>
 #include <cstring>
 #include <dirent.h>
+#include <fcntl.h>
 #include <glog/logging.h>
 #include <stdexcept>
 #include <sys/inotify.h>
+#include <sys/select.h>
 #include <unistd.h>
 
 namespace viya {
@@ -33,11 +35,12 @@ namespace input {
 
 namespace fs = boost::filesystem;
 
-Watcher::Watcher(db::Database &db) : db_(db) {
+Watcher::Watcher(db::Database &db) : db_(db), running_(true) {
   fd_ = inotify_init();
   if (fd_ == -1) {
     throw std::runtime_error(std::strerror(errno));
   }
+  fcntl(fd_, F_SETFL, fcntl(fd_, F_GETFL) | O_NONBLOCK);
 }
 
 void Watcher::AddWatch(const util::Config &config, db::Table *table) {
@@ -115,7 +118,21 @@ void Watcher::Run() {
   static const size_t BUF_LEN = 1024 * (EVENT_SIZE + 16);
   char buffer[BUF_LEN];
 
-  while (true) {
+  fd_set fdset;
+  FD_ZERO(&fdset);
+  FD_SET(fd_, &fdset);
+  struct timeval timeout;
+  timeout.tv_sec = 1;
+  timeout.tv_usec = 0;
+
+  while (running_) {
+    int n = select(fd_ + 1, &fdset, NULL, NULL, &timeout);
+    if (n == -1) {
+      throw std::runtime_error(std::strerror(errno));
+    }
+    if (!n) {
+      continue;
+    }
     ssize_t length = read(fd_, buffer, BUF_LEN);
     if (length == -1) {
       throw std::runtime_error(std::strerror(errno));
@@ -143,6 +160,8 @@ void Watcher::Run() {
 }
 
 Watcher::~Watcher() {
+  running_ = false;
+
   if (fd_ != -1) {
     for (auto &watch : watches_) {
       inotify_rm_watch(fd_, watch.wd);
