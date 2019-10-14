@@ -313,3 +313,19 @@ TEST_F(NumericDimensions, AggregateQuery) {
 
   EXPECT_EQ(expected, actual);
 }
+
+TEST_F(StringDimensions, AggregateQuery) {
+  LoadEvents();
+
+  query::MemoryRowOutput output;
+  db.Query(std::move(util::Config(
+               json{{"type", "aggregate"},
+                    {"table", "events"},
+                    {"dimensions", {"8bit", "16bit", "32bit", "64bit"}},
+                    {"metrics", {"count"}}})),
+           output);
+
+  std::vector<query::MemoryRowOutput::Row> expected = {
+      {"a", "b", "c", "d", "3"}};
+  EXPECT_EQ(expected, output.rows());
+}

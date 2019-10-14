@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "db.h"
 #include "db/database.h"
 #include "db/table.h"
 #include "input/simple.h"
@@ -30,14 +31,13 @@ namespace input = viya::input;
 class LiteEvents : public testing::Test {
 protected:
   LiteEvents()
-      : db(std::move(util::Config("{\"tables\": [{\"name\": \"events\","
-                                  "               \"dimensions\": [{\"name\": "
-                                  "\"time\", \"type\": \"ulong\", \"max\": "
-                                  "4000000},"
-                                  "                                {\"name\": "
-                                  "\"dummy\", \"max\": 1}],"
-                                  "               \"metrics\": [{\"name\": "
-                                  "\"count\", \"type\": \"count\"}]}]}"))) {}
+      : db(std::move(util::Config(json{
+            {"tables",
+             {{{"name", "events"},
+               {"dimensions",
+                {{{"name", "time"}, {"type", "ulong"}, {"max", "4000000"}},
+                 {{"name", "dummy"}, {"max", 1}}}},
+               {"metrics", {{{"name", "count"}, {"type", "count"}}}}}}}}))) {}
   db::Database db;
 };
 
@@ -57,18 +57,18 @@ TEST_F(LiteEvents, SegmentsSkipped) {
   unsigned int segment2_start = start_time + table->segment_size();
   query::MemoryRowOutput output;
   auto stats = db.Query(
-      std::move(util::Config("{\"type\": \"aggregate\","
-                             " \"table\": \"events\","
-                             " \"dimensions\": [\"time\"],"
-                             " \"metrics\": [\"count\"],"
-                             " \"filter\": {\"op\": \"and\", \"filters\": ["
-                             "               {\"op\": \"gt\", \"column\": "
-                             "\"time\", \"value\": \"" +
-                             std::to_string(segment2_start) +
-                             "\"},"
-                             "               {\"op\": \"ne\", \"column\": "
-                             "\"dummy\", \"value\": \"bla\"}"
-                             "             ]}}")),
+      std::move(util::Config(
+          json{{"type", "aggregate"},
+               {"table", "events"},
+               {"dimensions", {"time"}},
+               {"metrics", {"count"}},
+               {"filter",
+                {{"op", "and"},
+                 {"filters",
+                  {{{"op", "gt"},
+                    {"column", "time"},
+                    {"value", std::to_string(segment2_start)}},
+                   {{"op", "ne"}, {"column", "dummy"}, {"value", "bla"}}}}}}})),
       output);
 
   EXPECT_EQ(1, stats.scanned_segments);

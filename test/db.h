@@ -112,6 +112,29 @@ protected:
   db::Database db;
 };
 
+class StringDimensions : public testing::Test {
+protected:
+  StringDimensions()
+      : db(std::move(util::Config(json{
+            {"tables",
+             {{{"name", "events"},
+               {"dimensions",
+                {{{"name", "8bit"}, {"cardinality", 254}},
+                 {{"name", "16bit"}, {"cardinality", 65534}},
+                 {{"name", "32bit"}, {"cardinality", 4294967294U}},
+                 {{"name", "64bit"}, {"cardinality", 4294967296U}}}},
+               {"metrics", {{{"name", "count"}, {"type", "count"}}}}}}}}))) {}
+
+  void LoadEvents() {
+    auto table = db.GetTable("events");
+    input::SimpleLoader loader(*table);
+    loader.Load(
+        {{"a", "b", "c", "d"}, {"a", "b", "c", "d"}, {"a", "b", "c", "d"}});
+  }
+
+  db::Database db;
+};
+
 class UserEvents : public testing::Test {
 protected:
   UserEvents()
