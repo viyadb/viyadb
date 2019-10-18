@@ -31,6 +31,36 @@ namespace sql = viya::sql;
 using SqlEvents = InappEvents;
 using SqlTimeEvents = TimeEvents;
 
+TEST_F(SqlEvents, ErrorUnknownTable) {
+  LoadEvents();
+
+  query::MemoryRowOutput output;
+  sql::Driver sql_driver(db);
+
+  std::istringstream query(
+      "SELECT event_name,country,revenue FROM unknown WHERE country='US';");
+  try {
+    sql_driver.Run(query, &output);
+    FAIL() << "Should throw exception on unknown table!";
+  } catch (std::exception &e) {
+    EXPECT_EQ(std::string("No such table: unknown"), e.what());
+  }
+}
+
+TEST_F(SqlEvents, ErrorSyntax) {
+  query::MemoryRowOutput output;
+  sql::Driver sql_driver(db);
+
+  std::istringstream query(
+      "SELECT event_name, FROM events WHERE country='US';");
+  try {
+    sql_driver.Run(query, &output);
+    FAIL() << "Should throw exception on syntax error!";
+  } catch (std::exception &e) {
+    EXPECT_EQ(0, strncmp(e.what(), "syntax error", strlen("syntax error")));
+  }
+}
+
 TEST_F(SqlEvents, Select) {
   LoadEvents();
 
