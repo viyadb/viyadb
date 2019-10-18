@@ -97,7 +97,7 @@ def compare_results(expected, actual):
         raise Exception('Expected: {}\nActual: {}'.format(expected, actual))
 
 
-def check_node_bootstrapped(host):
+def check_node_bootstrapped(query, host):
     compare_results({
         'com.skype.raider': '44'
     }, dict(send_sql_query(query, host, 5000, 1565439460000)))
@@ -110,7 +110,7 @@ def check_node_bootstrapped(host):
     }, dict(send_sql_query(query, host, 5555)))
 
 
-def check_node_uptodate(host):
+def check_node_uptodate(query, host):
     compare_results({
         'com.skype.raider': '76'
     }, dict(send_sql_query(query, host, 5000, 1565439620000)))
@@ -161,17 +161,21 @@ if __name__ == '__main__':
 
     query = 'SELECT app_id,count FROM events WHERE app_id IN (\'com.dropbox.android\', \'com.skype.raider\')'
     for host in nodes:
-        check_node_bootstrapped(host)
+        check_node_bootstrapped(query, host)
 
     send_new_notifications()
 
     time.sleep(3)
     for host in nodes:
-        check_node_uptodate(host)
+        check_node_uptodate(query, host)
 
     send_control_cmd(nodes[0], 'kill_worker')
-    check_node_uptodate(nodes[0])
+    check_node_uptodate(query, nodes[0])
 
     for host in nodes:
         validate_statsd_metrics(host)
         validate_metadata(host)
+
+    search_query = 'SELECT SEARCH(site_id, \'booking.com\') FROM events'
+    compare_results([['http://booking.com/page53']],
+                    list(send_sql_query(search_query, host, 5000)))
